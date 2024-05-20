@@ -27,13 +27,6 @@ public interface TransactionRepository {
     Transaction getTransactionById(String id);
 
     /**
-     * Deletes the given {@code Transaction} from the repository.
-     *
-     * @param transaction the transaction to be deleted
-     */
-    void deleteTransaction(Transaction transaction);
-
-    /**
      * Deletes the {@code Transaction} with the specified ID from the repository.
      *
      * @param id the ID of the transaction to be deleted

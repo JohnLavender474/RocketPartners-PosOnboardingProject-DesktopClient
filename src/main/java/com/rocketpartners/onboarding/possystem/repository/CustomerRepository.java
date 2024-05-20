@@ -26,13 +26,6 @@ public interface CustomerRepository {
     List<Customer> getAllCustomers();
 
     /**
-     * Deletes the given {@code Customer} from the repository.
-     *
-     * @param customer the customer to be deleted
-     */
-    void deleteCustomer(Customer customer);
-
-    /**
      * Deletes the {@code Customer} with the specified ID from the repository.
      *
      * @param id the ID of the customer to be deleted

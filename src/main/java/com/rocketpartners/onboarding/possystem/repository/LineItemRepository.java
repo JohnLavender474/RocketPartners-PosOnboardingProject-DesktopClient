@@ -26,13 +26,6 @@ public interface LineItemRepository {
     List<LineItem> getAllLineItems();
 
     /**
-     * Deletes the given {@code LineItem} from the repository.
-     *
-     * @param lineItem the line item to be deleted
-     */
-    void deleteLineItem(LineItem lineItem);
-
-    /**
      * Deletes the {@code LineItem} with the specified ID from the repository.
      *
      * @param id the ID of the line item to be deleted

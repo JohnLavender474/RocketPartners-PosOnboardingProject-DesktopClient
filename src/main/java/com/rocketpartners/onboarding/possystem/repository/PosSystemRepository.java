@@ -27,13 +27,6 @@ public interface PosSystemRepository {
     PosSystem getPosSystemById(String id);
 
     /**
-     * Deletes the given {@code PosSystem} from the repository.
-     *
-     * @param posSystem the POS system to be deleted
-     */
-    void deletePosSystem(PosSystem posSystem);
-
-    /**
      * Deletes the {@code PosSystem} with the specified ID from the repository.
      *
      * @param id the ID of the POS system to be deleted

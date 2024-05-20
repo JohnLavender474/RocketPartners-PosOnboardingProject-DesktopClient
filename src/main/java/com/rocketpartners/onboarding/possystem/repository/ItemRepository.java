@@ -26,13 +26,6 @@ public interface ItemRepository {
     List<Item> getAllItems();
 
     /**
-     * Deletes the given {@code Item} from the repository.
-     *
-     * @param item the item to be deleted
-     */
-    void deleteItem(Item item);
-
-    /**
      * Deletes the {@code Item} with the specified UPC from the repository.
      *
      * @param upc the UPC of the item to be deleted

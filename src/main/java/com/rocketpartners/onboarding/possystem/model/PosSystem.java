@@ -14,5 +14,4 @@ public class PosSystem {
     private String id;
     private String storeName;
     private int posLane;
-
 }
