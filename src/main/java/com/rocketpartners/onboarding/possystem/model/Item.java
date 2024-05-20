@@ -7,6 +7,10 @@ import lombok.Setter;
 
 import java.math.BigDecimal;
 
+/**
+ * Represents an item that can be sold in a store. Items have a UPC, name, category, description, and unit price. Items
+ * are used to create line items in a transaction.
+ */
 @Getter
 @Setter
 @AllArgsConstructor
@@ -18,5 +22,4 @@ public class Item {
     private String category;
     private String description;
     private BigDecimal unitPrice;
-
 }

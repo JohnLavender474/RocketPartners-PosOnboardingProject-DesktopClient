@@ -1,11 +1,8 @@
 package com.rocketpartners.onboarding.possystem.display.view;
 
-import org.springframework.stereotype.Component;
-
 import javax.swing.*;
 import java.awt.*;
 
-@Component
 public class CustomerView extends JFrame {
 
     private JLabel bannerLabel;

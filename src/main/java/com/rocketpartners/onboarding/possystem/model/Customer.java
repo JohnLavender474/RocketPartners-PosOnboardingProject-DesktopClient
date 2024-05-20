@@ -5,6 +5,10 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+/**
+ * Represents a customer who can make purchases in a store. Customers have a unique ID, name, email, phone number, and
+ * address. TODO: Customers can earn loyalty points when they make purchases.
+ */
 @Getter
 @Setter
 @AllArgsConstructor

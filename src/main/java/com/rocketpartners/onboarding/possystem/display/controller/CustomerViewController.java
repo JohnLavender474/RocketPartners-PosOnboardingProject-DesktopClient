@@ -1,13 +1,13 @@
 package com.rocketpartners.onboarding.possystem.display.controller;
 
-import com.rocketpartners.onboarding.possystem.constant.TransactionState;
 import com.rocketpartners.onboarding.possystem.component.IComponent;
+import com.rocketpartners.onboarding.possystem.constant.TransactionState;
 import com.rocketpartners.onboarding.possystem.display.view.CustomerView;
 import lombok.NonNull;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
-@Component
+/**
+ * Controller for the customer view.
+ */
 public class CustomerViewController implements IComponent {
 
     private final CustomerView customerView;
@@ -15,12 +15,21 @@ public class CustomerViewController implements IComponent {
     @NonNull
     private TransactionState transactionState;
 
-    @Autowired
+    /**
+     * Constructor for the CustomerViewController.
+     *
+     * @param customerView The customer view.
+     */
     public CustomerViewController(@NonNull CustomerView customerView) {
         this.customerView = customerView;
         transactionState = TransactionState.NOT_STARTED;
     }
 
+    /**
+     * Sets the transaction state and updates the view according to the state.
+     *
+     * @param transactionState The transaction state.
+     */
     public void setTransactionState(@NonNull TransactionState transactionState) {
         this.transactionState = transactionState;
         updateView();

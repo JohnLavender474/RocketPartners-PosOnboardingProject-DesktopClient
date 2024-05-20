@@ -9,6 +9,11 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
+/**
+ * Represents a transaction in a point of sale system. A transaction has a unique ID, customer ID, point of sale
+ * system ID, transaction number, time completed, line items, subtotal, discounts applied, taxes, total, voided status,
+ * and tendered status. Transactions are made up of one or more line items.
+ */
 @Getter
 @Setter
 @AllArgsConstructor

@@ -12,20 +12,25 @@ import lombok.Getter;
 import lombok.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
 import java.util.*;
 
 /**
  * Controller for a POS system. This class is responsible for handling POS events and managing transactions.
  */
+@Component
 public class PosComponent implements IComponent, IPosEventManager {
 
     private static final Logger logger = LoggerFactory.getLogger(PosComponent.class);
 
-    private final PosSystem posSystem;
+    private final TransactionFactory transactionFactory;
     private final Map<PosEventType, List<PosEvent>> events;
     private final Set<IPosEventListener> posEventListeners;
 
+    @Getter
+    private PosSystem posSystem;
     @Getter
     private Transaction transaction;
     @Getter
@@ -34,20 +39,34 @@ public class PosComponent implements IComponent, IPosEventManager {
     private int transactionNumber;
 
     /**
-     * Constructor that accepts a POS system.
+     * Constructor that accepts a transaction factory. The method {@link #setPosSystem} must be called before the
+     * {@link #bootUp()} method is called or else an {@link IllegalStateException} will be thrown.
      *
-     * @param posSystem The POS system.
+     * @param transactionFactory The transaction factory.
      */
-    public PosComponent(@NonNull PosSystem posSystem) {
-        this.posSystem = posSystem;
+    @Autowired
+    public PosComponent(@NonNull TransactionFactory transactionFactory) {
+        this.transactionFactory = transactionFactory;
         events = new EnumMap<>(PosEventType.class);
         posEventListeners = new LinkedHashSet<>();
         transactionState = TransactionState.NOT_STARTED;
         transactionNumber = 1;
     }
 
+    /**
+     * Set the POS system for this component.
+     *
+     * @param posSystem The POS system.
+     */
+    public void setPosSystem(@NonNull PosSystem posSystem) {
+        this.posSystem = posSystem;
+    }
+
     @Override
     public void bootUp() {
+        if (posSystem == null) {
+            throw new IllegalStateException("POS system must be set to non-null value before calling bootUp()");
+        }
         transaction = null;
         transactionState = TransactionState.NOT_STARTED;
         dispatchPosEvent(new PosEvent(PosEventType.POS_BOOTUP, Map.of("posSystemId", posSystem.getId())));
@@ -71,20 +90,35 @@ public class PosComponent implements IComponent, IPosEventManager {
      * Start a new transaction. Package-private for testing purposes.
      */
     void startTransaction() {
-        transaction = TransactionFactory.getInstance().createTransaction(posSystem.getId(), transactionNumber);
+        transaction = transactionFactory.createAndPersist(posSystem.getId(), transactionNumber);
         transactionNumber++;
         transactionState = TransactionState.SCANNING_IN_PROGRESS;
-        dispatchPosEvent(new PosEvent(PosEventType.START_TRANSACTION));
+        dispatchPosEvent(new PosEvent(PosEventType.TRANSACTION_STARTED));
     }
 
+    /**
+     * Void the current transaction. Package-private for testing purposes.
+     */
     void voidTransaction() {
         transactionState = TransactionState.VOIDED;
-        dispatchPosEvent(new PosEvent(PosEventType.VOID_TRANSACTION));
+        dispatchPosEvent(new PosEvent(PosEventType.TRANSACTION_VOIDED));
     }
 
+    /**
+     * Complete the current transaction. Package-private for testing purposes.
+     */
     void completeTransaction() {
         transactionState = TransactionState.COMPLETED;
-        dispatchPosEvent(new PosEvent(PosEventType.COMPLETE_TRANSACTION));
+        dispatchPosEvent(new PosEvent(PosEventType.TRANSACTION_COMPLETED));
+    }
+
+    /**
+     * Resets the pos component to its initial state. Package-private for testing purposes.
+     */
+    void resetPos() {
+        transaction = null;
+        transactionState = TransactionState.NOT_STARTED;
+        dispatchPosEvent(new PosEvent(PosEventType.POS_RESET));
     }
 
     @Override
@@ -148,6 +182,14 @@ public class PosComponent implements IComponent, IPosEventManager {
                     return;
                 }
                 completeTransaction();
+            }
+
+            case REQUEST_RESET_POS -> {
+                if (transactionState != TransactionState.VOIDED && transactionState != TransactionState.COMPLETED) {
+                    logger.error("Request to reset POS not allowed when transaction state is not VOIDED or COMPLETED");
+                    return;
+                }
+                resetPos();
             }
         }
     }
