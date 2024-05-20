@@ -1,4 +1,4 @@
-package com.rocketpartners.onboarding.possystem.controller;
+package com.rocketpartners.onboarding.possystem.component;
 
 import com.rocketpartners.onboarding.possystem.constant.TransactionState;
 import com.rocketpartners.onboarding.possystem.event.IPosEventListener;
@@ -17,7 +17,7 @@ import java.util.*;
  * Controller for a POS system. This class is responsible for handling POS events and managing transactions.
  */
 @Getter
-public class PosController implements IController, IPosEventManager {
+public class PosComponent implements IComponent, IPosEventManager {
 
     private final PosSystem posSystem;
     private final Map<PosEventType, List<PosEvent>> events;
@@ -32,7 +32,7 @@ public class PosController implements IController, IPosEventManager {
      *
      * @param posSystem The POS system.
      */
-    public PosController(@NonNull PosSystem posSystem) {
+    public PosComponent(@NonNull PosSystem posSystem) {
         this.posSystem = posSystem;
         events = new EnumMap<>(PosEventType.class);
         posEventListeners = new LinkedHashSet<>();
@@ -81,7 +81,7 @@ public class PosController implements IController, IPosEventManager {
     /**
      * {@inheritDoc}
      * <p>
-     * In this implementation, this {@link PosController} instance listens and acts on the event immediately. However,
+     * In this implementation, this {@link PosComponent} instance listens and acts on the event immediately. However,
      * {@link IPosEventListener} instances do not receive the event until the {@link #update()} method call is made.
      *
      * @param event The event to dispatch.
