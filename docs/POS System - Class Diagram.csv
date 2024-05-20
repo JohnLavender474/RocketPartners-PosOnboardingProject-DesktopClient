@@ -1,0 +1,63 @@
+Id,Name,Shape Library,Page ID,Contained By,Group,Line Source,Line Destination,Source Arrow,Destination Arrow,Status,Text Area 1,Text Area 2,Text Area 3,Comments
+1,Document,,,,,,,,,Draft,POS System - Class Diagram,,,
+2,Page,,,,,,,,,,Page 1,,,
+3,Class,UML,2,,,,,,,,BackOfficeComputer (Main),"​- cloudDriver: CloudApiDriver
+- backOfficeComputer: BackOfficeComputer
+- posSystems: Set<PosSystem>","​- initialize()
+- update()
+- shutdown()",
+4,Class,UML,2,,,,,,,,CloudApiDriver,,,
+5,Class,UML,2,,,,,,,,PosSystem,"​- posEventListeners: Set<PosEventListener>
+- currentTransaction: Transaction?","​+ getTransactionState(): TransactionState
++ getTransactionReference(): Transaction
+- initialize()
+- startTransaction()
+- finalizeTransaction()
+- voidTransaction()
+- voidLineItem(LineItem)
+- shutdown()",
+6,Class,UML,2,,,,,,,,"<<interface>>
+PosEventDispatcher","​+ dispatchPosEvent(PosEvent)
++ registerPosEventListener(PosEventListener)
++ deregisterPosEventListener(PosEventListener)",,
+7,Class,UML,2,,,,,,,,"<<interface>>
+PosEventListener",​+ receivePosEvent(PosEvent),,
+8,Class,UML,2,,,,,,,,"<<interface>>
+InputListener",​+ onInput(String),,
+9,Class,UML,2,,,,,,,,Keypad,​- posEventDispatcher: PosEventDispatcher,"​- setPinpadInput(input)
+- setCardNumberInput(input)",
+10,Class,UML,2,,,,,,,,ReceiptDisplay,​- posEventDispatcher: PosEventDispatcher,"​- receiveReceipt(Receipt)
+- displayReceipt(Receipt)",
+11,Class,UML,2,,,,,,,,JournalDispatcher,​- journalDevices: Set<JournalDevice>,"​+ dispatchJournalLog(String)
++ registerJournalDevice(JournalDevice)
++ deregisterJournalDevice(JournalDevice)",
+12,Class,UML,2,,,,,,,,"<<interface>>
+JournalDevice",​+ receiveJournalLog(String),,
+13,Class,UML,2,,,,,,,,PosDisplay,​- posEventDispatcher: PosEventDispatcher,​- handle,
+14,Class,UML,2,,,,,,,,Scanner,​- posEventDispatcher: PosEventDispatcher,"​- readScannerInput()
+- publishScannerInput(String)",
+15,Class,UML,2,,,,,,,,"<<enumeration>>
+TransactionState","NOT_STARTED,
+SCANNING_IN_PROGRESS,
+AWAITING_CARD_PAYMENT,
+AWAITING_CASH_PAYMENT,
+COMPLETED,
+VOIDED",,
+16,Line,,2,,,6,5,Generalization,None,,,,,
+17,Line,,2,,,5,3,None,Aggregation,,,,,
+18,Line,,2,,,7,5,None,None,,,,,
+19,Line,,2,,,3,4,None,None,,,,,
+20,Line,,2,,,8,3,None,None,,,,,
+21,Line,,2,,,9,5,None,Aggregation,,,,,
+22,Line,,2,,,11,5,None,Aggregation,,,,,
+23,Line,,2,,,9,7,None,Generalization,,,,,
+24,Line,,2,,,11,7,None,Generalization,,,,,
+25,Line,,2,,,12,11,None,None,,,,,
+26,Line,,2,,,13,5,None,Aggregation,,,,,
+27,Line,,2,,,14,7,None,Generalization,,,,,
+28,Line,,2,,,14,5,None,Aggregation,,,,,
+29,Line,,2,,,10,7,None,Generalization,,,,,
+30,Line,,2,,,10,5,None,Aggregation,,,,,
+31,Line,,2,,,8,14,None,None,,,,,
+32,Line,,2,,,5,15,None,None,,,,,
+33,Line,,2,,,13,7,None,Generalization,,,,,
