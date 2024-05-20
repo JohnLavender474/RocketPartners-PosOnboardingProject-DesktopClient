@@ -10,21 +10,27 @@ import com.rocketpartners.onboarding.possystem.model.PosSystem;
 import com.rocketpartners.onboarding.possystem.model.Transaction;
 import lombok.Getter;
 import lombok.NonNull;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
 /**
  * Controller for a POS system. This class is responsible for handling POS events and managing transactions.
  */
-@Getter
 public class PosComponent implements IComponent, IPosEventManager {
+
+    private static final Logger logger = LoggerFactory.getLogger(PosComponent.class);
 
     private final PosSystem posSystem;
     private final Map<PosEventType, List<PosEvent>> events;
     private final Set<IPosEventListener> posEventListeners;
 
+    @Getter
     private Transaction transaction;
+    @Getter
     private TransactionState transactionState;
+    @Getter
     private int transactionNumber;
 
     /**
@@ -68,6 +74,17 @@ public class PosComponent implements IComponent, IPosEventManager {
         transaction = TransactionFactory.getInstance().createTransaction(posSystem.getId(), transactionNumber);
         transactionNumber++;
         transactionState = TransactionState.SCANNING_IN_PROGRESS;
+        dispatchPosEvent(new PosEvent(PosEventType.START_TRANSACTION));
+    }
+
+    void voidTransaction() {
+        transactionState = TransactionState.VOIDED;
+        dispatchPosEvent(new PosEvent(PosEventType.VOID_TRANSACTION));
+    }
+
+    void completeTransaction() {
+        transactionState = TransactionState.COMPLETED;
+        dispatchPosEvent(new PosEvent(PosEventType.COMPLETE_TRANSACTION));
     }
 
     @Override
@@ -107,27 +124,31 @@ public class PosComponent implements IComponent, IPosEventManager {
     }
 
     private void handlePosEvent(@NonNull PosEvent event) {
-        // TODO: Implement this method
-        /*
         switch (event.getType()) {
-            case TRANSACTION_START:
+            case REQUEST_START_TRANSACTION -> {
+                if (transactionState != TransactionState.NOT_STARTED) {
+                    logger.error("Request to start transaction not allowed when transaction state is not NOT_STARTED");
+                    return;
+                }
                 startTransaction();
-                break;
-            case TRANSACTION_END:
-                endTransaction();
-                break;
-            case ITEM_SCAN:
-                scanItem(event);
-                break;
-            case ITEM_REMOVE:
-                removeItem(event);
-                break;
-            case ITEM_QUANTITY_CHANGE:
-                changeItemQuantity(event);
-                break;
-            default:
-                break;
+            }
+
+            case REQUEST_VOID_TRANSACTION -> {
+                if (transactionState == TransactionState.NOT_STARTED) {
+                    logger.error("Request to void transaction not allowed when transaction state is NOT_STARTED");
+                    return;
+                }
+                voidTransaction();
+            }
+
+            case REQUEST_COMPLETE_TRANSACTION -> {
+                if (transactionState != TransactionState.AWAITING_PAYMENT) {
+                    logger.error("Request to complete transaction not allowed when transaction state is not " +
+                            "AWAITING_PAYMENT");
+                    return;
+                }
+                completeTransaction();
+            }
         }
-         */
     }
 }

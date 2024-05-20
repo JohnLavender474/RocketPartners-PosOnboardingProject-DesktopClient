@@ -1,8 +1,11 @@
 package com.rocketpartners.onboarding.possystem.display.view;
 
+import org.springframework.stereotype.Component;
+
 import javax.swing.*;
 import java.awt.*;
 
+@Component
 public class CustomerView extends JFrame {
 
     private JLabel bannerLabel;
@@ -74,6 +77,10 @@ public class CustomerView extends JFrame {
         repaint();
     }
 
+    public void showAwaitingPayment() {
+        // TODO: Implement this method to handle either card or cash payment depending on user selection
+    }
+
     public void showAwaitingCardPayment() {
         bannerLabel.setText("Awaiting Card Payment");
         showPaymentComponents("Card Number: \nPIN: ");
@@ -123,12 +130,13 @@ public class CustomerView extends JFrame {
         showContinue(voidedMessage);
     }
 
-    public void showTranactionCompleted() {
+    public void showTransactionCompleted() {
         bannerLabel.setText("Transaction Completed");
         contentPanel.removeAll();
         contentPanel.setLayout(new BorderLayout());
 
-        JLabel completedMessage = new JLabel("We appreciate your business! Your receipt is now displayed on the receipt display", SwingConstants.CENTER);
+        JLabel completedMessage = new JLabel("We appreciate your business! Your receipt is now displayed on the " +
+                "receipt display", SwingConstants.CENTER);
         showContinue(completedMessage);
     }
 
