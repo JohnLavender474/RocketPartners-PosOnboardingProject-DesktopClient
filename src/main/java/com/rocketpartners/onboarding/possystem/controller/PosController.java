@@ -4,31 +4,37 @@ import com.rocketpartners.onboarding.possystem.constant.TransactionState;
 import com.rocketpartners.onboarding.possystem.event.IPosEventListener;
 import com.rocketpartners.onboarding.possystem.event.IPosEventManager;
 import com.rocketpartners.onboarding.possystem.event.PosEvent;
+import com.rocketpartners.onboarding.possystem.event.PosEventType;
 import com.rocketpartners.onboarding.possystem.factory.TransactionFactory;
 import com.rocketpartners.onboarding.possystem.model.PosSystem;
 import com.rocketpartners.onboarding.possystem.model.Transaction;
 import lombok.Getter;
 import lombok.NonNull;
 
-import java.util.LinkedHashSet;
-import java.util.LinkedList;
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
 
+/**
+ * Controller for a POS system. This class is responsible for handling POS events and managing transactions.
+ */
 @Getter
 public class PosController implements IController, IPosEventManager {
 
     private final PosSystem posSystem;
-    private final Queue<PosEvent> posEventQueue;
+    private final Map<PosEventType, List<PosEvent>> events;
     private final Set<IPosEventListener> posEventListeners;
 
     private Transaction transaction;
     private TransactionState transactionState;
     private int transactionNumber;
 
+    /**
+     * Constructor that accepts a POS system.
+     *
+     * @param posSystem The POS system.
+     */
     public PosController(@NonNull PosSystem posSystem) {
         this.posSystem = posSystem;
-        posEventQueue = new LinkedList<>();
+        events = new EnumMap<>(PosEventType.class);
         posEventListeners = new LinkedHashSet<>();
         transactionState = TransactionState.NOT_STARTED;
         transactionNumber = 1;
@@ -38,17 +44,21 @@ public class PosController implements IController, IPosEventManager {
     public void bootUp() {
         transaction = null;
         transactionState = TransactionState.NOT_STARTED;
+        dispatchPosEvent(new PosEvent(PosEventType.POS_BOOTUP, Map.of("posSystemId", posSystem.getId())));
     }
 
     @Override
     public void update() {
-        while (!posEventQueue.isEmpty()) {
-            PosEvent event = posEventQueue.poll();
-            handlePosEvent(event);
-            for (IPosEventListener listener : posEventListeners) {
-                listener.onPosEvent(event);
-            }
-        }
+        posEventListeners.forEach(listener -> {
+            Set<PosEventType> eventTypesToListenFor = listener.getEventTypesToListenFor();
+            eventTypesToListenFor.forEach(type -> {
+                List<PosEvent> eventsOfType = events.get(type);
+                if (eventsOfType != null) {
+                    eventsOfType.forEach(listener::onPosEvent);
+                }
+            });
+        });
+        events.clear();
     }
 
     /**
@@ -64,11 +74,26 @@ public class PosController implements IController, IPosEventManager {
     public void shutdown() {
         transaction = null;
         transactionState = TransactionState.NOT_STARTED;
+        events.clear();
+        posEventListeners.clear();
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * In this implementation, this {@link PosController} instance listens and acts on the event immediately. However,
+     * {@link IPosEventListener} instances do not receive the event until the {@link #update()} method call is made.
+     *
+     * @param event The event to dispatch.
+     */
     @Override
     public void dispatchPosEvent(@NonNull PosEvent event) {
-        posEventQueue.add(event);
+        handlePosEvent(event);
+
+        PosEventType type = event.getType();
+        List<PosEvent> eventsOfType = events.getOrDefault(type, new ArrayList<>());
+        eventsOfType.add(event);
+        events.put(type, eventsOfType);
     }
 
     @Override
