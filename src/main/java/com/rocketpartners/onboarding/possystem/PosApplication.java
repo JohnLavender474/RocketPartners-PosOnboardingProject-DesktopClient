@@ -2,6 +2,7 @@ package com.rocketpartners.onboarding.possystem;
 
 import com.rocketpartners.onboarding.possystem.component.BackOfficeComponent;
 import com.rocketpartners.onboarding.possystem.component.PosComponent;
+import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.context.ConfigurableApplicationContext;
@@ -12,8 +13,8 @@ import javax.swing.*;
 /**
  * The main entry point for the Point of Sale application.
  */
-@SpringBootApplication
 @EnableScheduling
+@SpringBootApplication
 public class PosApplication {
 
     /**
@@ -22,8 +23,12 @@ public class PosApplication {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
+        SpringApplication.run(PosApplication.class, args);
+        /*
         ConfigurableApplicationContext context = createApplicationContext(args);
         startApplication(context);
+         */
+
         // TODO:
         /*
         try {

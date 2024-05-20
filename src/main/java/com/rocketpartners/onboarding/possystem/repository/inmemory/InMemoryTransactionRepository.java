@@ -2,6 +2,7 @@ package com.rocketpartners.onboarding.possystem.repository.inmemory;
 
 import com.rocketpartners.onboarding.possystem.model.Transaction;
 import com.rocketpartners.onboarding.possystem.repository.TransactionRepository;
+import org.springframework.stereotype.Component;
 
 import java.util.HashMap;
 import java.util.List;
@@ -10,6 +11,7 @@ import java.util.Map;
 /**
  * An in-memory implementation of the {@link TransactionRepository} interface.
  */
+@Component
 public class InMemoryTransactionRepository implements TransactionRepository {
 
     private final Map<String, Transaction> transactions = new HashMap<>();
