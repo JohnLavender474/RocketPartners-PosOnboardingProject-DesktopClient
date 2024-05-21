@@ -24,7 +24,7 @@ public class PosComponent implements IComponent, IPosEventManager {
 
     private final TransactionService transactionService;
     private final Map<PosEventType, List<PosEvent>> events;
-    private final Set<IController> childControllers;
+    private final Set<IComponent> childComponents;
     private final Set<IPosEventListener> posEventListeners;
 
     @Getter
@@ -52,7 +52,7 @@ public class PosComponent implements IComponent, IPosEventManager {
         }
         this.transactionService = transactionService;
         events = new EnumMap<>(PosEventType.class);
-        childControllers = new LinkedHashSet<>();
+        childComponents = new LinkedHashSet<>();
         posEventListeners = new LinkedHashSet<>();
         transactionState = TransactionState.NOT_STARTED;
         transactionNumber = 1;
@@ -81,7 +81,7 @@ public class PosComponent implements IComponent, IPosEventManager {
         on = true;
         transaction = null;
         transactionState = TransactionState.NOT_STARTED;
-        childControllers.forEach(IController::bootUp);
+        childComponents.forEach(IComponent::bootUp);
         dispatchPosEvent(new PosEvent(PosEventType.POS_BOOTUP, Map.of("posSystemId", posSystem.getId())));
         if (Application.DEBUG) {
             System.out.println("[PosComponent] POS component booted up: " + this);
@@ -95,6 +95,7 @@ public class PosComponent implements IComponent, IPosEventManager {
         if (!on) {
             return;
         }
+        childComponents.forEach(IComponent::update);
         posEventListeners.forEach(listener -> {
             Set<PosEventType> eventTypesToListenFor = listener.getEventTypesToListenFor();
             eventTypesToListenFor.forEach(type -> {
@@ -123,6 +124,7 @@ public class PosComponent implements IComponent, IPosEventManager {
         }
         transaction = null;
         transactionState = TransactionState.NOT_STARTED;
+        childComponents.forEach(IComponent::shutdown);
         dispatchPosEvent(new PosEvent(PosEventType.POS_SHUTDOWN));
         // The POS component will be fully shutdown after the next update
         shuttingDown = true;
@@ -179,13 +181,13 @@ public class PosComponent implements IComponent, IPosEventManager {
     }
 
     /**
-     * Register a child controller with this controller and also adds it as an event listener. Child controllers will
+     * Register a child controller with this controller and also add it as an event listener. Child controllers will
      * receive boot up, update, and shutdown calls, and POS events.
      *
      * @param controller The child controller to register.
      */
     public void registerChildController(@NonNull IController controller) {
-        childControllers.add(controller);
+        childComponents.add(controller);
         posEventListeners.add(controller);
         if (Application.DEBUG) {
             System.out.println("[PosComponent] Registered child controller: " + controller);
@@ -193,13 +195,13 @@ public class PosComponent implements IComponent, IPosEventManager {
     }
 
     /**
-     * Unregister a child controller from this controller and also removes it as an event listener. Child controllers
+     * Unregister a child controller from this controller and also remove it as an event listener. Child controllers
      * will no longer receive boot up, update, or shutdown calls, or POS events.
      *
      * @param controller The child controller to unregister.
      */
     public void unregisterChildController(@NonNull IController controller) {
-        childControllers.remove(controller);
+        childComponents.remove(controller);
         posEventListeners.remove(controller);
         if (Application.DEBUG) {
             System.out.println("[PosComponent] Unregistered child controller: " + controller);
