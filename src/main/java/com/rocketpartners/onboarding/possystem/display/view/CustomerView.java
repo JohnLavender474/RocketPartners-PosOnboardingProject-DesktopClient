@@ -23,6 +23,7 @@ public class CustomerView extends JFrame {
         setLayout(new BorderLayout());
         add(bannerLabel, BorderLayout.NORTH);
         add(contentPanel, BorderLayout.CENTER);
+        setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
     }
 
     private void initializeComponents() {

@@ -2,50 +2,80 @@ package com.rocketpartners.onboarding.possystem.repository.inmemory;
 
 import com.rocketpartners.onboarding.possystem.model.PosSystem;
 import com.rocketpartners.onboarding.possystem.repository.PosSystemRepository;
-import org.springframework.stereotype.Component;
+import lombok.AccessLevel;
+import lombok.NoArgsConstructor;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
-@Component
+/**
+ * An in-memory implementation of the {@link PosSystemRepository} interface.
+ */
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class InMemoryPosSystemRepository implements PosSystemRepository {
+
+    private static InMemoryPosSystemRepository instance;
+
+    /**
+     * Get the singleton instance of the in-memory repository.
+     *
+     * @return The instance of the in-memory repository.
+     */
+    public static InMemoryPosSystemRepository getInstance() {
+        if (instance == null) {
+            instance = new InMemoryPosSystemRepository();
+        }
+        return instance;
+    }
+
+    private final Map<String, PosSystem> posSystems = new HashMap<>();
 
     @Override
     public void savePosSystem(PosSystem posSystem) {
-
+        if (posSystem.getId() == null) {
+            String id = UUID.randomUUID().toString();
+            posSystem.setId(id);
+        }
+        posSystems.put(posSystem.getId(), posSystem);
     }
 
     @Override
     public PosSystem getPosSystemById(String id) {
-        return null;
+        return posSystems.get(id);
     }
 
     @Override
     public void deletePosSystemById(String id) {
-
+        posSystems.remove(id);
     }
 
     @Override
     public boolean posSystemExists(String id) {
-        return false;
+        return posSystems.containsKey(id);
     }
 
     @Override
     public List<PosSystem> getAllPosSystems() {
-        return List.of();
+        return posSystems.values().stream().toList();
     }
 
     @Override
     public List<PosSystem> getPosSystemsByStoreName(String storeName) {
-        return List.of();
+        return posSystems.values().stream().filter(posSystem -> posSystem.getStoreName().equals(storeName)).toList();
     }
 
     @Override
     public PosSystem getPosSystemByStoreNameAndPosLane(String storeName, int posLane) {
-        return null;
+        return posSystems.values().stream()
+                .filter(posSystem -> posSystem.getStoreName().equals(storeName) && posSystem.getPosLane() == posLane)
+                .findFirst().orElse(null);
     }
 
     @Override
     public boolean posSystemExistsByStoreNameAndPosLane(String storeName, int posLane) {
-        return false;
+        return posSystems.values().stream()
+                .anyMatch(posSystem -> posSystem.getStoreName().equals(storeName) && posSystem.getPosLane() == posLane);
     }
 }

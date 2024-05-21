@@ -2,13 +2,10 @@ package com.rocketpartners.onboarding.possystem.factory;
 
 import com.rocketpartners.onboarding.possystem.model.Transaction;
 import com.rocketpartners.onboarding.possystem.repository.TransactionRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 /**
  * Factory class for creating new Transaction objects.
  */
-@Component
 public class TransactionFactory {
 
     private final TransactionRepository transactionRepository;
@@ -18,7 +15,6 @@ public class TransactionFactory {
      *
      * @param transactionRepository the transaction repository
      */
-    @Autowired
     public TransactionFactory(TransactionRepository transactionRepository) {
         this.transactionRepository = transactionRepository;
     }

@@ -3,12 +3,19 @@ package com.rocketpartners.onboarding.possystem.display.controller;
 import com.rocketpartners.onboarding.possystem.component.IComponent;
 import com.rocketpartners.onboarding.possystem.constant.TransactionState;
 import com.rocketpartners.onboarding.possystem.display.view.CustomerView;
+import com.rocketpartners.onboarding.possystem.event.IPosEventListener;
+import com.rocketpartners.onboarding.possystem.event.PosEvent;
+import com.rocketpartners.onboarding.possystem.event.PosEventType;
 import lombok.NonNull;
+
+import java.util.Set;
 
 /**
  * Controller for the customer view.
  */
-public class CustomerViewController implements IComponent {
+public class CustomerViewController implements IPosEventListener, IComponent {
+
+    private static final Set<PosEventType> eventTypesToListenFor = Set.of();
 
     private final CustomerView customerView;
 
@@ -23,6 +30,16 @@ public class CustomerViewController implements IComponent {
     public CustomerViewController(@NonNull CustomerView customerView) {
         this.customerView = customerView;
         transactionState = TransactionState.NOT_STARTED;
+    }
+
+    @Override
+    public Set<PosEventType> getEventTypesToListenFor() {
+        return eventTypesToListenFor;
+    }
+
+    @Override
+    public void onPosEvent(PosEvent posEvent) {
+
     }
 
     /**

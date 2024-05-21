@@ -10,20 +10,13 @@ import com.rocketpartners.onboarding.possystem.model.PosSystem;
 import com.rocketpartners.onboarding.possystem.model.Transaction;
 import lombok.Getter;
 import lombok.NonNull;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 import java.util.*;
 
 /**
  * Controller for a POS system. This class is responsible for handling POS events and managing transactions.
  */
-@Component
 public class PosComponent implements IComponent, IPosEventManager {
-
-    private static final Logger logger = LoggerFactory.getLogger(PosComponent.class);
 
     private final TransactionFactory transactionFactory;
     private final Map<PosEventType, List<PosEvent>> events;
@@ -44,7 +37,6 @@ public class PosComponent implements IComponent, IPosEventManager {
      *
      * @param transactionFactory The transaction factory.
      */
-    @Autowired
     public PosComponent(@NonNull TransactionFactory transactionFactory) {
         this.transactionFactory = transactionFactory;
         events = new EnumMap<>(PosEventType.class);
@@ -161,7 +153,8 @@ public class PosComponent implements IComponent, IPosEventManager {
         switch (event.getType()) {
             case REQUEST_START_TRANSACTION -> {
                 if (transactionState != TransactionState.NOT_STARTED) {
-                    logger.error("Request to start transaction not allowed when transaction state is not NOT_STARTED");
+                    System.err.println("Request to start transaction not allowed when transaction state is not " +
+                            "NOT_STARTED");
                     return;
                 }
                 startTransaction();
@@ -169,7 +162,7 @@ public class PosComponent implements IComponent, IPosEventManager {
 
             case REQUEST_VOID_TRANSACTION -> {
                 if (transactionState == TransactionState.NOT_STARTED) {
-                    logger.error("Request to void transaction not allowed when transaction state is NOT_STARTED");
+                    System.err.println("Request to void transaction not allowed when transaction state is NOT_STARTED");
                     return;
                 }
                 voidTransaction();
@@ -177,7 +170,7 @@ public class PosComponent implements IComponent, IPosEventManager {
 
             case REQUEST_COMPLETE_TRANSACTION -> {
                 if (transactionState != TransactionState.AWAITING_PAYMENT) {
-                    logger.error("Request to complete transaction not allowed when transaction state is not " +
+                    System.err.println("Request to complete transaction not allowed when transaction state is not " +
                             "AWAITING_PAYMENT");
                     return;
                 }
@@ -186,7 +179,8 @@ public class PosComponent implements IComponent, IPosEventManager {
 
             case REQUEST_RESET_POS -> {
                 if (transactionState != TransactionState.VOIDED && transactionState != TransactionState.COMPLETED) {
-                    logger.error("Request to reset POS not allowed when transaction state is not VOIDED or COMPLETED");
+                    System.err.println("Request to reset POS not allowed when transaction state is not VOIDED or " +
+                            "COMPLETED");
                     return;
                 }
                 resetPos();
