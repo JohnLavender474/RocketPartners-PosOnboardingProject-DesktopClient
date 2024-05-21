@@ -6,30 +6,38 @@ import com.rocketpartners.onboarding.possystem.display.view.CustomerView;
 import com.rocketpartners.onboarding.possystem.event.IPosEventListener;
 import com.rocketpartners.onboarding.possystem.event.PosEvent;
 import com.rocketpartners.onboarding.possystem.event.PosEventType;
+import lombok.AllArgsConstructor;
 import lombok.NonNull;
 
 import java.util.Set;
 
 /**
- * Controller for the customer view.
+ * Controller for the customer view. This class is responsible for updating the customer view based on POS events.
  */
+@AllArgsConstructor
 public class CustomerViewController implements IPosEventListener, IComponent {
 
-    private static final Set<PosEventType> eventTypesToListenFor = Set.of();
+    private static final Set<PosEventType> eventTypesToListenFor = Set.of(
+            PosEventType.POS_BOOTUP,
+            PosEventType.POS_RESET,
+            PosEventType.TRANSACTION_STARTED,
+            PosEventType.TRANSACTION_VOIDED,
+            PosEventType.TRANSACTION_COMPLETED
+    );
 
+    @NonNull
     private final CustomerView customerView;
-
     @NonNull
     private TransactionState transactionState;
 
     /**
-     * Constructor for the CustomerViewController.
+     * Constructor that accepts a customer view. The transaction state is set to NOT_STARTED and will be updated when
+     * the POS system sends an event contained in {@link #getEventTypesToListenFor()}.
      *
      * @param customerView The customer view.
      */
     public CustomerViewController(@NonNull CustomerView customerView) {
-        this.customerView = customerView;
-        transactionState = TransactionState.NOT_STARTED;
+        this(customerView, TransactionState.NOT_STARTED);
     }
 
     @Override
@@ -39,7 +47,12 @@ public class CustomerViewController implements IPosEventListener, IComponent {
 
     @Override
     public void onPosEvent(PosEvent posEvent) {
-
+        switch (posEvent.getType()) {
+            case POS_BOOTUP, POS_RESET -> setTransactionState(TransactionState.NOT_STARTED);
+            case TRANSACTION_STARTED -> setTransactionState(TransactionState.SCANNING_IN_PROGRESS);
+            case TRANSACTION_VOIDED -> setTransactionState(TransactionState.VOIDED);
+            case TRANSACTION_COMPLETED -> setTransactionState(TransactionState.COMPLETED);
+        }
     }
 
     /**

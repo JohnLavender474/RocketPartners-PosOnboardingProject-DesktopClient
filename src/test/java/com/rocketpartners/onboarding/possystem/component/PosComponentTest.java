@@ -140,7 +140,8 @@ public class PosComponentTest {
         assertEquals(4, capturedEvents.size());
         assertEquals(PosEventType.POS_BOOTUP, capturedEvents.get(0).getType());
         assertEquals(PosEventType.TRANSACTION_STARTED, capturedEvents.get(1).getType());
+        assertEquals(PosEventType.TRANSACTION_COMPLETED, capturedEvents.get(2).getType());
+        assertEquals(PosEventType.POS_RESET, capturedEvents.get(3).getType());
     }
-
 }
 
