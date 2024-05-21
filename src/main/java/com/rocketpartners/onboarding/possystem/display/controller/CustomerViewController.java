@@ -7,6 +7,7 @@ import com.rocketpartners.onboarding.possystem.event.IPosEventListener;
 import com.rocketpartners.onboarding.possystem.event.PosEvent;
 import com.rocketpartners.onboarding.possystem.event.PosEventType;
 import lombok.AllArgsConstructor;
+import lombok.Getter;
 import lombok.NonNull;
 
 import java.util.Set;
@@ -28,6 +29,7 @@ public class CustomerViewController implements IPosEventListener, IComponent {
     @NonNull
     private final CustomerView customerView;
     @NonNull
+    @Getter
     private TransactionState transactionState;
 
     /**
