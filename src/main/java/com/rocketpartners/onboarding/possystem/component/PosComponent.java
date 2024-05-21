@@ -5,7 +5,7 @@ import com.rocketpartners.onboarding.possystem.event.IPosEventListener;
 import com.rocketpartners.onboarding.possystem.event.IPosEventManager;
 import com.rocketpartners.onboarding.possystem.event.PosEvent;
 import com.rocketpartners.onboarding.possystem.event.PosEventType;
-import com.rocketpartners.onboarding.possystem.factory.TransactionFactory;
+import com.rocketpartners.onboarding.possystem.service.TransactionService;
 import com.rocketpartners.onboarding.possystem.model.PosSystem;
 import com.rocketpartners.onboarding.possystem.model.Transaction;
 import lombok.Getter;
@@ -18,10 +18,12 @@ import java.util.*;
  */
 public class PosComponent implements IComponent, IPosEventManager {
 
-    private final TransactionFactory transactionFactory;
+    private final TransactionService transactionService;
     private final Map<PosEventType, List<PosEvent>> events;
     private final Set<IPosEventListener> posEventListeners;
 
+    @Getter
+    private boolean on;
     @Getter
     private PosSystem posSystem;
     @Getter
@@ -31,14 +33,16 @@ public class PosComponent implements IComponent, IPosEventManager {
     @Getter
     private int transactionNumber;
 
+    private boolean shuttingDown;
+
     /**
      * Constructor that accepts a transaction factory. The method {@link #setPosSystem} must be called before the
      * {@link #bootUp()} method is called or else an {@link IllegalStateException} will be thrown.
      *
-     * @param transactionFactory The transaction factory.
+     * @param transactionService The transaction factory.
      */
-    public PosComponent(@NonNull TransactionFactory transactionFactory) {
-        this.transactionFactory = transactionFactory;
+    public PosComponent(@NonNull TransactionService transactionService) {
+        this.transactionService = transactionService;
         events = new EnumMap<>(PosEventType.class);
         posEventListeners = new LinkedHashSet<>();
         transactionState = TransactionState.NOT_STARTED;
@@ -59,6 +63,7 @@ public class PosComponent implements IComponent, IPosEventManager {
         if (posSystem == null) {
             throw new IllegalStateException("POS system must be set to non-null value before calling bootUp()");
         }
+        on = true;
         transaction = null;
         transactionState = TransactionState.NOT_STARTED;
         dispatchPosEvent(new PosEvent(PosEventType.POS_BOOTUP, Map.of("posSystemId", posSystem.getId())));
@@ -66,6 +71,11 @@ public class PosComponent implements IComponent, IPosEventManager {
 
     @Override
     public void update() {
+        // Do not process events if the POS component is off. A PosComponent that is off should still have its
+        // update method called so that it can continue to process events when it is turned back on.
+        if (!on) {
+            return;
+        }
         posEventListeners.forEach(listener -> {
             Set<PosEventType> eventTypesToListenFor = listener.getEventTypesToListenFor();
             eventTypesToListenFor.forEach(type -> {
@@ -76,13 +86,27 @@ public class PosComponent implements IComponent, IPosEventManager {
             });
         });
         events.clear();
+
+        // Turn off the POS component if it is shutting down so that it and its children do not process any more events
+        if (shuttingDown) {
+            on = false;
+        }
+    }
+
+    @Override
+    public void shutdown() {
+        transaction = null;
+        transactionState = TransactionState.NOT_STARTED;
+        dispatchPosEvent(new PosEvent(PosEventType.POS_SHUTDOWN));
+        // The POS component will be fully shutdown after the next update
+        shuttingDown = true;
     }
 
     /**
      * Start a new transaction. Package-private for testing purposes.
      */
     void startTransaction() {
-        transaction = transactionFactory.createAndPersist(posSystem.getId(), transactionNumber);
+        transaction = transactionService.createAndPersist(posSystem.getId(), transactionNumber);
         transactionNumber++;
         transactionState = TransactionState.SCANNING_IN_PROGRESS;
         dispatchPosEvent(new PosEvent(PosEventType.TRANSACTION_STARTED));
@@ -111,14 +135,6 @@ public class PosComponent implements IComponent, IPosEventManager {
         transaction = null;
         transactionState = TransactionState.NOT_STARTED;
         dispatchPosEvent(new PosEvent(PosEventType.POS_RESET));
-    }
-
-    @Override
-    public void shutdown() {
-        transaction = null;
-        transactionState = TransactionState.NOT_STARTED;
-        events.clear();
-        posEventListeners.clear();
     }
 
     /**

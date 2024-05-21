@@ -66,10 +66,5 @@ public class CustomerViewController implements IPosEventListener, IComponent {
     public void bootUp() {
         customerView.setVisible(true);
     }
-
-    @Override
-    public void shutdown() {
-        customerView.setVisible(false);
-    }
 }
 

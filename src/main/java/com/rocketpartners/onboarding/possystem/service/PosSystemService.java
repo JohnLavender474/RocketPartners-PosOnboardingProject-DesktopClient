@@ -1,15 +1,12 @@
-package com.rocketpartners.onboarding.possystem.factory;
+package com.rocketpartners.onboarding.possystem.service;
 
 import com.rocketpartners.onboarding.possystem.model.PosSystem;
 import com.rocketpartners.onboarding.possystem.repository.PosSystemRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Component;
 
 /**
  * Factory class for creating and persisting new POS system objects.
  */
-@Component
-public class PosSystemFactory {
+public class PosSystemService {
 
     private final PosSystemRepository posSystemRepository;
 
@@ -18,8 +15,7 @@ public class PosSystemFactory {
      *
      * @param posSystemRepository the POS system repository
      */
-    @Autowired
-    public PosSystemFactory(PosSystemRepository posSystemRepository) {
+    public PosSystemService(PosSystemRepository posSystemRepository) {
         this.posSystemRepository = posSystemRepository;
     }
 

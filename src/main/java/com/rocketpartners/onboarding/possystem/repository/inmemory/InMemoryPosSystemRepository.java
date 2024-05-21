@@ -18,6 +18,8 @@ public class InMemoryPosSystemRepository implements PosSystemRepository {
 
     private static InMemoryPosSystemRepository instance;
 
+    private final Map<String, PosSystem> posSystems = new HashMap<>();
+
     /**
      * Get the singleton instance of the in-memory repository.
      *
@@ -29,8 +31,6 @@ public class InMemoryPosSystemRepository implements PosSystemRepository {
         }
         return instance;
     }
-
-    private final Map<String, PosSystem> posSystems = new HashMap<>();
 
     @Override
     public void savePosSystem(PosSystem posSystem) {

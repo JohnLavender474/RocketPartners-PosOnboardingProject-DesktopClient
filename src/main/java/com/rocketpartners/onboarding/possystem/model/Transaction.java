@@ -24,6 +24,7 @@ public class Transaction {
     private String customerId;
     private String posSystemId;
     private int transactionNumber;
+    private LocalDateTime timeCreated;
     private LocalDateTime timeCompleted;
     private List<LineItem> lineItems;
     private BigDecimal subtotal;

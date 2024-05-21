@@ -7,8 +7,10 @@ import com.rocketpartners.onboarding.possystem.component.BackOfficeComponent;
 import com.rocketpartners.onboarding.possystem.component.PosComponent;
 import com.rocketpartners.onboarding.possystem.display.controller.CustomerViewController;
 import com.rocketpartners.onboarding.possystem.display.view.CustomerView;
-import com.rocketpartners.onboarding.possystem.factory.TransactionFactory;
+import com.rocketpartners.onboarding.possystem.service.PosSystemService;
+import com.rocketpartners.onboarding.possystem.service.TransactionService;
 import com.rocketpartners.onboarding.possystem.model.PosSystem;
+import com.rocketpartners.onboarding.possystem.repository.PosSystemRepository;
 import com.rocketpartners.onboarding.possystem.repository.TransactionRepository;
 import com.rocketpartners.onboarding.possystem.repository.inmemory.InMemoryPosSystemRepository;
 import com.rocketpartners.onboarding.possystem.repository.inmemory.InMemoryTransactionRepository;
@@ -78,20 +80,20 @@ public class Application {
         SwingUtilities.invokeLater(() -> {
             BackOfficeComponent backOfficeComponent = new BackOfficeComponent();
 
+            PosSystemRepository posSystemRepository = InMemoryPosSystemRepository.getInstance();
+            PosSystemService posSystemService = new PosSystemService(posSystemRepository);
+
             TransactionRepository transactionRepository = InMemoryTransactionRepository.getInstance();
-            TransactionFactory transactionFactory = new TransactionFactory(transactionRepository);
+            TransactionService transactionService = new TransactionService(transactionRepository);
 
             // For each lane, there should be a separate pos component with its own pos system and customer view
             int lanes = arguments.getLanes();
             for (int lane = 0; lane < lanes; lane++) {
-                PosComponent posComponent = new PosComponent(transactionFactory);
+                PosComponent posComponent = new PosComponent(transactionService);
                 backOfficeComponent.addPosComponent(posComponent);
 
-                PosSystem posSystem = new PosSystem();
+                PosSystem posSystem = posSystemService.createAndPersist(arguments.getStoreName(), lane);
                 posComponent.setPosSystem(posSystem);
-                posSystem.setStoreName(arguments.getStoreName());
-                posSystem.setPosLane(lane);
-                InMemoryPosSystemRepository.getInstance().savePosSystem(posSystem);
 
                 CustomerView customerView = new CustomerView();
                 CustomerViewController customerViewController = new CustomerViewController(customerView);
@@ -99,6 +101,13 @@ public class Application {
             }
 
             backOfficeComponent.bootUp();
+
+            // According to ChatGPT, the javax.swing.Timer ensures that the action performed in the ActionListener is
+            // executed on the Event Dispatch Thread (EDT). Also, by default, the javax.swing.Timer ensures that the
+            // next update is scheduled only after the previous one completes because it runs on the same thread.
+            Timer timer = new Timer(1000, e -> backOfficeComponent.update());
+            timer.setRepeats(true);
+            timer.start();
         });
     }
 
@@ -106,37 +115,4 @@ public class Application {
         throw new RuntimeException("Not implemented yet");
     }
 }
-
-/*
-
-@SpringBootApplication
-public class PoSApplication extends JFrame {
-
-    public static void main(String... args) {
-        ConfigurableApplicationContext context = createApplicationContext(args);
-        displayLoginFrame(context);
-        try {
-            Server server = new Server();
-            server.start(5000);
-        }
-        catch (Exception e) {
-            System.out.println(e);
-        }
-    }
-
-    private static ConfigurableApplicationContext createApplicationContext(String... args) {
-        return new SpringApplicationBuilder(PoSApplication.class)
-                .headless(false)
-                .run(args);
-    }
-
-    private static void displayLoginFrame(ConfigurableApplicationContext context) {
-        SwingUtilities.invokeLater(() -> {
-            LoginViewController loginViewController = context.getBean(LoginViewController.class);
-            loginViewController.prepareAndOpenFrame();
-        });
-    }
-}
-
- */
 

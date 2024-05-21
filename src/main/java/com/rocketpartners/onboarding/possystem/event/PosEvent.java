@@ -36,6 +36,16 @@ public class PosEvent {
     }
 
     /**
+     * Returns true if the event contains a property with the specified key.
+     *
+     * @param key The key of the property.
+     * @return True if the event contains the property, false otherwise.
+     */
+    public boolean containsProperty(String key) {
+        return props.containsKey(key);
+    }
+
+    /**
      * Add a property to the event.
      *
      * @param key The key of the property.
