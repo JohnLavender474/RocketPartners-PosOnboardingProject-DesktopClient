@@ -6,7 +6,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 import java.math.BigDecimal;
-import java.util.List;
+import java.util.Set;
 
 /**
  * Represents a discount that can be applied to a transaction. This model is designed to handle the following types
@@ -98,6 +98,6 @@ public class Discount {
     private int discountedQuantity;
     private BigDecimal discountedValue;
     private String applicableCategory;
-    private List<String> applicableUpcs;
+    private Set<String> applicableUpcs;
 
 }
