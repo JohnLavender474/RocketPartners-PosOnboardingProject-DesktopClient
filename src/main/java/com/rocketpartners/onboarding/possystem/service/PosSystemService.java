@@ -1,14 +1,17 @@
 package com.rocketpartners.onboarding.possystem.service;
 
+import com.rocketpartners.onboarding.possystem.Application;
 import com.rocketpartners.onboarding.possystem.model.PosSystem;
 import com.rocketpartners.onboarding.possystem.repository.PosSystemRepository;
 import lombok.RequiredArgsConstructor;
+import lombok.ToString;
 
 import java.util.List;
 
 /**
  * Service class for managing POS system objects.
  */
+@ToString
 @RequiredArgsConstructor
 public class PosSystemService {
 
@@ -23,6 +26,9 @@ public class PosSystemService {
      * @throws IllegalArgumentException if a POS system already exists for the store name and POS lane
      */
     public PosSystem createAndPersist(String storeName, int posLane) {
+        if (Application.DEBUG) {
+            System.out.println("[PosSystemService] Creating POS system for store name: " + storeName + ", POS lane: " + posLane);
+        }
         if (posSystemRepository.posSystemExistsByStoreNameAndPosLane(storeName, posLane)) {
             throw new IllegalArgumentException("POS system already exists for store name and POS lane");
         }
@@ -30,6 +36,9 @@ public class PosSystemService {
         posSystem.setStoreName(storeName);
         posSystem.setPosLane(posLane);
         posSystemRepository.savePosSystem(posSystem);
+        if (Application.DEBUG) {
+            System.out.println("[PosSystemService] Created POS system: " + posSystem);
+        }
         return posSystem;
     }
 
@@ -40,6 +49,9 @@ public class PosSystemService {
      */
     public void savePosSystem(PosSystem posSystem) {
         posSystemRepository.savePosSystem(posSystem);
+        if (Application.DEBUG) {
+            System.out.println("[PosSystemService] Saved POS system: " + posSystem);
+        }
     }
 
     /**
@@ -49,7 +61,11 @@ public class PosSystemService {
      * @return the POS system with the specified ID, or {@code null} if no such POS system exists
      */
     public PosSystem getPosSystemById(String posSystemId) {
-        return posSystemRepository.getPosSystemById(posSystemId);
+        PosSystem posSystem = posSystemRepository.getPosSystemById(posSystemId);
+        if (Application.DEBUG) {
+            System.out.println("Retrieved POS system: " + posSystem);
+        }
+        return posSystem;
     }
 
     /**
@@ -58,6 +74,9 @@ public class PosSystemService {
      * @param posSystemId the ID of the POS system to be deleted
      */
     public void deletePosSystemById(String posSystemId) {
+        if (Application.DEBUG) {
+            System.out.println("Deleting POS system with ID: " + posSystemId);
+        }
         posSystemRepository.deletePosSystemById(posSystemId);
     }
 
@@ -68,7 +87,11 @@ public class PosSystemService {
      * @return {@code true} if a POS system with the specified ID exists, {@code false} otherwise
      */
     public boolean posSystemExists(String posSystemId) {
-        return posSystemRepository.posSystemExists(posSystemId);
+        boolean exists = posSystemRepository.posSystemExists(posSystemId);
+        if (Application.DEBUG) {
+            System.out.println("POS system exists with ID: " + posSystemId + ", " + exists);
+        }
+        return exists;
     }
 
     /**
@@ -77,7 +100,11 @@ public class PosSystemService {
      * @return a list of all POS systems in the repository
      */
     public List<PosSystem> getAllPosSystems() {
-        return posSystemRepository.getAllPosSystems();
+        List<PosSystem> posSystems = posSystemRepository.getAllPosSystems();
+        if (Application.DEBUG) {
+            System.out.println("Retrieving all POS systems: " + posSystems);
+        }
+        return posSystems;
     }
 
     /**
@@ -87,7 +114,11 @@ public class PosSystemService {
      * @return a list of POS systems associated with the specified store name
      */
     public List<PosSystem> getPosSystemsByStoreName(String storeName) {
-        return posSystemRepository.getPosSystemsByStoreName(storeName);
+        List<PosSystem> posSystems = posSystemRepository.getPosSystemsByStoreName(storeName);
+        if (Application.DEBUG) {
+            System.out.println("Retrieved POS systems for store name: " + storeName);
+        }
+        return posSystems;
     }
 
     /**
@@ -98,7 +129,11 @@ public class PosSystemService {
      * @return the POS system with the specified store name and POS lane, or {@code null} if no such POS system exists
      */
     public PosSystem getPosSystemByStoreNameAndPosLane(String storeName, int posLane) {
-        return posSystemRepository.getPosSystemByStoreNameAndPosLane(storeName, posLane);
+        PosSystem posSystem = posSystemRepository.getPosSystemByStoreNameAndPosLane(storeName, posLane);
+        if (Application.DEBUG) {
+            System.out.println("Retrieved POS system for store name: " + storeName + ", POS lane: " + posLane);
+        }
+        return posSystem;
     }
 
     /**
@@ -109,6 +144,10 @@ public class PosSystemService {
      * @return {@code true} if a POS system with the specified store name and POS lane exists, {@code false} otherwise
      */
     public boolean posSystemExistsByStoreNameAndPosLane(String storeName, int posLane) {
-        return posSystemRepository.posSystemExistsByStoreNameAndPosLane(storeName, posLane);
+        boolean exists = posSystemRepository.posSystemExistsByStoreNameAndPosLane(storeName, posLane);
+        if (Application.DEBUG) {
+            System.out.println("POS system exists for store name: " + storeName + ", POS lane: " + posLane + ", " + exists);
+        }
+        return exists;
     }
 }

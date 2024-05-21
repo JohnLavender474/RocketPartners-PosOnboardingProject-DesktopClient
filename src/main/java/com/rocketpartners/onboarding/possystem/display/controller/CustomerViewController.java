@@ -1,9 +1,8 @@
 package com.rocketpartners.onboarding.possystem.display.controller;
 
-import com.rocketpartners.onboarding.possystem.component.IComponent;
+import com.rocketpartners.onboarding.possystem.Application;
 import com.rocketpartners.onboarding.possystem.constant.TransactionState;
 import com.rocketpartners.onboarding.possystem.display.view.CustomerView;
-import com.rocketpartners.onboarding.possystem.event.IPosEventListener;
 import com.rocketpartners.onboarding.possystem.event.PosEvent;
 import com.rocketpartners.onboarding.possystem.event.PosEventType;
 import lombok.AllArgsConstructor;
@@ -16,14 +15,16 @@ import java.util.Set;
  * Controller for the customer view. This class is responsible for updating the customer view based on POS events.
  */
 @AllArgsConstructor
-public class CustomerViewController implements IPosEventListener, IComponent {
+public class CustomerViewController implements IController {
 
     private static final Set<PosEventType> eventTypesToListenFor = Set.of(
             PosEventType.POS_BOOTUP,
             PosEventType.POS_RESET,
             PosEventType.TRANSACTION_STARTED,
             PosEventType.TRANSACTION_VOIDED,
-            PosEventType.TRANSACTION_COMPLETED
+            PosEventType.TRANSACTION_COMPLETED,
+            PosEventType.REQUEST_ADD_ITEM,
+            PosEventType.ADD_ITEM
     );
 
     @NonNull
@@ -58,11 +59,14 @@ public class CustomerViewController implements IPosEventListener, IComponent {
     }
 
     /**
-     * Sets the transaction state and updates the view according to the state.
+     * Sets the transaction state and updates the view according to the state. Package-private for testing.
      *
      * @param transactionState The transaction state.
      */
-    public void setTransactionState(@NonNull TransactionState transactionState) {
+    void setTransactionState(@NonNull TransactionState transactionState) {
+        if (Application.DEBUG) {
+            System.out.println("[CustomerViewController] Setting transaction state to: " + transactionState);
+        }
         this.transactionState = transactionState;
         updateView();
     }
@@ -71,7 +75,8 @@ public class CustomerViewController implements IPosEventListener, IComponent {
         switch (transactionState) {
             case NOT_STARTED -> customerView.showTransactionNotStarted();
             case SCANNING_IN_PROGRESS -> customerView.showScanningInProgress();
-            case AWAITING_PAYMENT -> customerView.showAwaitingPayment();
+            case AWAITING_CARD_PAYMENT -> customerView.showAwaitingCardPayment();
+            case AWAITING_CASH_PAYMENT -> customerView.showAwaitingCashPayment();
             case VOIDED -> customerView.showTransactionVoided();
             case COMPLETED -> customerView.showTransactionCompleted();
         }
@@ -79,7 +84,18 @@ public class CustomerViewController implements IPosEventListener, IComponent {
 
     @Override
     public void bootUp() {
+        if (Application.DEBUG) {
+            System.out.println("[CustomerViewController] Booting up customer view controller");
+        }
         customerView.setVisible(true);
+    }
+
+    @Override
+    public void shutdown() {
+        if (Application.DEBUG) {
+            System.out.println("[CustomerViewController] Shutting down customer view controller");
+        }
+        customerView.setVisible(false);
     }
 }
 

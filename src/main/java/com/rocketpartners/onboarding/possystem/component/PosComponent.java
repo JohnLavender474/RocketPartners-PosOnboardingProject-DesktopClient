@@ -1,25 +1,30 @@
 package com.rocketpartners.onboarding.possystem.component;
 
+import com.rocketpartners.onboarding.possystem.Application;
 import com.rocketpartners.onboarding.possystem.constant.TransactionState;
+import com.rocketpartners.onboarding.possystem.display.controller.IController;
 import com.rocketpartners.onboarding.possystem.event.IPosEventListener;
 import com.rocketpartners.onboarding.possystem.event.IPosEventManager;
 import com.rocketpartners.onboarding.possystem.event.PosEvent;
 import com.rocketpartners.onboarding.possystem.event.PosEventType;
-import com.rocketpartners.onboarding.possystem.service.TransactionService;
 import com.rocketpartners.onboarding.possystem.model.PosSystem;
 import com.rocketpartners.onboarding.possystem.model.Transaction;
+import com.rocketpartners.onboarding.possystem.service.TransactionService;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.ToString;
 
 import java.util.*;
 
 /**
  * Controller for a POS system. This class is responsible for handling POS events and managing transactions.
  */
+@ToString
 public class PosComponent implements IComponent, IPosEventManager {
 
     private final TransactionService transactionService;
     private final Map<PosEventType, List<PosEvent>> events;
+    private final Set<IController> childControllers;
     private final Set<IPosEventListener> posEventListeners;
 
     @Getter
@@ -42,8 +47,12 @@ public class PosComponent implements IComponent, IPosEventManager {
      * @param transactionService The transaction factory.
      */
     public PosComponent(@NonNull TransactionService transactionService) {
+        if (Application.DEBUG) {
+            System.out.println("[PosComponent] Creating POS component");
+        }
         this.transactionService = transactionService;
         events = new EnumMap<>(PosEventType.class);
+        childControllers = new LinkedHashSet<>();
         posEventListeners = new LinkedHashSet<>();
         transactionState = TransactionState.NOT_STARTED;
         transactionNumber = 1;
@@ -56,6 +65,9 @@ public class PosComponent implements IComponent, IPosEventManager {
      */
     public void setPosSystem(@NonNull PosSystem posSystem) {
         this.posSystem = posSystem;
+        if (Application.DEBUG) {
+            System.out.println("[PosComponent] Set POS system for POS component: " + posSystem);
+        }
     }
 
     @Override
@@ -63,10 +75,17 @@ public class PosComponent implements IComponent, IPosEventManager {
         if (posSystem == null) {
             throw new IllegalStateException("POS system must be set to non-null value before calling bootUp()");
         }
+        if (Application.DEBUG) {
+            System.out.println("[PosComponent] Booting up POS component: " + this);
+        }
         on = true;
         transaction = null;
         transactionState = TransactionState.NOT_STARTED;
+        childControllers.forEach(IController::bootUp);
         dispatchPosEvent(new PosEvent(PosEventType.POS_BOOTUP, Map.of("posSystemId", posSystem.getId())));
+        if (Application.DEBUG) {
+            System.out.println("[PosComponent] POS component booted up: " + this);
+        }
     }
 
     @Override
@@ -90,11 +109,18 @@ public class PosComponent implements IComponent, IPosEventManager {
         // Turn off the POS component if it is shutting down so that it and its children do not process any more events
         if (shuttingDown) {
             on = false;
+            shuttingDown = false;
+            if (Application.DEBUG) {
+                System.out.println("[PosComponent] POS component has been shut down: " + this);
+            }
         }
     }
 
     @Override
     public void shutdown() {
+        if (Application.DEBUG) {
+            System.out.println("[PosComponent] Shutting down POS component: " + this);
+        }
         transaction = null;
         transactionState = TransactionState.NOT_STARTED;
         dispatchPosEvent(new PosEvent(PosEventType.POS_SHUTDOWN));
@@ -106,10 +132,16 @@ public class PosComponent implements IComponent, IPosEventManager {
      * Start a new transaction. Package-private for testing purposes.
      */
     void startTransaction() {
+        if (Application.DEBUG) {
+            System.out.println("[PosComponent] Starting new transaction: " + this);
+        }
         transaction = transactionService.createAndPersist(posSystem.getId(), transactionNumber);
         transactionNumber++;
         transactionState = TransactionState.SCANNING_IN_PROGRESS;
         dispatchPosEvent(new PosEvent(PosEventType.TRANSACTION_STARTED));
+        if (Application.DEBUG) {
+            System.out.println("[PosComponent] New transaction started: " + this);
+        }
     }
 
     /**
@@ -118,6 +150,9 @@ public class PosComponent implements IComponent, IPosEventManager {
     void voidTransaction() {
         transactionState = TransactionState.VOIDED;
         dispatchPosEvent(new PosEvent(PosEventType.TRANSACTION_VOIDED));
+        if (Application.DEBUG) {
+            System.out.println("[PosComponent] Transaction voided: " + this);
+        }
     }
 
     /**
@@ -126,6 +161,9 @@ public class PosComponent implements IComponent, IPosEventManager {
     void completeTransaction() {
         transactionState = TransactionState.COMPLETED;
         dispatchPosEvent(new PosEvent(PosEventType.TRANSACTION_COMPLETED));
+        if (Application.DEBUG) {
+            System.out.println("[PosComponent] Transaction completed: " + this);
+        }
     }
 
     /**
@@ -135,6 +173,37 @@ public class PosComponent implements IComponent, IPosEventManager {
         transaction = null;
         transactionState = TransactionState.NOT_STARTED;
         dispatchPosEvent(new PosEvent(PosEventType.POS_RESET));
+        if (Application.DEBUG) {
+            System.out.println("[PosComponent] POS component reset: " + this);
+        }
+    }
+
+    /**
+     * Register a child controller with this controller and also adds it as an event listener. Child controllers will
+     * receive boot up, update, and shutdown calls, and POS events.
+     *
+     * @param controller The child controller to register.
+     */
+    public void registerChildController(@NonNull IController controller) {
+        childControllers.add(controller);
+        posEventListeners.add(controller);
+        if (Application.DEBUG) {
+            System.out.println("[PosComponent] Registered child controller: " + controller);
+        }
+    }
+
+    /**
+     * Unregister a child controller from this controller and also removes it as an event listener. Child controllers
+     * will no longer receive boot up, update, or shutdown calls, or POS events.
+     *
+     * @param controller The child controller to unregister.
+     */
+    public void unregisterChildController(@NonNull IController controller) {
+        childControllers.remove(controller);
+        posEventListeners.remove(controller);
+        if (Application.DEBUG) {
+            System.out.println("[PosComponent] Unregistered child controller: " + controller);
+        }
     }
 
     /**
@@ -155,22 +224,44 @@ public class PosComponent implements IComponent, IPosEventManager {
         events.put(type, eventsOfType);
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * If the listener is an {@link IController} instance, then you should use the {@link #registerChildController} and
+     * {@link #unregisterChildController} methods instead.
+     *
+     * @param listener The listener to register.
+     */
     @Override
     public void registerPosEventListener(@NonNull IPosEventListener listener) {
         posEventListeners.add(listener);
+        if (Application.DEBUG) {
+            System.out.println("[PosComponent] Registered POS event listener: " + listener);
+        }
     }
 
+    /**
+     * {@inheritDoc}
+     * <p>
+     * If the listener is an {@link IController} instance, then you should use the {@link #registerChildController} and
+     * {@link #unregisterChildController} methods instead.
+     *
+     * @param listener The listener to unregister.
+     */
     @Override
     public void unregisterPosEventListener(@NonNull IPosEventListener listener) {
         posEventListeners.remove(listener);
+        if (Application.DEBUG) {
+            System.out.println("[PosComponent] Unregistered POS event listener: " + listener);
+        }
     }
 
     private void handlePosEvent(@NonNull PosEvent event) {
         switch (event.getType()) {
             case REQUEST_START_TRANSACTION -> {
                 if (transactionState != TransactionState.NOT_STARTED) {
-                    System.err.println("Request to start transaction not allowed when transaction state is not " +
-                            "NOT_STARTED");
+                    System.err.println("[PosComponent] Request to start transaction not allowed when transaction " +
+                            "state is not NOT_STARTED");
                     return;
                 }
                 startTransaction();
@@ -178,25 +269,26 @@ public class PosComponent implements IComponent, IPosEventManager {
 
             case REQUEST_VOID_TRANSACTION -> {
                 if (transactionState == TransactionState.NOT_STARTED) {
-                    System.err.println("Request to void transaction not allowed when transaction state is NOT_STARTED");
+                    System.err.println("[PosComponent] Request to void transaction not allowed when transaction state " +
+                            "is NOT_STARTED");
                     return;
                 }
                 voidTransaction();
             }
 
             case REQUEST_COMPLETE_TRANSACTION -> {
-                if (transactionState != TransactionState.AWAITING_PAYMENT) {
-                    System.err.println("Request to complete transaction not allowed when transaction state is not " +
-                            "AWAITING_PAYMENT");
+                if (!transactionState.isAwaitingPayment()) {
+                    System.err.println("[PosComponent] Request to complete transaction not allowed when transaction " +
+                            "state is not AWAITING_CARD_PAYMENT or AWAITING_CASH_PAYMENT");
                     return;
                 }
                 completeTransaction();
             }
 
             case REQUEST_RESET_POS -> {
-                if (transactionState != TransactionState.VOIDED && transactionState != TransactionState.COMPLETED) {
-                    System.err.println("Request to reset POS not allowed when transaction state is not VOIDED or " +
-                            "COMPLETED");
+                if (!transactionState.isEnded()) {
+                    System.err.println("[PosComponent] Request to reset POS not allowed when transaction state is not " +
+                            "VOIDED or COMPLETED");
                     return;
                 }
                 resetPos();

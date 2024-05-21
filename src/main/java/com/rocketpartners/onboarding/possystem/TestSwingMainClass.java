@@ -16,7 +16,7 @@ public class TestSwingMainClass {
      */
     public static void main(String[] args) {
         SwingUtilities.invokeLater(() -> {
-            CustomerView customerView = new CustomerView();
+            CustomerView customerView = new CustomerView("Test Store", 1);
             customerView.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             customerView.setSize(800, 600);
             customerView.setVisible(true);

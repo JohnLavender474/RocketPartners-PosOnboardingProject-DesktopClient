@@ -4,6 +4,7 @@ import com.rocketpartners.onboarding.possystem.model.Transaction;
 import com.rocketpartners.onboarding.possystem.repository.TransactionRepository;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.util.HashMap;
 import java.util.List;
@@ -13,6 +14,7 @@ import java.util.UUID;
 /**
  * An in-memory implementation of the {@link TransactionRepository} interface.
  */
+@ToString
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class InMemoryTransactionRepository implements TransactionRepository {
 

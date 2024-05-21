@@ -1,5 +1,7 @@
 package com.rocketpartners.onboarding.possystem.component;
 
+import com.rocketpartners.onboarding.possystem.Application;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -14,6 +16,9 @@ public class BackOfficeComponent implements IComponent {
      * Constructor that initializes the list of POS components.
      */
     public BackOfficeComponent() {
+        if (Application.DEBUG) {
+            System.out.println("[BackOfficeComponent] Creating back office component");
+        }
         posComponents = new ArrayList<>();
     }
 
@@ -24,10 +29,16 @@ public class BackOfficeComponent implements IComponent {
      */
     public void addPosComponent(PosComponent posController) {
         posComponents.add(posController);
+        if (Application.DEBUG) {
+            System.out.println("[BackOfficeComponent] Added POS component to back office: " + posController);
+        }
     }
 
     @Override
     public void bootUp() {
+        if (Application.DEBUG) {
+            System.out.println("[BackOfficeComponent] Booting up back office component");
+        }
         posComponents.forEach(PosComponent::bootUp);
     }
 
@@ -38,6 +49,9 @@ public class BackOfficeComponent implements IComponent {
 
     @Override
     public void shutdown() {
+        if (Application.DEBUG) {
+            System.out.println("[BackOfficeComponent] Shutting down back office component");
+        }
         posComponents.forEach(PosComponent::shutdown);
     }
 }

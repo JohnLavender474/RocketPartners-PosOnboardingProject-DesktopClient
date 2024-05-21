@@ -31,6 +31,8 @@ public class Transaction {
     private List<Discount> discountsApplied;
     private BigDecimal taxes;
     private BigDecimal total;
+    private BigDecimal amountTendered;
+    private BigDecimal changeDue;
     private boolean voided;
     private boolean tendered;
 }

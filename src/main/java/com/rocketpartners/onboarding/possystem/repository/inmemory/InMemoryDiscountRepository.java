@@ -4,6 +4,7 @@ import com.rocketpartners.onboarding.possystem.model.Discount;
 import com.rocketpartners.onboarding.possystem.repository.DiscountRepository;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import java.util.HashMap;
 import java.util.List;
@@ -12,6 +13,7 @@ import java.util.Map;
 /**
  * An in-memory implementation of the {@link DiscountRepository} interface.
  */
+@ToString
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class InMemoryDiscountRepository implements DiscountRepository {
 

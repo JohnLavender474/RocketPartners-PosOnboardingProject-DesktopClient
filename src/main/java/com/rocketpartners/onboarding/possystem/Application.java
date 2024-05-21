@@ -15,8 +15,10 @@ import com.rocketpartners.onboarding.possystem.repository.TransactionRepository;
 import com.rocketpartners.onboarding.possystem.repository.inmemory.InMemoryPosSystemRepository;
 import com.rocketpartners.onboarding.possystem.repository.inmemory.InMemoryTransactionRepository;
 import lombok.Getter;
+import lombok.Setter;
 
 import javax.swing.*;
+import java.util.Arrays;
 
 /**
  * The main entry point for the Point of Sale application. Starts up a new {@link BackOfficeComponent} with the
@@ -24,15 +26,21 @@ import javax.swing.*;
  */
 public class Application {
 
+    public static boolean DEBUG;
+
     /**
      * Command line arguments for the Point of Sale application.
      */
     @Getter
+    @Setter
     public static class Arguments {
 
         private static final String DEFAULT_APP_MODE = "dev";
         private static final String DEFAULT_STORE_NAME = "Rocket Partners Store";
         private static final int DEFAULT_NUMBER_LANES = 1;
+
+        @Parameter(names = "-debug", description = "Enable debug mode")
+        private boolean debug = DEBUG;
 
         @Parameter(names = "-mode", description = "The mode of the application")
         private String mode = DEFAULT_APP_MODE;
@@ -52,6 +60,8 @@ public class Application {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
+        System.out.println("[Application] Starting Point of Sale application with args: " + Arrays.toString(args));
+
         Arguments arguments = new Arguments();
         JCommander jCommander = JCommander.newBuilder()
                 .addObject(arguments)
@@ -59,10 +69,12 @@ public class Application {
         try {
             jCommander.parse(args);
         } catch (ParameterException e) {
-            System.err.println(e.getMessage());
+            System.err.println("[Application] Error in main method while parsing parameters: " + e.getMessage());
             jCommander.usage();
             System.exit(1);
         }
+
+        DEBUG = arguments.isDebug();
 
         String mode = arguments.getMode();
         if (mode.equals("dev")) {
@@ -78,6 +90,10 @@ public class Application {
 
     private static void startDevApplication(Arguments arguments) {
         SwingUtilities.invokeLater(() -> {
+            if (Application.DEBUG) {
+                System.out.println("[Application] Starting Point of Sale application in development mode");
+            }
+
             BackOfficeComponent backOfficeComponent = new BackOfficeComponent();
 
             PosSystemRepository posSystemRepository = InMemoryPosSystemRepository.getInstance();
@@ -87,17 +103,23 @@ public class Application {
             TransactionService transactionService = new TransactionService(transactionRepository);
 
             // For each lane, there should be a separate pos component with its own pos system and customer view
+            String storeName = arguments.getStoreName();
             int lanes = arguments.getLanes();
-            for (int lane = 0; lane < lanes; lane++) {
+            for (int lane = 1; lane <= lanes; lane++) {
+                if (Application.DEBUG) {
+                    System.out.println("[Application] Creating POS system for store name: " + storeName + ", POS " +
+                            "lane: " + lane);
+                }
+
                 PosComponent posComponent = new PosComponent(transactionService);
                 backOfficeComponent.addPosComponent(posComponent);
 
-                PosSystem posSystem = posSystemService.createAndPersist(arguments.getStoreName(), lane);
+                PosSystem posSystem = posSystemService.createAndPersist(storeName, lane);
                 posComponent.setPosSystem(posSystem);
 
-                CustomerView customerView = new CustomerView();
+                CustomerView customerView = new CustomerView(storeName, lane);
                 CustomerViewController customerViewController = new CustomerViewController(customerView);
-                posComponent.registerPosEventListener(customerViewController);
+                posComponent.registerChildController(customerViewController);
             }
 
             backOfficeComponent.bootUp();
@@ -112,6 +134,9 @@ public class Application {
     }
 
     private static void startProdApplication(Arguments arguments) {
+        if (Application.DEBUG) {
+            System.out.println("Starting Point of Sale application in production mode");
+        }
         throw new RuntimeException("Not implemented yet");
     }
 }

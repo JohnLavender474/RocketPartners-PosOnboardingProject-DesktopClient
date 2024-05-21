@@ -2,22 +2,20 @@ package com.rocketpartners.onboarding.possystem.component;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.mockito.Spy;
+import org.mockito.Mockito;
 
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
 public class BackOfficeComponentTest {
 
-    @Mock
     private PosComponent posComponent;
-
-    @Spy
     private BackOfficeComponent backOfficeComponent;
 
     @BeforeEach
     void setUp() {
+        backOfficeComponent = Mockito.spy(new BackOfficeComponent());
+        posComponent = Mockito.mock(PosComponent.class);
         backOfficeComponent.addPosComponent(posComponent);
     }
 

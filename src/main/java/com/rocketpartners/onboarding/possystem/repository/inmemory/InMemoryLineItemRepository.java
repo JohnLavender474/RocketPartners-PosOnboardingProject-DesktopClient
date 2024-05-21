@@ -4,6 +4,7 @@ import com.rocketpartners.onboarding.possystem.model.LineItem;
 import com.rocketpartners.onboarding.possystem.repository.LineItemRepository;
 import lombok.AccessLevel;
 import lombok.RequiredArgsConstructor;
+import lombok.ToString;
 
 import java.util.HashMap;
 import java.util.List;
@@ -12,6 +13,7 @@ import java.util.Map;
 /**
  * An in-memory implementation of the {@link LineItemRepository} interface.
  */
+@ToString
 @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
 public class InMemoryLineItemRepository implements LineItemRepository {
 
