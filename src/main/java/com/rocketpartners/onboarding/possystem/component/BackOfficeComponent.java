@@ -1,6 +1,8 @@
 package com.rocketpartners.onboarding.possystem.component;
 
 import com.rocketpartners.onboarding.possystem.Application;
+import com.rocketpartners.onboarding.possystem.service.ItemService;
+import lombok.NonNull;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,15 +12,23 @@ import java.util.List;
  */
 public class BackOfficeComponent implements IComponent {
 
+    @NonNull
+    private final ItemBookLoaderComponent itemBookLoaderComponent;
+    @NonNull
+    private final ItemService itemService;
+    @NonNull
     private final List<PosComponent> posComponents;
 
     /**
      * Constructor that initializes the list of POS components.
      */
-    public BackOfficeComponent() {
+    public BackOfficeComponent(@NonNull ItemBookLoaderComponent itemBookLoaderComponent,
+                               @NonNull ItemService itemService) {
         if (Application.DEBUG) {
             System.out.println("[BackOfficeComponent] Creating back office component");
         }
+        this.itemBookLoaderComponent = itemBookLoaderComponent;
+        this.itemService = itemService;
         posComponents = new ArrayList<>();
     }
 
@@ -39,6 +49,7 @@ public class BackOfficeComponent implements IComponent {
         if (Application.DEBUG) {
             System.out.println("[BackOfficeComponent] Booting up back office component");
         }
+        itemBookLoaderComponent.loadItemBook(itemService);
         posComponents.forEach(PosComponent::bootUp);
     }
 

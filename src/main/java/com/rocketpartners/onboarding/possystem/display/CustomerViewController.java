@@ -1,7 +1,9 @@
 package com.rocketpartners.onboarding.possystem.display;
 
 import com.rocketpartners.onboarding.possystem.Application;
+import com.rocketpartners.onboarding.possystem.constant.ConstKeys;
 import com.rocketpartners.onboarding.possystem.constant.TransactionState;
+import com.rocketpartners.onboarding.possystem.display.dto.LineItemDto;
 import com.rocketpartners.onboarding.possystem.event.IPosEventDispatcher;
 import com.rocketpartners.onboarding.possystem.event.PosEvent;
 import com.rocketpartners.onboarding.possystem.event.PosEventType;
@@ -10,6 +12,7 @@ import lombok.Getter;
 import lombok.NonNull;
 
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Set;
 
 /**
@@ -82,6 +85,10 @@ public class CustomerViewController implements IController {
         switch (posEvent.getType()) {
             case POS_BOOTUP, POS_RESET -> setTransactionState(TransactionState.NOT_STARTED);
             case TRANSACTION_STARTED -> setTransactionState(TransactionState.SCANNING_IN_PROGRESS);
+            case ITEM_ADDED -> {
+                List<LineItemDto> lineitemDtos = (List<LineItemDto>) posEvent.getProperty(ConstKeys.LINE_ITEM_DTOS);
+                customerView.updateTransactionsTable(lineitemDtos);
+            }
             case TRANSACTION_VOIDED -> setTransactionState(TransactionState.VOIDED);
             case TRANSACTION_COMPLETED -> setTransactionState(TransactionState.COMPLETED);
         }

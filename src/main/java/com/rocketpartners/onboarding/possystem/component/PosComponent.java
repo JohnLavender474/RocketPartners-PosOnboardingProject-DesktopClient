@@ -4,10 +4,12 @@ import com.rocketpartners.onboarding.possystem.Application;
 import com.rocketpartners.onboarding.possystem.constant.ConstKeys;
 import com.rocketpartners.onboarding.possystem.constant.TransactionState;
 import com.rocketpartners.onboarding.possystem.display.IController;
+import com.rocketpartners.onboarding.possystem.display.dto.LineItemDto;
 import com.rocketpartners.onboarding.possystem.event.IPosEventListener;
 import com.rocketpartners.onboarding.possystem.event.IPosEventManager;
 import com.rocketpartners.onboarding.possystem.event.PosEvent;
 import com.rocketpartners.onboarding.possystem.event.PosEventType;
+import com.rocketpartners.onboarding.possystem.model.Item;
 import com.rocketpartners.onboarding.possystem.model.PosSystem;
 import com.rocketpartners.onboarding.possystem.model.Transaction;
 import com.rocketpartners.onboarding.possystem.service.ItemService;
@@ -289,7 +291,17 @@ public class PosComponent implements IComponent, IPosEventManager {
                 }
                 if (itemService.itemExists(itemUpc)) {
                     transactionService.addItemToTransaction(transaction, itemUpc);
-                    dispatchPosEvent(new PosEvent(PosEventType.ITEM_ADDED, Map.of(ConstKeys.ITEM_UPC, itemUpc)));
+                    List<LineItemDto> lineItemDtos = transaction.getLineItems().stream()
+                            .map(lineItem -> {
+                                Item item = itemService.getItemByUpc(lineItem.getItemUpc());
+
+                                // TODO: should handle case where item is null here
+
+                                return LineItemDto.from(lineItem, item);
+                            })
+                            .toList();
+                    dispatchPosEvent(new PosEvent(PosEventType.ITEM_ADDED, Map.of(ConstKeys.LINE_ITEM_DTOS,
+                            lineItemDtos)));
                 } else {
                     System.err.println("[PosComponent] Request to add item failed because item with UPC " + itemUpc +
                             " does not exist");

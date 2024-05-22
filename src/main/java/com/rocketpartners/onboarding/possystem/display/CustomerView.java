@@ -1,6 +1,7 @@
 package com.rocketpartners.onboarding.possystem.display;
 
 import com.rocketpartners.onboarding.possystem.Application;
+import com.rocketpartners.onboarding.possystem.display.dto.LineItemDto;
 import com.rocketpartners.onboarding.possystem.event.IPosEventDispatcher;
 import com.rocketpartners.onboarding.possystem.event.PosEvent;
 import com.rocketpartners.onboarding.possystem.event.PosEventType;
@@ -10,6 +11,9 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
 import java.awt.*;
+import java.math.BigDecimal;
+import java.text.NumberFormat;
+import java.util.List;
 
 public class CustomerView extends JFrame {
 
@@ -94,6 +98,24 @@ public class CustomerView extends JFrame {
         if (Application.DEBUG) {
             System.out.println("[CustomerView] Setting visibility to: " + visible);
         }
+    }
+
+    public void updateTransactionsTable(@NonNull List<LineItemDto> lineItemDtos) {
+        if (Application.DEBUG) {
+            System.out.println("[CustomerView] Updating transactions table with line items DTOs: " + lineItemDtos);
+        }
+        clearTransactionTableRows();
+        lineItemDtos.forEach(it -> {
+            addTransactionTableRow();
+            transactionTable.setValueAt(it.getItemUpc(), transactionTable.getRowCount() - 1, 0);
+            transactionTable.setValueAt(it.getItemName(), transactionTable.getRowCount() - 1, 1);
+            transactionTable.setValueAt(it.getUnitPrice(), transactionTable.getRowCount() - 1, 2);
+            transactionTable.setValueAt(it.getQuantity(), transactionTable.getRowCount() - 1, 3);
+            BigDecimal total = it.getUnitPrice().multiply(BigDecimal.valueOf(it.getQuantity()));
+            NumberFormat currencyFormat = NumberFormat.getCurrencyInstance();
+            String totalFormatted = currencyFormat.format(total);
+            transactionTable.setValueAt(totalFormatted, transactionTable.getRowCount() - 1, 4);
+        });
     }
 
     private void initializeComponents() {

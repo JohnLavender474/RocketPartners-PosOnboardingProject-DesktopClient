@@ -4,6 +4,8 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.rocketpartners.onboarding.possystem.component.BackOfficeComponent;
+import com.rocketpartners.onboarding.possystem.component.ItemBookLoaderComponent;
+import com.rocketpartners.onboarding.possystem.component.LocalTestTsvItemBookLoaderComponent;
 import com.rocketpartners.onboarding.possystem.component.PosComponent;
 import com.rocketpartners.onboarding.possystem.display.CustomerViewController;
 import com.rocketpartners.onboarding.possystem.model.PosSystem;
@@ -100,8 +102,6 @@ public class Application {
                 System.out.println("[Application] Starting Point of Sale application in development mode");
             }
 
-            BackOfficeComponent backOfficeComponent = new BackOfficeComponent();
-
             PosSystemRepository posSystemRepository = InMemoryPosSystemRepository.getInstance();
             PosSystemService posSystemService = new PosSystemService(posSystemRepository);
 
@@ -110,6 +110,10 @@ public class Application {
 
             ItemRepository itemRepository = InMemoryItemRepository.getInstance();
             ItemService itemService = new ItemService(itemRepository);
+
+            ItemBookLoaderComponent itemBookLoaderComponent = new LocalTestTsvItemBookLoaderComponent();
+
+            BackOfficeComponent backOfficeComponent = new BackOfficeComponent(itemBookLoaderComponent, itemService);
 
             // For each lane, there should be a separate pos component with its own pos system and customer view
             String storeName = arguments.getStoreName();
