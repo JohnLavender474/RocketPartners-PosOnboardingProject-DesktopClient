@@ -1,4 +1,4 @@
-package com.rocketpartners.onboarding.possystem.display.controller;
+package com.rocketpartners.onboarding.possystem.display;
 
 import com.rocketpartners.onboarding.possystem.component.IComponent;
 import com.rocketpartners.onboarding.possystem.event.IPosEventDispatcher;

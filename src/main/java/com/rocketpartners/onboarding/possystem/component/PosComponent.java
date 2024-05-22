@@ -2,7 +2,7 @@ package com.rocketpartners.onboarding.possystem.component;
 
 import com.rocketpartners.onboarding.possystem.Application;
 import com.rocketpartners.onboarding.possystem.constant.TransactionState;
-import com.rocketpartners.onboarding.possystem.display.controller.IController;
+import com.rocketpartners.onboarding.possystem.display.IController;
 import com.rocketpartners.onboarding.possystem.event.IPosEventListener;
 import com.rocketpartners.onboarding.possystem.event.IPosEventManager;
 import com.rocketpartners.onboarding.possystem.event.PosEvent;

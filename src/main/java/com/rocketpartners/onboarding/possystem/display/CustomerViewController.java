@@ -1,8 +1,7 @@
-package com.rocketpartners.onboarding.possystem.display.controller;
+package com.rocketpartners.onboarding.possystem.display;
 
 import com.rocketpartners.onboarding.possystem.Application;
 import com.rocketpartners.onboarding.possystem.constant.TransactionState;
-import com.rocketpartners.onboarding.possystem.display.view.CustomerView;
 import com.rocketpartners.onboarding.possystem.event.IPosEventDispatcher;
 import com.rocketpartners.onboarding.possystem.event.PosEvent;
 import com.rocketpartners.onboarding.possystem.event.PosEventType;

@@ -1,10 +1,10 @@
-package com.rocketpartners.onboarding.possystem.display.controller;
+package com.rocketpartners.onboarding.possystem.display;
 
 import com.rocketpartners.onboarding.possystem.constant.TransactionState;
-import com.rocketpartners.onboarding.possystem.display.view.ScannerView;
 import com.rocketpartners.onboarding.possystem.event.IPosEventDispatcher;
 import com.rocketpartners.onboarding.possystem.event.PosEvent;
 import com.rocketpartners.onboarding.possystem.event.PosEventType;
+import lombok.AccessLevel;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -31,6 +31,7 @@ public class ScannerViewController implements IController {
     @NonNull
     private final IPosEventDispatcher parentPosEventDispatcher;
     @NonNull
+    @Getter(AccessLevel.PACKAGE)
     private final ScannerView scannerView;
     @NonNull
     @Getter
