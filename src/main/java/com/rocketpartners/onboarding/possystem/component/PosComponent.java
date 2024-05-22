@@ -14,6 +14,7 @@ import com.rocketpartners.onboarding.possystem.service.ItemService;
 import com.rocketpartners.onboarding.possystem.service.TransactionService;
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.Setter;
 import lombok.ToString;
 
 import java.util.*;
@@ -37,6 +38,7 @@ public class PosComponent implements IComponent, IPosEventManager {
     @Getter
     private Transaction transaction;
     @Getter
+    @Setter
     private TransactionState transactionState;
     @Getter
     private int transactionNumber;
@@ -287,6 +289,7 @@ public class PosComponent implements IComponent, IPosEventManager {
                 }
                 if (itemService.itemExists(itemUpc)) {
                     transactionService.addItemToTransaction(transaction, itemUpc);
+                    dispatchPosEvent(new PosEvent(PosEventType.ITEM_ADDED, Map.of(ConstKeys.ITEM_UPC, itemUpc)));
                 } else {
                     System.err.println("[PosComponent] Request to add item failed because item with UPC " + itemUpc +
                             " does not exist");

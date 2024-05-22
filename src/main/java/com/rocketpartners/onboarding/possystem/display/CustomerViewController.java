@@ -25,7 +25,7 @@ public class CustomerViewController implements IController {
             PosEventType.TRANSACTION_VOIDED,
             PosEventType.TRANSACTION_COMPLETED,
             PosEventType.REQUEST_ADD_ITEM,
-            PosEventType.ADD_ITEM
+            PosEventType.ITEM_ADDED
     );
 
     @NonNull

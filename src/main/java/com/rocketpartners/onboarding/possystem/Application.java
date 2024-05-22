@@ -91,6 +91,10 @@ public class Application {
     }
 
     private static void startDevApplication(Arguments arguments) {
+        // TODO: currently, the application will stop if all Swing frames are closed. To fix this, we can look at
+        //  the possibility of using a daemon thread to keep the application running and allow the user to open
+        //  frames using the command line even after all frames are closed.
+
         SwingUtilities.invokeLater(() -> {
             if (Application.DEBUG) {
                 System.out.println("[Application] Starting Point of Sale application in development mode");
@@ -122,7 +126,8 @@ public class Application {
                 PosSystem posSystem = posSystemService.createAndPersist(storeName, lane);
                 posComponent.setPosSystem(posSystem);
 
-                CustomerViewController customerViewController = new CustomerViewController(posComponent, storeName, lane);
+                CustomerViewController customerViewController = new CustomerViewController(posComponent, storeName,
+                        lane);
                 posComponent.registerChildController(customerViewController);
             }
 
