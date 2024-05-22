@@ -6,14 +6,13 @@ import com.beust.jcommander.ParameterException;
 import com.rocketpartners.onboarding.possystem.component.BackOfficeComponent;
 import com.rocketpartners.onboarding.possystem.component.PosComponent;
 import com.rocketpartners.onboarding.possystem.display.controller.CustomerViewController;
-import com.rocketpartners.onboarding.possystem.display.view.CustomerView;
-import com.rocketpartners.onboarding.possystem.service.PosSystemService;
-import com.rocketpartners.onboarding.possystem.service.TransactionService;
 import com.rocketpartners.onboarding.possystem.model.PosSystem;
 import com.rocketpartners.onboarding.possystem.repository.PosSystemRepository;
 import com.rocketpartners.onboarding.possystem.repository.TransactionRepository;
 import com.rocketpartners.onboarding.possystem.repository.inmemory.InMemoryPosSystemRepository;
 import com.rocketpartners.onboarding.possystem.repository.inmemory.InMemoryTransactionRepository;
+import com.rocketpartners.onboarding.possystem.service.PosSystemService;
+import com.rocketpartners.onboarding.possystem.service.TransactionService;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -117,8 +116,7 @@ public class Application {
                 PosSystem posSystem = posSystemService.createAndPersist(storeName, lane);
                 posComponent.setPosSystem(posSystem);
 
-                CustomerView customerView = new CustomerView(storeName, lane);
-                CustomerViewController customerViewController = new CustomerViewController(customerView);
+                CustomerViewController customerViewController = new CustomerViewController(posComponent, storeName, lane);
                 posComponent.registerChildController(customerViewController);
             }
 

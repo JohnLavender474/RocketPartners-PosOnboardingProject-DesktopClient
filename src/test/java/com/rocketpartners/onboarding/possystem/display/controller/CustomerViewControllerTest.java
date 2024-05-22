@@ -2,6 +2,7 @@ package com.rocketpartners.onboarding.possystem.display.controller;
 
 import com.rocketpartners.onboarding.possystem.constant.TransactionState;
 import com.rocketpartners.onboarding.possystem.display.view.CustomerView;
+import com.rocketpartners.onboarding.possystem.event.IPosEventDispatcher;
 import com.rocketpartners.onboarding.possystem.event.PosEvent;
 import com.rocketpartners.onboarding.possystem.event.PosEventType;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,8 +19,9 @@ public class CustomerViewControllerTest {
 
     @BeforeEach
     public void setUp() {
+        IPosEventDispatcher posEventDispatcherMock = mock(IPosEventDispatcher.class);
         customerViewMock = mock(CustomerView.class);
-        customerViewController = new CustomerViewController(customerViewMock);
+        customerViewController = new CustomerViewController(posEventDispatcherMock, customerViewMock);
     }
 
     @Test

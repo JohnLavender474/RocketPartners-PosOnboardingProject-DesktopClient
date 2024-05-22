@@ -1,6 +1,9 @@
 package com.rocketpartners.onboarding.possystem.display.view;
 
 import com.rocketpartners.onboarding.possystem.Application;
+import com.rocketpartners.onboarding.possystem.event.IPosEventDispatcher;
+import com.rocketpartners.onboarding.possystem.event.PosEvent;
+import com.rocketpartners.onboarding.possystem.event.PosEventType;
 import lombok.NonNull;
 
 import javax.swing.*;
@@ -46,6 +49,9 @@ public class CustomerView extends JFrame {
     private static final String FINALIZE_BUTTON_TEXT = "Finalize";
     private static final String CONTINUE_BUTTON_TEXT = "Continue";
 
+    @NonNull
+    private final IPosEventDispatcher parentEventDispatcher;
+    @NonNull
     private final String storeName;
 
     private JLabel bannerLabel;
@@ -65,11 +71,13 @@ public class CustomerView extends JFrame {
     private JButton finalizeButton;
     private JButton continueButton;
 
-    public CustomerView(@NonNull String storeName, int posLane) {
+    public CustomerView(@NonNull IPosEventDispatcher parentEventDispatcher,
+                        @NonNull String storeName, int posLane) {
         super("Customer View - Lane " + posLane);
         if (Application.DEBUG) {
             System.out.println("[CustomerView] Creating Customer View for Store Name: " + storeName + " and Lane: " + posLane);
         }
+        this.parentEventDispatcher = parentEventDispatcher;
         this.storeName = storeName;
         setSize(CUSTOMER_VIEW_FRAME_WIDTH, CUSTOMER_VIEW_FRAME_HEIGHT);
         setResizable(true);
@@ -118,11 +126,26 @@ public class CustomerView extends JFrame {
         cardPinNumberArea = new JTextArea();
         cardPinNumberArea.setEditable(false);
         payWithCardButton = new JButton(PAY_WITH_CARD_BUTTON_TEXT);
+        payWithCashButton.addActionListener(e ->
+                parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_PAY_WITH_CASH)));
         payWithCashButton = new JButton(PAY_WITH_CASH_BUTTON_TEXT);
+        payWithCashButton.addActionListener(e ->
+                parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_PAY_WITH_CARD)));
         voidButton = new JButton(VOID_BUTTON_TEXT);
+        voidButton.addActionListener(e -> {
+            // TODO: If item has focus, request to void the item, otherwise request to void the transaction.
+            //  For now, just void the transaction.
+            parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_VOID_TRANSACTION));
+        });
         cancelPaymentButton = new JButton(CANCEL_PAYMENT_BUTTON_TEXT);
+        cancelPaymentButton.addActionListener(e ->
+                parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_CANCEL_PAYMENT)));
         finalizeButton = new JButton(FINALIZE_BUTTON_TEXT);
+        finalizeButton.addActionListener(e ->
+                parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_COMPLETE_TRANSACTION)));
         continueButton = new JButton(CONTINUE_BUTTON_TEXT);
+        continueButton.addActionListener(e ->
+                parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_RESET_POS)));
     }
 
     public void showTransactionNotStarted() {
