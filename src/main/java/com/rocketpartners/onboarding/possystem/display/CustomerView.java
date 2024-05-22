@@ -16,8 +16,10 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
-import java.util.*;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * The customer view of the POS system
@@ -25,17 +27,26 @@ import java.util.List;
 public class CustomerView extends JFrame {
 
     /**
-     * A table model that makes the first column editable and the rest non-editable.
+     * A table model that represents the transactions table. This table model is used to display the transactions table
+     * in the customer view. The first column is a checkbox column that allows the user to select line items to void.
+     * The second column is the UPC of the item. The third column is the name of the item. The fourth column is the unit
+     * price of the item. The fifth column is the quantity of the item. The sixth column is the total price of the item.
+     * The table model is used to update the transactions table with line item DTOs.
      */
-    public static final class NonEditableTableModel extends DefaultTableModel {
+    public final class TransactionTableModel extends DefaultTableModel {
 
         /**
-         * Constructor that accepts column names and row count.
-         *
-         * @param columnNames The column names.
+         * Constructor that initializes the transactions table model.
          */
-        public NonEditableTableModel(Object[] columnNames) {
-            super(columnNames, 0);
+        public TransactionTableModel() {
+            super(new String[]{
+                    TRANSACTION_TABLE_COLUMN_0_CHECKBOX,
+                    TRANSACTION_TABLE_COLUMN_1_UPC,
+                    TRANSACTION_TABLE_COLUMN_2_ITEM_NAME,
+                    TRANSACTION_TABLE_COLUMN_3_PRICE,
+                    TRANSACTION_TABLE_COLUMN_4_QUANTITY,
+                    TRANSACTION_TABLE_COLUMN_5_TOTAL
+            }, 0);
         }
 
         @Override
@@ -48,7 +59,28 @@ public class CustomerView extends JFrame {
             if (columnIndex == 0) {
                 return Boolean.class;
             }
-            return super.getColumnClass(columnIndex);
+            return String.class;
+        }
+
+        @Override
+        public void setValueAt(Object aValue, int row, int column) {
+            super.setValueAt(aValue, row, column);
+            if (aValue instanceof Boolean checked && column == 0) {
+                String upc = (String) getValueAt(row, 1);
+                if (checked) {
+                    selectedLineItemUpcs.add(upc);
+                    if (Application.DEBUG) {
+                        System.out.println("[CustomerView] Select upc on row " + row + ": " + upc + ". Selected upc " +
+                                "set size: " + selectedLineItemUpcs.size());
+                    }
+                } else {
+                    selectedLineItemUpcs.remove(upc);
+                    if (Application.DEBUG) {
+                        System.out.println("[CustomerView] Deselect upc on row " + row + ": " + upc + ". Selected upc" +
+                                "set size: " + selectedLineItemUpcs.size());
+                    }}
+                updateVoidButtonText();
+            }
         }
     }
 
@@ -165,14 +197,7 @@ public class CustomerView extends JFrame {
         bannerLabel = new JLabel("", SwingConstants.CENTER);
         contentPanel = new JPanel();
 
-        String[] transactionTableColumns = new String[]{
-                TRANSACTION_TABLE_COLUMN_0_CHECKBOX,
-                TRANSACTION_TABLE_COLUMN_1_UPC,
-                TRANSACTION_TABLE_COLUMN_2_ITEM_NAME,
-                TRANSACTION_TABLE_COLUMN_3_PRICE, TRANSACTION_TABLE_COLUMN_4_QUANTITY,
-                TRANSACTION_TABLE_COLUMN_5_TOTAL
-        };
-        TableModel transactionTableModel = new NonEditableTableModel(transactionTableColumns);
+        TableModel transactionTableModel = new TransactionTableModel();
         transactionTable = new JTable(transactionTableModel);
         transactionTable.setSize(TRANSACTION_TABLE_WIDTH, TRANSACTION_TABLE_HEIGHT);
         transactionTable.setRowSelectionAllowed(false);
@@ -246,32 +271,31 @@ public class CustomerView extends JFrame {
             System.out.println("[CustomerView] Updating transactions table with line items DTOs: " + lineItemDtos);
         }
 
-        selectedLineItemUpcs.clear();
         clearTransactionTableRows();
+
+        Set<String> upcsPriorUpdate = new HashSet<>(selectedLineItemUpcs);
+        selectedLineItemUpcs.clear();
 
         lineItemDtos.forEach(it -> {
             addTransactionTableRow();
+            int row = transactionTable.getRowCount() - 1;
 
-            JCheckBox checkBox = new JCheckBox();
-            checkBox.addActionListener(e -> {
-                if (checkBox.isSelected()) {
-                    selectedLineItemUpcs.add(it.getItemUpc());
-                } else {
-                    selectedLineItemUpcs.remove(it.getItemUpc());
-                }
-                updateVoidButtonText();
-            });
+            String upc = it.getItemUpc();
+            boolean isSelected = upcsPriorUpdate.contains(upc);
+            if (isSelected) {
+                selectedLineItemUpcs.add(upc);
+            }
 
-            transactionTable.setValueAt(checkBox, transactionTable.getRowCount() - 1, 0);
-            transactionTable.setValueAt(it.getItemUpc(), transactionTable.getRowCount() - 1, 1);
-            transactionTable.setValueAt(it.getItemName(), transactionTable.getRowCount() - 1, 2);
-            transactionTable.setValueAt(it.getUnitPrice(), transactionTable.getRowCount() - 1, 3);
-            transactionTable.setValueAt(it.getQuantity(), transactionTable.getRowCount() - 1, 4);
+            transactionTable.setValueAt(isSelected, row, 0);
+            transactionTable.setValueAt(upc, row, 1);
+            transactionTable.setValueAt(it.getItemName(), row, 2);
+            transactionTable.setValueAt(it.getUnitPrice(), row, 3);
+            transactionTable.setValueAt(it.getQuantity(), row, 4);
 
             BigDecimal total = it.getUnitPrice().multiply(BigDecimal.valueOf(it.getQuantity()));
             NumberFormat currencyFormat = NumberFormat.getCurrencyInstance();
             String totalFormatted = currencyFormat.format(total);
-            transactionTable.setValueAt(totalFormatted, transactionTable.getRowCount() - 1, 5);
+            transactionTable.setValueAt(totalFormatted, row, 5);
         });
     }
 
@@ -397,6 +421,25 @@ public class CustomerView extends JFrame {
     }
 
     private void voidAction() {
+        if (selectedLineItemUpcs.isEmpty()) {
+            voidTransaction();
+        } else {
+            voidSelectedLineItems();
+        }
+    }
+
+    private void voidTransaction() {
+        if (Application.DEBUG) {
+            System.out.println("[CustomerView] Voiding transaction");
+        }
+        parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_VOID_TRANSACTION));
+        clearTransactionsTableSelections();
+    }
+
+    private void voidSelectedLineItems() {
+        if (Application.DEBUG) {
+            System.out.println("[CustomerView] Voiding selected line items: " + selectedLineItemUpcs);
+        }
         parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_VOID_LINE_ITEMS,
                 Map.of(ConstKeys.LINE_ITEM_UPCS, Set.of(selectedLineItemUpcs))));
         clearTransactionsTableSelections();
@@ -404,9 +447,8 @@ public class CustomerView extends JFrame {
 
     private void clearTransactionsTableSelections() {
         selectedLineItemUpcs.clear();
-        for (int i = 0; i < transactionTable.getRowCount(); i++) {
-            JCheckBox checkBox = (JCheckBox) transactionTable.getValueAt(i, 0);
-            checkBox.setSelected(false);
+        for (int row = 0; row < transactionTable.getRowCount(); row++) {
+            transactionTable.setValueAt(false, row, 0);
         }
         updateVoidButtonText();
     }
