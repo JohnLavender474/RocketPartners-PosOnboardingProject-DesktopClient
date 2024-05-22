@@ -12,26 +12,50 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
 
 /**
  * The customer view of the POS system
  */
 public class CustomerView extends JFrame {
 
+    /**
+     * A table model that makes the first column editable and the rest non-editable.
+     */
+    public static final class NonEditableTableModel extends DefaultTableModel {
+
+        /**
+         * Constructor that accepts column names and row count.
+         *
+         * @param columnNames The column names.
+         */
+        public NonEditableTableModel(Object[] columnNames) {
+            super(columnNames, 0);
+        }
+
+        @Override
+        public boolean isCellEditable(int row, int column) {
+            return column == 0;
+        }
+
+        @Override
+        public Class<?> getColumnClass(int columnIndex) {
+            if (columnIndex == 0) {
+                return Boolean.class;
+            }
+            return super.getColumnClass(columnIndex);
+        }
+    }
+
     private static final int CUSTOMER_VIEW_FRAME_WIDTH = 800;
     private static final int CUSTOMER_VIEW_FRAME_HEIGHT = 600;
     private static final int TRANSACTION_TABLE_WIDTH = 800;
     private static final int TRANSACTION_TABLE_HEIGHT = 200;
-    private static final int TRANSACTION_TABLE_GRID_ROWS_VARIABLE_COUNT = 0;
-    private static final int TRANSACTION_TABLE_GRID_COLUMNS_COUNT = 5;
     private static final int PAYMENT_INFO_TABLE_GRID_ROWS_COUNT = 2;
     private static final int PAYMENT_INFO_TABLE_GRID_COLUMNS_COUNT = 1;
 
@@ -50,6 +74,7 @@ public class CustomerView extends JFrame {
     private static final String AMOUNT_TENDERED_LABEL_TEXT = "Amount Tendered: ";
     private static final String CHANGE_DUE_LABEL_TEXT = "Change Due: ";
 
+    private static final String TRANSACTION_TABLE_COLUMN_0_CHECKBOX = "Select";
     private static final String TRANSACTION_TABLE_COLUMN_1_UPC = "UPC";
     private static final String TRANSACTION_TABLE_COLUMN_2_ITEM_NAME = "Item Name";
     private static final String TRANSACTION_TABLE_COLUMN_3_PRICE = "Unit Price";
@@ -61,7 +86,7 @@ public class CustomerView extends JFrame {
     private static final String PAY_WITH_CARD_BUTTON_TEXT = "Pay with Card";
     private static final String PAY_WITH_CASH_BUTTON_TEXT = "Pay with Cash";
     private static final String VOID_TRANSACTION_BUTTON_TEXT = "Void Transaction";
-    private static final String VOID_LINE_ITEM_BUTTON_TEXT = "Void Line Item";
+    private static final String VOID_LINE_ITEMS_BUTTON_TEXT = "Void Line Items";
     private static final String CANCEL_PAYMENT_BUTTON_TEXT = "Cancel Payment";
     private static final String FINALIZE_BUTTON_TEXT = "Finalize";
     private static final String CONTINUE_BUTTON_TEXT = "Continue";
@@ -70,6 +95,7 @@ public class CustomerView extends JFrame {
     private final IPosEventDispatcher parentEventDispatcher;
     @NonNull
     private final String storeName;
+    private final Set<String> selectedLineItemUpcs;
 
     private JLabel bannerLabel;
 
@@ -109,24 +135,99 @@ public class CustomerView extends JFrame {
         }
         this.parentEventDispatcher = parentEventDispatcher;
         this.storeName = storeName;
+
         setSize(CUSTOMER_VIEW_FRAME_WIDTH, CUSTOMER_VIEW_FRAME_HEIGHT);
         setResizable(true);
+
         initializeComponents();
+
         setLayout(new BorderLayout());
         add(bannerLabel, BorderLayout.NORTH);
         add(contentPanel, BorderLayout.CENTER);
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
                 if (JOptionPane.showConfirmDialog(CustomerView.this,
                         "Are you sure you want to close this window?", "Close Window?",
                         JOptionPane.YES_NO_OPTION,
-                        JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION){
+                        JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION) {
                     dispose();
                 }
             }
         });
+
+        selectedLineItemUpcs = new HashSet<>();
+    }
+
+    private void initializeComponents() {
+        bannerLabel = new JLabel("", SwingConstants.CENTER);
+        contentPanel = new JPanel();
+
+        String[] transactionTableColumns = new String[]{
+                TRANSACTION_TABLE_COLUMN_0_CHECKBOX,
+                TRANSACTION_TABLE_COLUMN_1_UPC,
+                TRANSACTION_TABLE_COLUMN_2_ITEM_NAME,
+                TRANSACTION_TABLE_COLUMN_3_PRICE, TRANSACTION_TABLE_COLUMN_4_QUANTITY,
+                TRANSACTION_TABLE_COLUMN_5_TOTAL
+        };
+        TableModel transactionTableModel = new NonEditableTableModel(transactionTableColumns);
+        transactionTable = new JTable(transactionTableModel);
+        transactionTable.setSize(TRANSACTION_TABLE_WIDTH, TRANSACTION_TABLE_HEIGHT);
+        transactionTable.setRowSelectionAllowed(false);
+        transactionTable.setColumnSelectionAllowed(false);
+        transactionTable.setCellSelectionEnabled(false);
+
+        metadataArea = new JTextArea();
+        metadataArea.setEditable(false);
+        totalsArea = new JTextArea();
+        totalsArea.setEditable(false);
+
+        paymentInfoTable = new JTable();
+        TableModel paymentInfoTableModel = new DefaultTableModel(PAYMENT_INFO_TABLE_GRID_ROWS_COUNT,
+                PAYMENT_INFO_TABLE_GRID_COLUMNS_COUNT);
+        paymentInfoTable.setModel(paymentInfoTableModel);
+
+        amountTenderedArea = new JTextArea();
+        amountTenderedArea.setEditable(false);
+        changeDueArea = new JTextArea();
+        changeDueArea.setEditable(false);
+        cardNumberArea = new JTextArea();
+        cardNumberArea.setEditable(false);
+        cardPinNumberArea = new JTextArea();
+        cardPinNumberArea.setEditable(false);
+
+        startTransactionButton = new JButton(START_TRANSACTION_BUTTON_TEXT);
+        startTransactionButton.addActionListener(e ->
+                parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_START_TRANSACTION)));
+
+        payWithCardButton = new JButton(PAY_WITH_CARD_BUTTON_TEXT);
+        payWithCardButton.addActionListener(e ->
+                parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_PAY_WITH_CASH)));
+
+        payWithCashButton = new JButton(PAY_WITH_CASH_BUTTON_TEXT);
+        payWithCashButton.addActionListener(e ->
+                parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_PAY_WITH_CARD)));
+
+        JButton openScannerButton = new JButton(OPEN_SCANNER_BUTTON_TEXT);
+        openScannerButton.addActionListener(e ->
+                parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_OPEN_SCANNER)));
+
+        voidButton = new JButton(VOID_TRANSACTION_BUTTON_TEXT);
+        voidButton.addActionListener(e -> voidAction());
+
+        cancelPaymentButton = new JButton(CANCEL_PAYMENT_BUTTON_TEXT);
+        cancelPaymentButton.addActionListener(e ->
+                parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_CANCEL_PAYMENT)));
+
+        finalizeButton = new JButton(FINALIZE_BUTTON_TEXT);
+        finalizeButton.addActionListener(e ->
+                parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_COMPLETE_TRANSACTION)));
+
+        continueButton = new JButton(CONTINUE_BUTTON_TEXT);
+        continueButton.addActionListener(e ->
+                parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_RESET_POS)));
     }
 
     @Override
@@ -144,97 +245,34 @@ public class CustomerView extends JFrame {
         if (Application.DEBUG) {
             System.out.println("[CustomerView] Updating transactions table with line items DTOs: " + lineItemDtos);
         }
+
+        selectedLineItemUpcs.clear();
         clearTransactionTableRows();
+
         lineItemDtos.forEach(it -> {
             addTransactionTableRow();
-            transactionTable.setValueAt(it.getItemUpc(), transactionTable.getRowCount() - 1, 0);
-            transactionTable.setValueAt(it.getItemName(), transactionTable.getRowCount() - 1, 1);
-            transactionTable.setValueAt(it.getUnitPrice(), transactionTable.getRowCount() - 1, 2);
-            transactionTable.setValueAt(it.getQuantity(), transactionTable.getRowCount() - 1, 3);
+
+            JCheckBox checkBox = new JCheckBox();
+            checkBox.addActionListener(e -> {
+                if (checkBox.isSelected()) {
+                    selectedLineItemUpcs.add(it.getItemUpc());
+                } else {
+                    selectedLineItemUpcs.remove(it.getItemUpc());
+                }
+                updateVoidButtonText();
+            });
+
+            transactionTable.setValueAt(checkBox, transactionTable.getRowCount() - 1, 0);
+            transactionTable.setValueAt(it.getItemUpc(), transactionTable.getRowCount() - 1, 1);
+            transactionTable.setValueAt(it.getItemName(), transactionTable.getRowCount() - 1, 2);
+            transactionTable.setValueAt(it.getUnitPrice(), transactionTable.getRowCount() - 1, 3);
+            transactionTable.setValueAt(it.getQuantity(), transactionTable.getRowCount() - 1, 4);
+
             BigDecimal total = it.getUnitPrice().multiply(BigDecimal.valueOf(it.getQuantity()));
             NumberFormat currencyFormat = NumberFormat.getCurrencyInstance();
             String totalFormatted = currencyFormat.format(total);
-            transactionTable.setValueAt(totalFormatted, transactionTable.getRowCount() - 1, 4);
+            transactionTable.setValueAt(totalFormatted, transactionTable.getRowCount() - 1, 5);
         });
-    }
-
-    private void initializeComponents() {
-        bannerLabel = new JLabel("", SwingConstants.CENTER);
-        contentPanel = new JPanel();
-        TableModel transactionTableModel = new DefaultTableModel(TRANSACTION_TABLE_GRID_ROWS_VARIABLE_COUNT,
-                TRANSACTION_TABLE_GRID_COLUMNS_COUNT) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
-        };
-        transactionTable = new JTable(transactionTableModel);
-        transactionTable.setSize(TRANSACTION_TABLE_WIDTH, TRANSACTION_TABLE_HEIGHT);
-        setTransactionTableColumnNames(new String[]{
-                TRANSACTION_TABLE_COLUMN_1_UPC,
-                TRANSACTION_TABLE_COLUMN_2_ITEM_NAME,
-                TRANSACTION_TABLE_COLUMN_3_PRICE, TRANSACTION_TABLE_COLUMN_4_QUANTITY,
-                TRANSACTION_TABLE_COLUMN_5_TOTAL
-        });
-        transactionTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
-        transactionTable.setRowSelectionAllowed(true);
-        transactionTable.setColumnSelectionAllowed(false);
-        transactionTable.setCellSelectionEnabled(false);
-        transactionTable.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                if (SwingUtilities.isLeftMouseButton(e) || SwingUtilities.isRightMouseButton(e)) {
-                    int row = transactionTable.rowAtPoint(e.getPoint());
-                    if (row >= 0) {
-                        if (transactionTable.getSelectedRow() == row) {
-                            transactionTable.clearSelection();
-                        } else {
-                            transactionTable.setRowSelectionInterval(row, row);
-                        }
-                        updateVoidButtonText();
-                    }
-                }
-            }
-        });
-        metadataArea = new JTextArea();
-        metadataArea.setEditable(false);
-        totalsArea = new JTextArea();
-        totalsArea.setEditable(false);
-        paymentInfoTable = new JTable();
-        TableModel paymentInfoTableModel = new DefaultTableModel(PAYMENT_INFO_TABLE_GRID_ROWS_COUNT,
-                PAYMENT_INFO_TABLE_GRID_COLUMNS_COUNT);
-        paymentInfoTable.setModel(paymentInfoTableModel);
-        amountTenderedArea = new JTextArea();
-        amountTenderedArea.setEditable(false);
-        changeDueArea = new JTextArea();
-        changeDueArea.setEditable(false);
-        cardNumberArea = new JTextArea();
-        cardNumberArea.setEditable(false);
-        cardPinNumberArea = new JTextArea();
-        cardPinNumberArea.setEditable(false);
-        startTransactionButton = new JButton(START_TRANSACTION_BUTTON_TEXT);
-        startTransactionButton.addActionListener(e ->
-                parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_START_TRANSACTION)));
-        payWithCardButton = new JButton(PAY_WITH_CARD_BUTTON_TEXT);
-        payWithCardButton.addActionListener(e ->
-                parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_PAY_WITH_CASH)));
-        payWithCashButton = new JButton(PAY_WITH_CASH_BUTTON_TEXT);
-        payWithCashButton.addActionListener(e ->
-                parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_PAY_WITH_CARD)));
-        JButton openScannerButton = new JButton(OPEN_SCANNER_BUTTON_TEXT);
-        openScannerButton.addActionListener(e ->
-                parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_OPEN_SCANNER)));
-        voidButton = new JButton(VOID_TRANSACTION_BUTTON_TEXT);
-        voidButton.addActionListener(e -> voidAction());
-        cancelPaymentButton = new JButton(CANCEL_PAYMENT_BUTTON_TEXT);
-        cancelPaymentButton.addActionListener(e ->
-                parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_CANCEL_PAYMENT)));
-        finalizeButton = new JButton(FINALIZE_BUTTON_TEXT);
-        finalizeButton.addActionListener(e ->
-                parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_COMPLETE_TRANSACTION)));
-        continueButton = new JButton(CONTINUE_BUTTON_TEXT);
-        continueButton.addActionListener(e ->
-                parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_RESET_POS)));
     }
 
     /**
@@ -359,22 +397,25 @@ public class CustomerView extends JFrame {
     }
 
     private void voidAction() {
-        int selectedRow = transactionTable.getSelectedRow();
-        if (selectedRow >= 0) {
-            String itemUpc = (String) transactionTable.getValueAt(selectedRow, 0);
-            parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_VOID_LINE_ITEM,
-                    Map.of(ConstKeys.ITEM_UPC, itemUpc)));
-        } else {
-            parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_VOID_TRANSACTION));
+        parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_VOID_LINE_ITEMS,
+                Map.of(ConstKeys.LINE_ITEM_UPCS, Set.of(selectedLineItemUpcs))));
+        clearTransactionsTableSelections();
+    }
+
+    private void clearTransactionsTableSelections() {
+        selectedLineItemUpcs.clear();
+        for (int i = 0; i < transactionTable.getRowCount(); i++) {
+            JCheckBox checkBox = (JCheckBox) transactionTable.getValueAt(i, 0);
+            checkBox.setSelected(false);
         }
+        updateVoidButtonText();
     }
 
     private void updateVoidButtonText() {
-        int selectedRow = transactionTable.getSelectedRow();
-        if (selectedRow >= 0) {
-            voidButton.setText(VOID_LINE_ITEM_BUTTON_TEXT);
-        } else {
+        if (selectedLineItemUpcs.isEmpty()) {
             voidButton.setText(VOID_TRANSACTION_BUTTON_TEXT);
+        } else {
+            voidButton.setText(VOID_LINE_ITEMS_BUTTON_TEXT);
         }
     }
 
