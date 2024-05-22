@@ -13,6 +13,9 @@ public class ApplicationProperties {
 
     private final Properties properties;
 
+    /**
+     * Constructor to load the application properties.
+     */
     public ApplicationProperties() {
         properties = new Properties();
         try {

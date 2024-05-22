@@ -19,7 +19,9 @@ import com.rocketpartners.onboarding.possystem.service.ItemService;
 import com.rocketpartners.onboarding.possystem.service.PosSystemService;
 import com.rocketpartners.onboarding.possystem.service.TransactionService;
 import lombok.Getter;
+import lombok.NonNull;
 import lombok.Setter;
+import lombok.ToString;
 
 import javax.swing.*;
 import java.util.Arrays;
@@ -37,6 +39,7 @@ public class Application {
      */
     @Getter
     @Setter
+    @ToString
     public static class Arguments {
 
         private static final String DEFAULT_APP_MODE = "dev";
@@ -92,14 +95,14 @@ public class Application {
         }
     }
 
-    private static void startDevApplication(Arguments arguments) {
+    private static void startDevApplication(@NonNull Arguments arguments) {
         // TODO: currently, the application will stop if all Swing frames are closed. To fix this, we can look at
         //  the possibility of using a daemon thread to keep the application running and allow the user to open
         //  frames using the command line even after all frames are closed.
 
         SwingUtilities.invokeLater(() -> {
             if (Application.DEBUG) {
-                System.out.println("[Application] Starting Point of Sale application in development mode");
+                System.out.println("[Application] Starting Point of Sale application in dev mode with args: " + arguments);
             }
 
             PosSystemRepository posSystemRepository = InMemoryPosSystemRepository.getInstance();
@@ -146,11 +149,11 @@ public class Application {
         });
     }
 
-    private static void startProdApplication(Arguments arguments) {
+    private static void startProdApplication(@NonNull Arguments arguments) {
         if (Application.DEBUG) {
-            System.out.println("Starting Point of Sale application in production mode");
+            System.out.println("Starting Point of Sale application in production mode with args: " + arguments);
         }
-        throw new RuntimeException("Not implemented yet");
+        throw new RuntimeException("Prod application mode not implemented yet. Please run app with -debug flag.");
     }
 }
 

@@ -2,6 +2,7 @@ package com.rocketpartners.onboarding.possystem.event;
 
 import lombok.Getter;
 import lombok.NonNull;
+import lombok.ToString;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -9,6 +10,7 @@ import java.util.Map;
 /**
  * Represents a point of sale event. An event has a type and a map of properties.
  */
+@ToString
 public class PosEvent {
 
     @Getter

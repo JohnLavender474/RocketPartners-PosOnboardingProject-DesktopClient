@@ -148,7 +148,7 @@ public class CustomerView extends JFrame {
         cardPinNumberArea = new JTextArea();
         cardPinNumberArea.setEditable(false);
         payWithCardButton = new JButton(PAY_WITH_CARD_BUTTON_TEXT);
-        payWithCashButton.addActionListener(e ->
+        payWithCardButton.addActionListener(e ->
                 parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_PAY_WITH_CASH)));
         payWithCashButton = new JButton(PAY_WITH_CASH_BUTTON_TEXT);
         payWithCashButton.addActionListener(e ->

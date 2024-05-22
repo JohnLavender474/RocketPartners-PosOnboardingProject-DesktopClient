@@ -30,8 +30,8 @@ public class TestSwingMainClass {
      * @param args Command line arguments.
      */
     public static void main(String[] args) {
-        // testCustomerView();
-        testScannerView();
+        testCustomerView();
+        // testScannerView();
     }
 
     private static void testCustomerView() {
