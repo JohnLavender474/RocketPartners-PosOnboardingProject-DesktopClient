@@ -1,11 +1,6 @@
 package com.rocketpartners.onboarding.possystem.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-
-import java.math.BigDecimal;
+import lombok.*;
 
 /**
  * Represents a line item in a transaction. A line item is a multiple of the same item. Transactions are made up of
@@ -17,10 +12,11 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 public class LineItem {
 
+    @NonNull
     private String itemUpc;
+    @NonNull
     private String transactionId;
     private int quantity;
-    private BigDecimal totalPrice;
     private boolean voided;
     private boolean purchased;
 }

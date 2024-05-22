@@ -3,14 +3,17 @@ package com.rocketpartners.onboarding.possystem.component;
 import com.rocketpartners.onboarding.possystem.constant.TransactionState;
 import com.rocketpartners.onboarding.possystem.event.PosEvent;
 import com.rocketpartners.onboarding.possystem.event.PosEventType;
+import com.rocketpartners.onboarding.possystem.model.Item;
 import com.rocketpartners.onboarding.possystem.model.PosSystem;
 import com.rocketpartners.onboarding.possystem.model.Transaction;
+import com.rocketpartners.onboarding.possystem.service.ItemService;
 import com.rocketpartners.onboarding.possystem.service.TransactionService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -33,7 +36,23 @@ public class PosComponentTest {
             transaction.setTransactionNumber(transactionNumber);
             return transaction;
         });
-        posComponent = Mockito.spy(new PosComponent(transactionService));
+        ItemService itemService = mock(ItemService.class);
+        when(itemService.createAndPersist(anyString(), anyString(), any(BigDecimal.class), anyString(), anyString()))
+                .thenAnswer(invocation -> {
+                    String itemUpc = invocation.getArgument(0);
+                    String itemName = invocation.getArgument(1);
+                    BigDecimal itemPrice = invocation.getArgument(2);
+                    String itemCategory = invocation.getArgument(3);
+                    String itemDescription = invocation.getArgument(4);
+                    Item item = new Item();
+                    item.setUpc(itemUpc);
+                    item.setName(itemName);
+                    item.setUnitPrice(itemPrice);
+                    item.setCategory(itemCategory);
+                    item.setDescription(itemDescription);
+                    return item;
+                });
+        posComponent = Mockito.spy(new PosComponent(transactionService, itemService));
         PosSystem posSystem = new PosSystem();
         posSystem.setId("1");
         posSystem.setPosLane(1);

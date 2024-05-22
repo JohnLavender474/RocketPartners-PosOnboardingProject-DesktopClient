@@ -1,16 +1,20 @@
 package com.rocketpartners.onboarding.possystem.service;
 
 import com.rocketpartners.onboarding.possystem.Application;
+import com.rocketpartners.onboarding.possystem.model.LineItem;
 import com.rocketpartners.onboarding.possystem.model.Transaction;
 import com.rocketpartners.onboarding.possystem.repository.TransactionRepository;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
  * Service class for Transaction objects.
  */
+@SuppressWarnings("DuplicatedCode")
 @ToString
 @RequiredArgsConstructor
 public class TransactionService {
@@ -26,7 +30,8 @@ public class TransactionService {
      */
     public Transaction createAndPersist(String posSystemId, int transactionNumber) {
         if (Application.DEBUG) {
-            System.out.println("[TransactionService] Creating transaction for POS system ID: " + posSystemId + ", transaction number: " + transactionNumber);
+            System.out.println("[TransactionService] Creating transaction for POS system ID: " + posSystemId + ", " +
+                    "transaction number: " + transactionNumber);
         }
         Transaction transaction = new Transaction();
         transaction.setPosSystemId(posSystemId);
@@ -37,5 +42,98 @@ public class TransactionService {
             System.out.println("[TransactionService] Created transaction: " + transaction);
         }
         return transaction;
+    }
+
+    /**
+     * Save a transaction. The transaction should already exist in the repository.
+     *
+     * @param transaction the transaction to save
+     */
+    public void saveTransaction(@NonNull Transaction transaction) {
+        transactionRepository.saveTransaction(transaction);
+    }
+
+    /**
+     * Add an item to a transaction. If the item is already in the transaction, the quantity of the line item is
+     * incremented by one. If the item is not in the transaction, a new line item is created with a quantity of one.
+     *
+     * @param transaction the transaction to add the item to
+     * @param itemUpc     the UPC of the item to add
+     */
+    public void addItemToTransaction(@NonNull Transaction transaction, @NonNull String itemUpc) {
+        List<LineItem> lineItems = transaction.getLineItems();
+        LineItem lineItem = null;
+        for (LineItem item : lineItems) {
+            if (item.getItemUpc().equals(itemUpc) && !item.isVoided()) {
+                lineItem = item;
+                break;
+            }
+        }
+        if (lineItem == null) {
+            lineItem = new LineItem();
+            lineItem.setItemUpc(itemUpc);
+            lineItems.add(lineItem);
+        }
+        lineItem.setQuantity(lineItem.getQuantity() + 1);
+        transaction.setLineItems(lineItems);
+        saveTransaction(transaction);
+        if (Application.DEBUG) {
+            System.out.println("[TransactionService] Added item with UPC " + itemUpc + " to transaction: " + transaction);
+        }
+    }
+
+    /**
+     * Remove an item from a transaction. If the item is in the transaction, the quantity of the line item is
+     * decremented by one. If the quantity of the line item is zero, the line item is removed from the transaction.
+     *
+     * @param transaction the transaction to remove the item from
+     * @param itemUpc     the UPC of the item to remove
+     */
+    public void removeItemFromTransaction(@NonNull Transaction transaction, @NonNull String itemUpc) {
+        List<LineItem> lineItems = transaction.getLineItems();
+        LineItem lineItem = null;
+        for (LineItem item : lineItems) {
+            if (item.getItemUpc().equals(itemUpc) && !item.isVoided()) {
+                lineItem = item;
+                break;
+            }
+        }
+        if (lineItem != null) {
+            lineItem.setQuantity(lineItem.getQuantity() - 1);
+            if (lineItem.getQuantity() == 0) {
+                lineItems.remove(lineItem);
+            }
+            transaction.setLineItems(lineItems);
+            saveTransaction(transaction);
+            if (Application.DEBUG) {
+                System.out.println("[TransactionService] Removed item with UPC " + itemUpc + " from transaction: " + transaction);
+            }
+        }
+    }
+
+    /**
+     * Void a line item in a transaction. If the line item is in the transaction and has not already been voided, it
+     * is voided.
+     *
+     * @param transaction the transaction to void the line item in
+     * @param itemUpc     the UPC of the line item to void
+     */
+    public void voidLineItemInTransaction(@NonNull Transaction transaction, @NonNull String itemUpc) {
+        List<LineItem> lineItems = transaction.getLineItems();
+        LineItem lineItem = null;
+        for (LineItem item : lineItems) {
+            if (item.getItemUpc().equals(itemUpc) && !item.isVoided()) {
+                lineItem = item;
+                break;
+            }
+        }
+        if (lineItem != null) {
+            lineItem.setVoided(true);
+            transaction.setLineItems(lineItems);
+            saveTransaction(transaction);
+            if (Application.DEBUG) {
+                System.out.println("[TransactionService] Voided line item with UPC " + itemUpc + " in transaction: " + transaction);
+            }
+        }
     }
 }

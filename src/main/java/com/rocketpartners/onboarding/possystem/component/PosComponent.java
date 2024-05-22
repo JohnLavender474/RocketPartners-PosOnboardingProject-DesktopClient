@@ -1,6 +1,7 @@
 package com.rocketpartners.onboarding.possystem.component;
 
 import com.rocketpartners.onboarding.possystem.Application;
+import com.rocketpartners.onboarding.possystem.constant.ConstKeys;
 import com.rocketpartners.onboarding.possystem.constant.TransactionState;
 import com.rocketpartners.onboarding.possystem.display.IController;
 import com.rocketpartners.onboarding.possystem.event.IPosEventListener;
@@ -9,6 +10,7 @@ import com.rocketpartners.onboarding.possystem.event.PosEvent;
 import com.rocketpartners.onboarding.possystem.event.PosEventType;
 import com.rocketpartners.onboarding.possystem.model.PosSystem;
 import com.rocketpartners.onboarding.possystem.model.Transaction;
+import com.rocketpartners.onboarding.possystem.service.ItemService;
 import com.rocketpartners.onboarding.possystem.service.TransactionService;
 import lombok.Getter;
 import lombok.NonNull;
@@ -23,6 +25,7 @@ import java.util.*;
 public class PosComponent implements IComponent, IPosEventManager {
 
     private final TransactionService transactionService;
+    private final ItemService itemService;
     private final Map<PosEventType, List<PosEvent>> events;
     private final Set<IComponent> childComponents;
     private final Set<IPosEventListener> posEventListeners;
@@ -46,11 +49,13 @@ public class PosComponent implements IComponent, IPosEventManager {
      *
      * @param transactionService The transaction factory.
      */
-    public PosComponent(@NonNull TransactionService transactionService) {
+    public PosComponent(@NonNull TransactionService transactionService,
+                        @NonNull ItemService itemService) {
         if (Application.DEBUG) {
             System.out.println("[PosComponent] Creating POS component");
         }
         this.transactionService = transactionService;
+        this.itemService = itemService;
         events = new EnumMap<>(PosEventType.class);
         childComponents = new LinkedHashSet<>();
         posEventListeners = new LinkedHashSet<>();
@@ -269,10 +274,29 @@ public class PosComponent implements IComponent, IPosEventManager {
                 startTransaction();
             }
 
+            case REQUEST_ADD_ITEM -> {
+                if (transactionState != TransactionState.SCANNING_IN_PROGRESS) {
+                    System.err.println("[PosComponent] Request to add item not allowed when transaction state is not " +
+                            "SCANNING_IN_PROGRESS");
+                    return;
+                }
+                String itemUpc = event.getProperty(ConstKeys.ITEM_UPC, String.class);
+                if (itemUpc == null) {
+                    System.err.println("[PosComponent] Request to add item failed because item UPC is null");
+                    return;
+                }
+                if (itemService.itemExists(itemUpc)) {
+                    transactionService.addItemToTransaction(transaction, itemUpc);
+                } else {
+                    System.err.println("[PosComponent] Request to add item failed because item with UPC " + itemUpc +
+                            " does not exist");
+                }
+            }
+
             case REQUEST_VOID_TRANSACTION -> {
                 if (transactionState == TransactionState.NOT_STARTED) {
-                    System.err.println("[PosComponent] Request to void transaction not allowed when transaction state " +
-                            "is NOT_STARTED");
+                    System.err.println("[PosComponent] Request to void transaction not allowed when transaction state" +
+                            " is NOT_STARTED");
                     return;
                 }
                 voidTransaction();
@@ -289,8 +313,8 @@ public class PosComponent implements IComponent, IPosEventManager {
 
             case REQUEST_RESET_POS -> {
                 if (!transactionState.isEnded()) {
-                    System.err.println("[PosComponent] Request to reset POS not allowed when transaction state is not " +
-                            "VOIDED or COMPLETED");
+                    System.err.println("[PosComponent] Request to reset POS not allowed when transaction state is not" +
+                            " VOIDED or COMPLETED");
                     return;
                 }
                 resetPos();

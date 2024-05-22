@@ -7,10 +7,13 @@ import com.rocketpartners.onboarding.possystem.component.BackOfficeComponent;
 import com.rocketpartners.onboarding.possystem.component.PosComponent;
 import com.rocketpartners.onboarding.possystem.display.CustomerViewController;
 import com.rocketpartners.onboarding.possystem.model.PosSystem;
+import com.rocketpartners.onboarding.possystem.repository.ItemRepository;
 import com.rocketpartners.onboarding.possystem.repository.PosSystemRepository;
 import com.rocketpartners.onboarding.possystem.repository.TransactionRepository;
+import com.rocketpartners.onboarding.possystem.repository.inmemory.InMemoryItemRepository;
 import com.rocketpartners.onboarding.possystem.repository.inmemory.InMemoryPosSystemRepository;
 import com.rocketpartners.onboarding.possystem.repository.inmemory.InMemoryTransactionRepository;
+import com.rocketpartners.onboarding.possystem.service.ItemService;
 import com.rocketpartners.onboarding.possystem.service.PosSystemService;
 import com.rocketpartners.onboarding.possystem.service.TransactionService;
 import lombok.Getter;
@@ -101,6 +104,9 @@ public class Application {
             TransactionRepository transactionRepository = InMemoryTransactionRepository.getInstance();
             TransactionService transactionService = new TransactionService(transactionRepository);
 
+            ItemRepository itemRepository = InMemoryItemRepository.getInstance();
+            ItemService itemService = new ItemService(itemRepository);
+
             // For each lane, there should be a separate pos component with its own pos system and customer view
             String storeName = arguments.getStoreName();
             int lanes = arguments.getLanes();
@@ -110,7 +116,7 @@ public class Application {
                             "lane: " + lane);
                 }
 
-                PosComponent posComponent = new PosComponent(transactionService);
+                PosComponent posComponent = new PosComponent(transactionService, itemService);
                 backOfficeComponent.addPosComponent(posComponent);
 
                 PosSystem posSystem = posSystemService.createAndPersist(storeName, lane);

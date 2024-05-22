@@ -1,9 +1,6 @@
 package com.rocketpartners.onboarding.possystem.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.math.BigDecimal;
 
@@ -17,9 +14,12 @@ import java.math.BigDecimal;
 @NoArgsConstructor
 public class Item {
 
+    @NonNull
     private String upc;
+    @NonNull
     private String name;
+    @NonNull
+    private BigDecimal unitPrice;
     private String category;
     private String description;
-    private BigDecimal unitPrice;
 }

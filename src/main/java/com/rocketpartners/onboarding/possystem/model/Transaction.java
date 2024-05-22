@@ -1,12 +1,10 @@
 package com.rocketpartners.onboarding.possystem.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -17,22 +15,30 @@ import java.util.List;
 @Getter
 @Setter
 @AllArgsConstructor
-@NoArgsConstructor
 public class Transaction {
 
+    @NonNull
     private String id;
-    private String customerId;
+    @NonNull
     private String posSystemId;
+    @NonNull
+    private List<LineItem> lineItems;
+    @NonNull
+    private List<Discount> discountsApplied;
     private int transactionNumber;
     private LocalDateTime timeCreated;
     private LocalDateTime timeCompleted;
-    private List<LineItem> lineItems;
     private BigDecimal subtotal;
-    private List<Discount> discountsApplied;
     private BigDecimal taxes;
     private BigDecimal total;
     private BigDecimal amountTendered;
     private BigDecimal changeDue;
+    private String customerId;
     private boolean voided;
     private boolean tendered;
+
+    public Transaction() {
+        lineItems = new ArrayList<>();
+        discountsApplied = new ArrayList<>();
+    }
 }
