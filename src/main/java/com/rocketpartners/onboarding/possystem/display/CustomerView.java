@@ -1,6 +1,7 @@
 package com.rocketpartners.onboarding.possystem.display;
 
 import com.rocketpartners.onboarding.possystem.Application;
+import com.rocketpartners.onboarding.possystem.constant.ConstKeys;
 import com.rocketpartners.onboarding.possystem.display.dto.LineItemDto;
 import com.rocketpartners.onboarding.possystem.event.IPosEventDispatcher;
 import com.rocketpartners.onboarding.possystem.event.PosEvent;
@@ -11,10 +12,18 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.util.List;
+import java.util.Map;
 
+/**
+ * The customer view of the POS system
+ */
 public class CustomerView extends JFrame {
 
     private static final int CUSTOMER_VIEW_FRAME_WIDTH = 800;
@@ -51,7 +60,8 @@ public class CustomerView extends JFrame {
     private static final String OPEN_SCANNER_BUTTON_TEXT = "Open Scanner";
     private static final String PAY_WITH_CARD_BUTTON_TEXT = "Pay with Card";
     private static final String PAY_WITH_CASH_BUTTON_TEXT = "Pay with Cash";
-    private static final String VOID_BUTTON_TEXT = "Void";
+    private static final String VOID_TRANSACTION_BUTTON_TEXT = "Void Transaction";
+    private static final String VOID_LINE_ITEM_BUTTON_TEXT = "Void Line Item";
     private static final String CANCEL_PAYMENT_BUTTON_TEXT = "Cancel Payment";
     private static final String FINALIZE_BUTTON_TEXT = "Finalize";
     private static final String CONTINUE_BUTTON_TEXT = "Continue";
@@ -79,12 +89,18 @@ public class CustomerView extends JFrame {
     private JButton startTransactionButton;
     private JButton payWithCardButton;
     private JButton payWithCashButton;
-    private JButton openScannerButton;
     private JButton voidButton;
     private JButton cancelPaymentButton;
     private JButton finalizeButton;
     private JButton continueButton;
 
+    /**
+     * Constructor that accepts a parent event dispatcher, store name, and POS lane number.
+     *
+     * @param parentEventDispatcher The parent event dispatcher.
+     * @param storeName             The name of the store.
+     * @param posLane               The POS lane number.
+     */
     public CustomerView(@NonNull IPosEventDispatcher parentEventDispatcher,
                         @NonNull String storeName, int posLane) {
         super("Customer View - Lane " + posLane);
@@ -100,6 +116,17 @@ public class CustomerView extends JFrame {
         add(bannerLabel, BorderLayout.NORTH);
         add(contentPanel, BorderLayout.CENTER);
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                if (JOptionPane.showConfirmDialog(CustomerView.this,
+                        "Are you sure you want to close this window?", "Close Window?",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION){
+                    dispose();
+                }
+            }
+        });
     }
 
     @Override
@@ -110,6 +137,9 @@ public class CustomerView extends JFrame {
         }
     }
 
+    /**
+     * Update the transactions table with the provided line item DTOs.
+     */
     public void updateTransactionsTable(@NonNull List<LineItemDto> lineItemDtos) {
         if (Application.DEBUG) {
             System.out.println("[CustomerView] Updating transactions table with line items DTOs: " + lineItemDtos);
@@ -132,7 +162,12 @@ public class CustomerView extends JFrame {
         bannerLabel = new JLabel("", SwingConstants.CENTER);
         contentPanel = new JPanel();
         TableModel transactionTableModel = new DefaultTableModel(TRANSACTION_TABLE_GRID_ROWS_VARIABLE_COUNT,
-                TRANSACTION_TABLE_GRID_COLUMNS_COUNT);
+                TRANSACTION_TABLE_GRID_COLUMNS_COUNT) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
         transactionTable = new JTable(transactionTableModel);
         transactionTable.setSize(TRANSACTION_TABLE_WIDTH, TRANSACTION_TABLE_HEIGHT);
         setTransactionTableColumnNames(new String[]{
@@ -140,6 +175,26 @@ public class CustomerView extends JFrame {
                 TRANSACTION_TABLE_COLUMN_2_ITEM_NAME,
                 TRANSACTION_TABLE_COLUMN_3_PRICE, TRANSACTION_TABLE_COLUMN_4_QUANTITY,
                 TRANSACTION_TABLE_COLUMN_5_TOTAL
+        });
+        transactionTable.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        transactionTable.setRowSelectionAllowed(true);
+        transactionTable.setColumnSelectionAllowed(false);
+        transactionTable.setCellSelectionEnabled(false);
+        transactionTable.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (SwingUtilities.isLeftMouseButton(e) || SwingUtilities.isRightMouseButton(e)) {
+                    int row = transactionTable.rowAtPoint(e.getPoint());
+                    if (row >= 0) {
+                        if (transactionTable.getSelectedRow() == row) {
+                            transactionTable.clearSelection();
+                        } else {
+                            transactionTable.setRowSelectionInterval(row, row);
+                        }
+                        updateVoidButtonText();
+                    }
+                }
+            }
         });
         metadataArea = new JTextArea();
         metadataArea.setEditable(false);
@@ -166,15 +221,11 @@ public class CustomerView extends JFrame {
         payWithCashButton = new JButton(PAY_WITH_CASH_BUTTON_TEXT);
         payWithCashButton.addActionListener(e ->
                 parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_PAY_WITH_CARD)));
-        openScannerButton = new JButton(OPEN_SCANNER_BUTTON_TEXT);
+        JButton openScannerButton = new JButton(OPEN_SCANNER_BUTTON_TEXT);
         openScannerButton.addActionListener(e ->
                 parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_OPEN_SCANNER)));
-        voidButton = new JButton(VOID_BUTTON_TEXT);
-        voidButton.addActionListener(e -> {
-            // TODO: If item has focus, request to void the item, otherwise request to void the transaction.
-            //  For now, just void the transaction.
-            parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_VOID_TRANSACTION));
-        });
+        voidButton = new JButton(VOID_TRANSACTION_BUTTON_TEXT);
+        voidButton.addActionListener(e -> voidAction());
         cancelPaymentButton = new JButton(CANCEL_PAYMENT_BUTTON_TEXT);
         cancelPaymentButton.addActionListener(e ->
                 parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_CANCEL_PAYMENT)));
@@ -186,6 +237,9 @@ public class CustomerView extends JFrame {
                 parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_RESET_POS)));
     }
 
+    /**
+     * Show the transaction not started view.
+     */
     public void showTransactionNotStarted() {
         if (Application.DEBUG) {
             System.out.println("[CustomerView] Showing transaction not started");
@@ -199,6 +253,9 @@ public class CustomerView extends JFrame {
         repaint();
     }
 
+    /**
+     * Show the scanning in progress view.
+     */
     public void showScanningInProgress() {
         if (Application.DEBUG) {
             System.out.println("[CustomerView] Showing scanning in progress");
@@ -213,6 +270,9 @@ public class CustomerView extends JFrame {
         repaint();
     }
 
+    /**
+     * Show the awaiting cash payment view.
+     */
     public void showAwaitingCashPayment() {
         if (Application.DEBUG) {
             System.out.println("[CustomerView] Showing awaiting cash payment");
@@ -224,6 +284,9 @@ public class CustomerView extends JFrame {
         setAwaitingPaymentTableRow2Object(cardPinNumberArea);
     }
 
+    /**
+     * Show the awaiting card payment view.
+     */
     public void showAwaitingCardPayment() {
         if (Application.DEBUG) {
             System.out.println("[CustomerView] Showing awaiting card payment");
@@ -235,6 +298,9 @@ public class CustomerView extends JFrame {
         setAwaitingPaymentTableRow2Object(changeDueArea);
     }
 
+    /**
+     * Show the transaction voided view.
+     */
     public void showTransactionVoided() {
         if (Application.DEBUG) {
             System.out.println("[CustomerView] Showing transaction voided");
@@ -246,6 +312,9 @@ public class CustomerView extends JFrame {
         showContinue(voidedMessage);
     }
 
+    /**
+     * Show the transaction ended view.
+     */
     public void showTransactionCompleted() {
         if (Application.DEBUG) {
             System.out.println("[CustomerView] Showing transaction completed");
@@ -257,15 +326,20 @@ public class CustomerView extends JFrame {
         showContinue(completedMessage);
     }
 
-    public void showContinue(JLabel voidedMessage) {
+    /**
+     * Show the continue view.
+     *
+     * @param continueMessage The voided message.
+     */
+    public void showContinue(JLabel continueMessage) {
         if (Application.DEBUG) {
             System.out.println("[CustomerView] Showing continue");
         }
         continueButton = new JButton(CONTINUE_BUTTON_TEXT);
-        JPanel voidedPanel = new JPanel(new GridLayout(2, 1));
-        voidedPanel.add(voidedMessage);
-        voidedPanel.add(continueButton);
-        contentPanel.add(voidedPanel, BorderLayout.CENTER);
+        JPanel continuePanel = new JPanel(new GridLayout(2, 1));
+        continuePanel.add(continueMessage);
+        continuePanel.add(continueButton);
+        contentPanel.add(continuePanel, BorderLayout.CENTER);
         revalidate();
         repaint();
     }
@@ -282,6 +356,26 @@ public class CustomerView extends JFrame {
         addPaymentInformationToContentPanel();
         revalidate();
         repaint();
+    }
+
+    private void voidAction() {
+        int selectedRow = transactionTable.getSelectedRow();
+        if (selectedRow >= 0) {
+            String itemUpc = (String) transactionTable.getValueAt(selectedRow, 0);
+            parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_VOID_LINE_ITEM,
+                    Map.of(ConstKeys.ITEM_UPC, itemUpc)));
+        } else {
+            parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_VOID_TRANSACTION));
+        }
+    }
+
+    private void updateVoidButtonText() {
+        int selectedRow = transactionTable.getSelectedRow();
+        if (selectedRow >= 0) {
+            voidButton.setText(VOID_LINE_ITEM_BUTTON_TEXT);
+        } else {
+            voidButton.setText(VOID_TRANSACTION_BUTTON_TEXT);
+        }
     }
 
     private void setAwaitingPaymentTableRow1Object(Object o) {

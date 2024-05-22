@@ -6,6 +6,9 @@ import lombok.*;
 
 import java.math.BigDecimal;
 
+/**
+ * Data transfer object for line items
+ */
 @Getter
 @Setter
 @ToString
@@ -26,6 +29,13 @@ public class LineItemDto {
     private String category;
     private String description;
 
+    /**
+     * Create a new LineItemDto from a LineItem and an Item.
+     *
+     * @param lineItem the line item
+     * @param item     the item
+     * @return the created LineItemDto
+     */
     public static LineItemDto from(@NonNull LineItem lineItem, @NonNull Item item) {
         return new LineItemDto(
                 lineItem.getItemUpc(),

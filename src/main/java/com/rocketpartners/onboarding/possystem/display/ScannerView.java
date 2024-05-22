@@ -8,6 +8,8 @@ import lombok.NonNull;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.util.Map;
 
 /**
@@ -37,6 +39,17 @@ public class ScannerView extends JFrame {
         this.parentPosDispatcher = parentPosDispatcher;
 
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        addWindowListener(new WindowAdapter() {
+            @Override
+            public void windowClosing(WindowEvent e) {
+                if (JOptionPane.showConfirmDialog(ScannerView.this,
+                        "Are you sure you want to close this window?", "Close Window?",
+                        JOptionPane.YES_NO_OPTION,
+                        JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION) {
+                    dispose();
+                }
+            }
+        });
         setMinimumSize(new Dimension(MIN_WIDTH, MIN_HEIGHT));
         setResizable(true);
 
