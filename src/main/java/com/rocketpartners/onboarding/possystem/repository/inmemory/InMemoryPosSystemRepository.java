@@ -2,8 +2,6 @@ package com.rocketpartners.onboarding.possystem.repository.inmemory;
 
 import com.rocketpartners.onboarding.possystem.model.PosSystem;
 import com.rocketpartners.onboarding.possystem.repository.PosSystemRepository;
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 import java.util.HashMap;
@@ -15,24 +13,9 @@ import java.util.UUID;
  * An in-memory implementation of the {@link PosSystemRepository} interface.
  */
 @ToString
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class InMemoryPosSystemRepository implements PosSystemRepository {
 
-    private static InMemoryPosSystemRepository instance;
-
     private final Map<String, PosSystem> posSystems = new HashMap<>();
-
-    /**
-     * Get the singleton instance of the in-memory repository.
-     *
-     * @return The instance of the in-memory repository.
-     */
-    public static InMemoryPosSystemRepository getInstance() {
-        if (instance == null) {
-            instance = new InMemoryPosSystemRepository();
-        }
-        return instance;
-    }
 
     @Override
     public void savePosSystem(PosSystem posSystem) {

@@ -1,9 +1,6 @@
 package com.rocketpartners.onboarding.possystem.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 /**
  * Represents a point of sale system in a store. A point of sale system has a unique ID, store name, and a lane number.
@@ -12,6 +9,7 @@ import lombok.Setter;
  */
 @Getter
 @Setter
+@ToString
 @AllArgsConstructor
 @NoArgsConstructor
 public class PosSystem {

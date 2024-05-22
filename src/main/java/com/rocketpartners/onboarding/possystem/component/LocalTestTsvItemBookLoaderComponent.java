@@ -1,5 +1,6 @@
 package com.rocketpartners.onboarding.possystem.component;
 
+import com.rocketpartners.onboarding.possystem.Application;
 import com.rocketpartners.onboarding.possystem.ApplicationProperties;
 import com.rocketpartners.onboarding.possystem.service.ItemService;
 import com.rocketpartners.onboarding.possystem.utils.TsvFileReader;
@@ -38,14 +39,23 @@ public class LocalTestTsvItemBookLoaderComponent implements ItemBookLoaderCompon
         ApplicationProperties props = getProps();
         String tsvFilePath = props.getProperty("test.item.book.tsv.file.path");
         List<String[]> tsvLines = getTsvFileReader().read(tsvFilePath);
+        if (Application.DEBUG) {
+            System.out.println("[LocalTestTsvItemBookLoaderComponent] Loading item book from TSV file");
+        }
         tsvLines.forEach(it -> {
             if (it.length != 3) {
                 throw new RuntimeException("Invalid TSV file format. Expected 3 fields per line. Invalid line: " + Arrays.toString(it));
+            }
+            if (Application.DEBUG) {
+                System.out.println("[LocalTestTsvItemBookLoaderComponent] Loading item: " + Arrays.toString(it));
             }
             String itemUpc = it[0];
             String itemName = it[1];
             BigDecimal unitPrice = BigDecimal.valueOf(Double.parseDouble(it[2]));
             itemService.createAndPersist(itemUpc, itemName, unitPrice, null, null);
         });
+        if (Application.DEBUG) {
+            System.out.println("[LocalTestTsvItemBookLoaderComponent] All items after loading item book: " + itemService.getAllItems());
+        }
     }
 }

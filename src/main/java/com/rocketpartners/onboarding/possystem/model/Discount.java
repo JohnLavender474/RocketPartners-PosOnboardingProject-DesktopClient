@@ -1,9 +1,6 @@
 package com.rocketpartners.onboarding.possystem.model;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import java.math.BigDecimal;
 import java.util.Set;
@@ -86,6 +83,7 @@ import java.util.Set;
  */
 @Getter
 @Setter
+@ToString
 @AllArgsConstructor
 @NoArgsConstructor
 public class Discount {

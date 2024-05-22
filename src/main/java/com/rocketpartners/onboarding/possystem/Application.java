@@ -8,6 +8,7 @@ import com.rocketpartners.onboarding.possystem.component.ItemBookLoaderComponent
 import com.rocketpartners.onboarding.possystem.component.LocalTestTsvItemBookLoaderComponent;
 import com.rocketpartners.onboarding.possystem.component.PosComponent;
 import com.rocketpartners.onboarding.possystem.display.CustomerViewController;
+import com.rocketpartners.onboarding.possystem.display.ScannerViewController;
 import com.rocketpartners.onboarding.possystem.model.PosSystem;
 import com.rocketpartners.onboarding.possystem.repository.ItemRepository;
 import com.rocketpartners.onboarding.possystem.repository.PosSystemRepository;
@@ -105,13 +106,13 @@ public class Application {
                 System.out.println("[Application] Starting Point of Sale application in dev mode with args: " + arguments);
             }
 
-            PosSystemRepository posSystemRepository = InMemoryPosSystemRepository.getInstance();
+            PosSystemRepository posSystemRepository = new InMemoryPosSystemRepository();
             PosSystemService posSystemService = new PosSystemService(posSystemRepository);
 
-            TransactionRepository transactionRepository = InMemoryTransactionRepository.getInstance();
+            TransactionRepository transactionRepository = new InMemoryTransactionRepository();
             TransactionService transactionService = new TransactionService(transactionRepository);
 
-            ItemRepository itemRepository = InMemoryItemRepository.getInstance();
+            ItemRepository itemRepository = new InMemoryItemRepository();
             ItemService itemService = new ItemService(itemRepository);
 
             ItemBookLoaderComponent itemBookLoaderComponent = new LocalTestTsvItemBookLoaderComponent();
@@ -122,20 +123,17 @@ public class Application {
             String storeName = arguments.getStoreName();
             int lanes = arguments.getLanes();
             for (int lane = 1; lane <= lanes; lane++) {
-                if (Application.DEBUG) {
-                    System.out.println("[Application] Creating POS system for store name: " + storeName + ", POS " +
-                            "lane: " + lane);
-                }
-
                 PosComponent posComponent = new PosComponent(transactionService, itemService);
                 backOfficeComponent.addPosComponent(posComponent);
 
                 PosSystem posSystem = posSystemService.createAndPersist(storeName, lane);
                 posComponent.setPosSystem(posSystem);
 
-                CustomerViewController customerViewController = new CustomerViewController(posComponent, storeName,
-                        lane);
+                CustomerViewController customerViewController = new CustomerViewController(posComponent, storeName, lane);
                 posComponent.registerChildController(customerViewController);
+
+                ScannerViewController scannerViewController = new ScannerViewController(posComponent);
+                posComponent.registerChildController(scannerViewController);
             }
 
             backOfficeComponent.bootUp();

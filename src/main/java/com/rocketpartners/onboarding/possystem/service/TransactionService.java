@@ -10,6 +10,7 @@ import lombok.ToString;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Service class for Transaction objects.
@@ -34,6 +35,7 @@ public class TransactionService {
                     "transaction number: " + transactionNumber);
         }
         Transaction transaction = new Transaction();
+        transaction.setId(UUID.randomUUID().toString());
         transaction.setPosSystemId(posSystemId);
         transaction.setTransactionNumber(transactionNumber);
         transaction.setTimeCreated(LocalDateTime.now());
@@ -72,6 +74,7 @@ public class TransactionService {
         if (lineItem == null) {
             lineItem = new LineItem();
             lineItem.setItemUpc(itemUpc);
+            lineItem.setTransactionId(transaction.getId());
             lineItems.add(lineItem);
         }
         lineItem.setQuantity(lineItem.getQuantity() + 1);

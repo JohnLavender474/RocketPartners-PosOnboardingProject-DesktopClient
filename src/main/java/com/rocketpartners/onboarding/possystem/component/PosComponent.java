@@ -91,7 +91,7 @@ public class PosComponent implements IComponent, IPosEventManager {
         transaction = null;
         transactionState = TransactionState.NOT_STARTED;
         childComponents.forEach(IComponent::bootUp);
-        dispatchPosEvent(new PosEvent(PosEventType.POS_BOOTUP, Map.of("posSystemId", posSystem.getId())));
+        dispatchPosEvent(new PosEvent(PosEventType.POS_BOOTUP, Map.of(ConstKeys.POS_SYSTEM_ID, posSystem.getId())));
         if (Application.DEBUG) {
             System.out.println("[PosComponent] POS component booted up: " + this);
         }

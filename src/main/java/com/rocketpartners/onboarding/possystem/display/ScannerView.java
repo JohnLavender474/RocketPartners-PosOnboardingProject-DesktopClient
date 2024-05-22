@@ -36,7 +36,7 @@ public class ScannerView extends JFrame {
         super(FRAME_TITLE);
         this.parentPosDispatcher = parentPosDispatcher;
 
-        setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         setMinimumSize(new Dimension(MIN_WIDTH, MIN_HEIGHT));
         setResizable(true);
 

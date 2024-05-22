@@ -2,44 +2,22 @@ package com.rocketpartners.onboarding.possystem.repository.inmemory;
 
 import com.rocketpartners.onboarding.possystem.model.Transaction;
 import com.rocketpartners.onboarding.possystem.repository.TransactionRepository;
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.UUID;
 
 /**
  * An in-memory implementation of the {@link TransactionRepository} interface.
  */
 @ToString
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class InMemoryTransactionRepository implements TransactionRepository {
-
-    private static InMemoryTransactionRepository instance;
 
     private final Map<String, Transaction> transactions = new HashMap<>();
 
-    /**
-     * Get the singleton instance of the in-memory repository.
-     *
-     * @return The instance of the in-memory repository.
-     */
-    public static InMemoryTransactionRepository getInstance() {
-        if (instance == null) {
-            instance = new InMemoryTransactionRepository();
-        }
-        return instance;
-    }
-
     @Override
     public void saveTransaction(Transaction transaction) {
-        if (transaction.getId() == null) {
-            String id = UUID.randomUUID().toString();
-            transaction.setId(String.valueOf(id));
-        }
         transactions.put(transaction.getId(), transaction);
     }
 

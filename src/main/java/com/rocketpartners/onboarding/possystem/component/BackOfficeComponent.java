@@ -20,7 +20,9 @@ public class BackOfficeComponent implements IComponent {
     private final List<PosComponent> posComponents;
 
     /**
-     * Constructor that initializes the list of POS components.
+     * Constructor that initializes the list of POS components. The back office component also requires an item book
+     * loader component and an item service. The item book loader component is used to load the item book into the
+     * item service when {@link #bootUp()} is called.
      */
     public BackOfficeComponent(@NonNull ItemBookLoaderComponent itemBookLoaderComponent,
                                @NonNull ItemService itemService) {

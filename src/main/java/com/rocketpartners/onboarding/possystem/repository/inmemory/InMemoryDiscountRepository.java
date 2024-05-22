@@ -2,8 +2,6 @@ package com.rocketpartners.onboarding.possystem.repository.inmemory;
 
 import com.rocketpartners.onboarding.possystem.model.Discount;
 import com.rocketpartners.onboarding.possystem.repository.DiscountRepository;
-import lombok.AccessLevel;
-import lombok.NoArgsConstructor;
 import lombok.ToString;
 
 import java.util.HashMap;
@@ -14,24 +12,9 @@ import java.util.Map;
  * An in-memory implementation of the {@link DiscountRepository} interface.
  */
 @ToString
-@NoArgsConstructor(access = AccessLevel.PRIVATE)
 public class InMemoryDiscountRepository implements DiscountRepository {
 
-    private static InMemoryDiscountRepository instance;
-
     private final Map<String, Discount> discounts = new HashMap<>();
-
-    /**
-     * Get the singleton instance of the in-memory repository.
-     *
-     * @return The instance of the in-memory repository.
-     */
-    public static InMemoryDiscountRepository getInstance() {
-        if (instance == null) {
-            instance = new InMemoryDiscountRepository();
-        }
-        return instance;
-    }
 
     @Override
     public void saveDiscount(Discount discount) {

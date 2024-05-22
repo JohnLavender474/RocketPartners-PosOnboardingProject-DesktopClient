@@ -27,7 +27,8 @@ public class CustomerView extends JFrame {
     private static final int PAYMENT_INFO_TABLE_GRID_COLUMNS_COUNT = 1;
 
     private static final String WELCOME_BANNER_TEXT = "WELCOME TO %s";
-    private static final String NO_TRANSACTION_IN_PROGRESS_CONTENT_EXT = "PLEASE SCAN AN ITEM TO BEGIN A TRANSACTION.";
+    private static final String NO_TRANSACTION_IN_PROGRESS_CONTENT_EXT = "PLEASE CLICK THE BUTTON TO START A " +
+            "TRANSACTION";
     private static final String TRANSACTION_IN_PROGRESS_BANNER_TEXT = "TRANSACTION IN PROGRESS. SCAN YOUR ITEMS NOW.";
     private static final String TRANSACTION_VOIDED_BANNER_TEXT = "TRANSACTION VOIDED";
     private static final String TRANSACTION_ENDED_TEXT = "TRANSACTION ENDED";
@@ -46,6 +47,8 @@ public class CustomerView extends JFrame {
     private static final String TRANSACTION_TABLE_COLUMN_4_QUANTITY = "Quantity";
     private static final String TRANSACTION_TABLE_COLUMN_5_TOTAL = "Total";
 
+    private static final String START_TRANSACTION_BUTTON_TEXT = "Start Transaction";
+    private static final String OPEN_SCANNER_BUTTON_TEXT = "Open Scanner";
     private static final String PAY_WITH_CARD_BUTTON_TEXT = "Pay with Card";
     private static final String PAY_WITH_CASH_BUTTON_TEXT = "Pay with Cash";
     private static final String VOID_BUTTON_TEXT = "Void";
@@ -59,17 +62,24 @@ public class CustomerView extends JFrame {
     private final String storeName;
 
     private JLabel bannerLabel;
+
     private JPanel contentPanel;
-    private JTable transactionTable;
+
     private JTextArea metadataArea;
     private JTextArea totalsArea;
+
+    private JTable transactionTable;
     private JTable paymentInfoTable;
+
     private JTextArea amountTenderedArea;
     private JTextArea changeDueArea;
     private JTextArea cardNumberArea;
     private JTextArea cardPinNumberArea;
+
+    private JButton startTransactionButton;
     private JButton payWithCardButton;
     private JButton payWithCashButton;
+    private JButton openScannerButton;
     private JButton voidButton;
     private JButton cancelPaymentButton;
     private JButton finalizeButton;
@@ -89,7 +99,7 @@ public class CustomerView extends JFrame {
         setLayout(new BorderLayout());
         add(bannerLabel, BorderLayout.NORTH);
         add(contentPanel, BorderLayout.CENTER);
-        setDefaultCloseOperation(JFrame.HIDE_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
     }
 
     @Override
@@ -147,12 +157,18 @@ public class CustomerView extends JFrame {
         cardNumberArea.setEditable(false);
         cardPinNumberArea = new JTextArea();
         cardPinNumberArea.setEditable(false);
+        startTransactionButton = new JButton(START_TRANSACTION_BUTTON_TEXT);
+        startTransactionButton.addActionListener(e ->
+                parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_START_TRANSACTION)));
         payWithCardButton = new JButton(PAY_WITH_CARD_BUTTON_TEXT);
         payWithCardButton.addActionListener(e ->
                 parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_PAY_WITH_CASH)));
         payWithCashButton = new JButton(PAY_WITH_CASH_BUTTON_TEXT);
         payWithCashButton.addActionListener(e ->
                 parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_PAY_WITH_CARD)));
+        openScannerButton = new JButton(OPEN_SCANNER_BUTTON_TEXT);
+        openScannerButton.addActionListener(e ->
+                parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_OPEN_SCANNER)));
         voidButton = new JButton(VOID_BUTTON_TEXT);
         voidButton.addActionListener(e -> {
             // TODO: If item has focus, request to void the item, otherwise request to void the transaction.
@@ -176,7 +192,9 @@ public class CustomerView extends JFrame {
         }
         bannerLabel.setText(String.format(WELCOME_BANNER_TEXT, storeName.toUpperCase()));
         contentPanel.removeAll();
-        contentPanel.add(new JLabel(NO_TRANSACTION_IN_PROGRESS_CONTENT_EXT));
+        contentPanel.setLayout(new GridLayout(2, 1));
+        contentPanel.add(new JLabel(NO_TRANSACTION_IN_PROGRESS_CONTENT_EXT, SwingConstants.CENTER));
+        contentPanel.add(startTransactionButton);
         revalidate();
         repaint();
     }
@@ -190,7 +208,7 @@ public class CustomerView extends JFrame {
         contentPanel.setLayout(new GridLayout(3, 1));
         addTransactionTableToContentPanel(true);
         addMetadataAndTotalsToContentPanel();
-        addPaymentAndVoidButtonsToContentPanel();
+        addButtonsToContentPanel();
         revalidate();
         repaint();
     }
@@ -299,22 +317,30 @@ public class CustomerView extends JFrame {
         contentPanel.add(metadataAndTotalsPanel);
     }
 
-    private void addPaymentAndVoidButtonsToContentPanel() {
+    private void addButtonsToContentPanel() {
+        JPanel otherButtonsPanel = new JPanel(new GridLayout(1, 2));
+        otherButtonsPanel.add(voidButton);
+        otherButtonsPanel.add(cancelPaymentButton);
+
         JPanel paymentButtonsPanel = new JPanel(new GridLayout(1, 2));
         paymentButtonsPanel.add(payWithCardButton);
         paymentButtonsPanel.add(payWithCashButton);
+
         JPanel buttonsPanel = new JPanel(new GridLayout(1, 2));
-        buttonsPanel.add(voidButton);
+        buttonsPanel.add(otherButtonsPanel);
         buttonsPanel.add(paymentButtonsPanel);
+
         contentPanel.add(buttonsPanel);
     }
 
     private void addPaymentInformationToContentPanel() {
         JPanel paymentPanel = new JPanel(new GridLayout(1, 2));
         paymentPanel.add(paymentInfoTable);
+
         JPanel paymentButtonsPanel = new JPanel(new GridLayout(1, 2));
         paymentButtonsPanel.add(cancelPaymentButton);
         paymentButtonsPanel.add(finalizeButton);
+
         paymentPanel.add(paymentButtonsPanel);
         contentPanel.add(paymentPanel);
     }

@@ -56,7 +56,7 @@ public class ScannerViewController implements IController {
      * testing.
      *
      * @param parentPosEventDispatcher The parent POS event dispatcher.
-     * @param scannerView The scanner view.
+     * @param scannerView              The scanner view.
      */
     ScannerViewController(@NonNull IPosEventDispatcher parentPosEventDispatcher, @NonNull ScannerView scannerView) {
         this.parentPosEventDispatcher = parentPosEventDispatcher;
@@ -77,7 +77,11 @@ public class ScannerViewController implements IController {
     @Override
     public void onPosEvent(@NonNull PosEvent event) {
         switch (event.getType()) {
-            case TRANSACTION_STARTED -> scannerView.setActive();
+            case REQUEST_OPEN_SCANNER -> scannerView.setVisible(true);
+            case TRANSACTION_STARTED -> {
+                scannerView.setVisible(true);
+                scannerView.setActive();
+            }
             case TRANSACTION_VOIDED, TRANSACTION_COMPLETED -> scannerView.setInactive();
         }
     }
