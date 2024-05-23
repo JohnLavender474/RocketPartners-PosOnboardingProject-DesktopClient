@@ -79,12 +79,12 @@ public class CustomerViewController implements IController {
     }
 
     @Override
-    public void dispatchPosEvent(PosEvent event) {
+    public void dispatchPosEvent(@NonNull PosEvent event) {
         parentPosEventDispatcher.dispatchPosEvent(event);
     }
 
     @Override
-    public void onPosEvent(PosEvent posEvent) {
+    public void onPosEvent(@NonNull PosEvent posEvent) {
         switch (posEvent.getType()) {
             case POS_BOOTUP, POS_RESET -> setTransactionState(TransactionState.NOT_STARTED);
             case TRANSACTION_STARTED -> setTransactionState(TransactionState.SCANNING_IN_PROGRESS);

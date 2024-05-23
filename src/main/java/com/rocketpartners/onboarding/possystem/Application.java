@@ -3,6 +3,7 @@ package com.rocketpartners.onboarding.possystem;
 import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
+import com.formdev.flatlaf.FlatLightLaf;
 import com.rocketpartners.onboarding.possystem.component.BackOfficeComponent;
 import com.rocketpartners.onboarding.possystem.component.ItemBookLoaderComponent;
 import com.rocketpartners.onboarding.possystem.component.LocalTestTsvItemBookLoaderComponent;
@@ -102,6 +103,8 @@ public class Application {
         //  frames using the command line even after all frames are closed.
 
         SwingUtilities.invokeLater(() -> {
+            FlatLightLaf.setup();
+
             if (Application.DEBUG) {
                 System.out.println("[Application] Starting Point of Sale application in dev mode with args: " + arguments);
             }
@@ -129,7 +132,8 @@ public class Application {
                 PosSystem posSystem = posSystemService.createAndPersist(storeName, lane);
                 posComponent.setPosSystem(posSystem);
 
-                CustomerViewController customerViewController = new CustomerViewController(posComponent, storeName, lane);
+                CustomerViewController customerViewController = new CustomerViewController(posComponent, storeName,
+                        lane);
                 posComponent.registerChildController(customerViewController);
 
                 ScannerViewController scannerViewController = new ScannerViewController(posComponent);

@@ -133,7 +133,7 @@ public class TransactionService {
      * @param transaction the transaction to void the line item in
      * @param itemUpc     the UPC of the line item to void
      */
-    public boolean voidLineItemInTransaction(@NonNull Transaction transaction, @NonNull String itemUpc) {
+    public void voidLineItemInTransaction(@NonNull Transaction transaction, @NonNull String itemUpc) {
         List<LineItem> lineItems = transaction.getLineItems();
         LineItem lineItem = null;
         for (LineItem item : lineItems) {
@@ -150,6 +150,5 @@ public class TransactionService {
                 System.out.println("[TransactionService] Voided line item with UPC " + itemUpc + " in transaction: " + transaction);
             }
         }
-        return true;
     }
 }

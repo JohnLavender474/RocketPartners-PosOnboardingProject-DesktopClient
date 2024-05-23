@@ -18,10 +18,8 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
-import java.util.HashSet;
+import java.util.*;
 import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 /**
  * The customer view of the POS system.
@@ -117,13 +115,14 @@ public class CustomerView extends JFrame {
      * checkbox in the first column is disabled. The renderer is used to update the transactions table with line item
      * DTOs. The renderer updates the transactions table with line item DTOs.
      */
-    static class StatusColumnRenderer extends JCheckBox implements TableCellRenderer {
+    static class SelectCellRenderer extends JCheckBox implements TableCellRenderer {
 
         private final TransactionTableModel model;
 
-        public StatusColumnRenderer(@NonNull TransactionTableModel model) {
+        public SelectCellRenderer(@NonNull TransactionTableModel model) {
             this.model = model;
             setOpaque(true);
+            setHorizontalAlignment(SwingConstants.CENTER);
         }
 
         @Override
@@ -229,7 +228,7 @@ public class CustomerView extends JFrame {
             panel.add(quantityField, BorderLayout.CENTER);
             panel.add(incrementButton, BorderLayout.EAST);
 
-            decrementButton.addActionListener(e -> {
+            decrementButton.addActionListener(e -> SwingUtilities.invokeLater(() -> {
                 String upc = (String) transactionTable.getModel().getValueAt(transactionTable.getEditingRow(), 2);
                 if (Application.DEBUG) {
                     System.out.println("[CustomerView] Decrementing quantity of line item: " + upc);
@@ -247,9 +246,9 @@ public class CustomerView extends JFrame {
                 } else if (Application.DEBUG) {
                     System.out.println("[CustomerView] Quantity cannot be less than 1");
                 }
-            });
+            }));
 
-            incrementButton.addActionListener(e -> {
+            incrementButton.addActionListener(e -> SwingUtilities.invokeLater(() -> {
                 String upc = (String) transactionTable.getModel().getValueAt(transactionTable.getEditingRow(), 2);
                 if (Application.DEBUG) {
                     System.out.println("[CustomerView] Incrementing quantity of line item: " + upc);
@@ -263,7 +262,7 @@ public class CustomerView extends JFrame {
                 decrementButton.setEnabled(value > 1);
                 parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_ADD_ITEM,
                         Map.of(ConstKeys.ITEM_UPC, upc)));
-            });
+            }));
         }
 
         @Override
@@ -332,6 +331,7 @@ public class CustomerView extends JFrame {
 
     private static final int STANDARD_BUTTON_WIDTH = 50;
     private static final int STANDARD_BUTTON_HEIGHT = 75;
+    private static final Font STANDARD_BUTTON_FONT = new Font("Courier New", Font.BOLD, 24);
 
     private static final int QUANTITY_FIELD_WIDTH = 30;
     private static final int QUANTITY_FIELD_HEIGHT = 20;
@@ -410,6 +410,7 @@ public class CustomerView extends JFrame {
     private JButton startTransactionButton;
     private JButton payWithCardButton;
     private JButton payWithCashButton;
+    private JButton openScannerButton;
     private JButton voidButton;
     private JButton cancelPaymentButton;
     private JButton finalizeButton;
@@ -472,7 +473,7 @@ public class CustomerView extends JFrame {
         transactionTable.setBackground(Color.LIGHT_GRAY);
         transactionTable.setSelectionBackground(Color.WHITE);
         TableColumnModel columnModel = transactionTable.getColumnModel();
-        columnModel.getColumn(0).setCellRenderer(new StatusColumnRenderer(model));
+        columnModel.getColumn(0).setCellRenderer(new SelectCellRenderer(model));
         columnModel.getColumn(1).setCellRenderer(new StandardCellRenderer(model));
         columnModel.getColumn(2).setCellRenderer(new StandardCellRenderer(model));
         columnModel.getColumn(3).setCellRenderer(new StandardCellRenderer(model));
@@ -504,44 +505,67 @@ public class CustomerView extends JFrame {
         cardPinNumberArea = new JTextArea();
         cardPinNumberArea.setEditable(false);
 
-        startTransactionButton = new JButton(START_TRANSACTION_BUTTON_TEXT);
-        startTransactionButton.setSize(STANDARD_BUTTON_WIDTH, STANDARD_BUTTON_HEIGHT);
+        startTransactionButton = createButton(START_TRANSACTION_BUTTON_TEXT, Color.getHSBColor(200f / 360f, 0.9f, 0.85f));
         startTransactionButton.addActionListener(e ->
-                parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_START_TRANSACTION)));
+                SwingUtilities.invokeLater(() ->
+                        parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_START_TRANSACTION))
+                )
+        );
 
-        payWithCardButton = new JButton(PAY_WITH_CARD_BUTTON_TEXT);
-        payWithCardButton.setSize(STANDARD_BUTTON_WIDTH, STANDARD_BUTTON_HEIGHT);
+        payWithCardButton = createButton(PAY_WITH_CARD_BUTTON_TEXT, Color.getHSBColor(140f / 360f, 0.8f, 0.4f));
         payWithCardButton.addActionListener(e ->
-                parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_PAY_WITH_CASH)));
+                SwingUtilities.invokeLater(() ->
+                        parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_PAY_WITH_CASH))
+                )
+        );
 
-        payWithCashButton = new JButton(PAY_WITH_CASH_BUTTON_TEXT);
-        payWithCashButton.setSize(STANDARD_BUTTON_WIDTH, STANDARD_BUTTON_HEIGHT);
+        payWithCashButton = createButton(PAY_WITH_CASH_BUTTON_TEXT, Color.getHSBColor(140f / 360f, 0.8f, 0.4f));
         payWithCashButton.addActionListener(e ->
-                parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_PAY_WITH_CARD)));
+                SwingUtilities.invokeLater(() ->
+                        parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_PAY_WITH_CARD))
+                )
+        );
 
-        JButton openScannerButton = new JButton(OPEN_SCANNER_BUTTON_TEXT);
-        openScannerButton.setSize(STANDARD_BUTTON_WIDTH, STANDARD_BUTTON_HEIGHT);
+        openScannerButton = createButton(OPEN_SCANNER_BUTTON_TEXT, Color.getHSBColor(200f / 360f, 0.9f, 0.85f));
         openScannerButton.addActionListener(e ->
-                parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_OPEN_SCANNER)));
+                SwingUtilities.invokeLater(() ->
+                        parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_OPEN_SCANNER))
+                )
+        );
 
-        voidButton = new JButton(VOID_TRANSACTION_BUTTON_TEXT);
-        voidButton.setSize(STANDARD_BUTTON_WIDTH, STANDARD_BUTTON_HEIGHT);
-        voidButton.addActionListener(e -> voidAction());
+        voidButton = createButton(VOID_TRANSACTION_BUTTON_TEXT, Color.getHSBColor(7f / 360f, 0.9f, 0.8f));
+        voidButton.addActionListener(e -> SwingUtilities.invokeLater(this::voidAction));
 
-        cancelPaymentButton = new JButton(CANCEL_PAYMENT_BUTTON_TEXT);
-        cancelPaymentButton.setSize(STANDARD_BUTTON_WIDTH, STANDARD_BUTTON_HEIGHT);
+        cancelPaymentButton = createButton(CANCEL_PAYMENT_BUTTON_TEXT, Color.getHSBColor(7f / 360f, 0.9f, 0.8f));
         cancelPaymentButton.addActionListener(e ->
-                parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_CANCEL_PAYMENT)));
+                SwingUtilities.invokeLater(() ->
+                        parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_CANCEL_PAYMENT))
+                )
+        );
 
-        finalizeButton = new JButton(FINALIZE_BUTTON_TEXT);
-        finalizeButton.setSize(STANDARD_BUTTON_WIDTH, STANDARD_BUTTON_HEIGHT);
+        finalizeButton = createButton(FINALIZE_BUTTON_TEXT, Color.getHSBColor(200f / 360f, 0.9f, 0.85f));
         finalizeButton.addActionListener(e ->
-                parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_COMPLETE_TRANSACTION)));
+                SwingUtilities.invokeLater(() ->
+                        parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_COMPLETE_TRANSACTION))
+                )
+        );
 
-        continueButton = new JButton(CONTINUE_BUTTON_TEXT);
-        continueButton.setSize(STANDARD_BUTTON_WIDTH, STANDARD_BUTTON_HEIGHT);
+        continueButton = createButton(CONTINUE_BUTTON_TEXT, Color.getHSBColor(200f / 360f, 0.9f, 0.85f));
         continueButton.addActionListener(e ->
-                parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_RESET_POS)));
+                SwingUtilities.invokeLater(() ->
+                        parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_RESET_POS))
+                )
+        );
+    }
+
+    private JButton createButton(@NonNull String text, @NonNull Color backgroundColor) {
+        JButton button = new JButton(text);
+        button.setSize(STANDARD_BUTTON_WIDTH, STANDARD_BUTTON_HEIGHT);
+        button.setFont(STANDARD_BUTTON_FONT);
+        button.setOpaque(true);
+        button.setBackground(backgroundColor);
+        button.setForeground(Color.WHITE);
+        return button;
     }
 
     @Override
@@ -630,7 +654,7 @@ public class CustomerView extends JFrame {
         addTransactionTableToContentPanel(true);
         contentPanel.add(resetQuickItemsPanel());
         addMetadataAndTotalsToContentPanel();
-        addButtonsToContentPanel();
+        addBottomButtonsPanel();
         revalidate();
         repaint();
     }
@@ -849,19 +873,12 @@ public class CustomerView extends JFrame {
         contentPanel.add(metadataAndTotalsPanel);
     }
 
-    private void addButtonsToContentPanel() {
-        JPanel otherButtonsPanel = new JPanel(new GridLayout(1, 2));
-        otherButtonsPanel.add(voidButton);
-        otherButtonsPanel.add(cancelPaymentButton);
-
-        JPanel paymentButtonsPanel = new JPanel(new GridLayout(1, 2));
-        paymentButtonsPanel.add(payWithCardButton);
-        paymentButtonsPanel.add(payWithCashButton);
-
-        JPanel buttonsPanel = new JPanel(new GridLayout(1, 2));
-        buttonsPanel.add(otherButtonsPanel);
-        buttonsPanel.add(paymentButtonsPanel);
-
+    private void addBottomButtonsPanel() {
+        JPanel buttonsPanel = new JPanel(new GridLayout(2, 4));
+        buttonsPanel.add(voidButton);
+        buttonsPanel.add(openScannerButton);
+        buttonsPanel.add(payWithCardButton);
+        buttonsPanel.add(payWithCashButton);
         contentPanel.add(buttonsPanel);
     }
 
