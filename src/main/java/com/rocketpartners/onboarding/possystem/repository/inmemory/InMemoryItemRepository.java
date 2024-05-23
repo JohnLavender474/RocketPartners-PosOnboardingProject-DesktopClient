@@ -2,8 +2,10 @@ package com.rocketpartners.onboarding.possystem.repository.inmemory;
 
 import com.rocketpartners.onboarding.possystem.model.Item;
 import com.rocketpartners.onboarding.possystem.repository.ItemRepository;
+import lombok.NonNull;
 import lombok.ToString;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,35 +25,43 @@ public class InMemoryItemRepository implements ItemRepository {
 
     @Override
     public List<Item> getAllItems() {
-        return items.values().stream().toList();
+        return new ArrayList<>(items.values());
     }
 
     @Override
-    public void deleteItemByUpc(String upc) {
+    public void deleteItemByUpc(@NonNull String upc) {
         items.remove(upc);
     }
 
     @Override
-    public Item getItemByUpc(String upc) {
+    public Item getItemByUpc(@NonNull String upc) {
         return items.get(upc);
     }
 
     @Override
-    public boolean itemExists(String upc) {
+    public boolean itemExists(@NonNull String upc) {
         return items.containsKey(upc);
     }
 
     @Override
-    public List<Item> getItemsByName(String name) {
-        return items.values().stream()
-                .filter(item -> item.getName().equals(name))
-                .toList();
+    public List<Item> getItemsByName(@NonNull String name) {
+        List<Item> items = new ArrayList<>();
+        this.items.values().forEach(it -> {
+            if (name.equals(it.getName())) {
+                items.add(it);
+            }
+        });
+        return items;
     }
 
     @Override
-    public List<Item> getItemsByCategory(String category) {
-        return items.values().stream()
-                .filter(item -> item.getCategory().equals(category))
-                .toList();
+    public List<Item> getItemsByCategory(@NonNull String category) {
+        List<Item> items = new ArrayList<>();
+        this.items.values().forEach(it -> {
+            if (category.equals(it.getCategory())) {
+                items.add(it);
+            }
+        });
+        return items;
     }
 }

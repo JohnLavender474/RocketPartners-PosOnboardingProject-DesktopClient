@@ -4,14 +4,17 @@ import com.rocketpartners.onboarding.possystem.Application;
 import com.rocketpartners.onboarding.possystem.component.journal.IPosJournalListener;
 import com.rocketpartners.onboarding.possystem.component.journal.PosJournalComponent;
 import com.rocketpartners.onboarding.possystem.constant.ConstKeys;
+import com.rocketpartners.onboarding.possystem.constant.ConstVals;
 import com.rocketpartners.onboarding.possystem.constant.TransactionState;
 import com.rocketpartners.onboarding.possystem.display.IController;
+import com.rocketpartners.onboarding.possystem.display.dto.ItemDto;
 import com.rocketpartners.onboarding.possystem.display.dto.LineItemDto;
 import com.rocketpartners.onboarding.possystem.event.IPosEventListener;
 import com.rocketpartners.onboarding.possystem.event.IPosEventManager;
 import com.rocketpartners.onboarding.possystem.event.PosEvent;
 import com.rocketpartners.onboarding.possystem.event.PosEventType;
 import com.rocketpartners.onboarding.possystem.model.Item;
+import com.rocketpartners.onboarding.possystem.model.LineItem;
 import com.rocketpartners.onboarding.possystem.model.PosSystem;
 import com.rocketpartners.onboarding.possystem.model.Transaction;
 import com.rocketpartners.onboarding.possystem.service.ItemService;
@@ -22,6 +25,7 @@ import lombok.Setter;
 import lombok.ToString;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 /**
  * Controller for a POS system. This class is responsible for handling POS events and managing transactions.
@@ -208,6 +212,9 @@ public class PosComponent implements IComponent, IPosEventManager {
         if (Application.DEBUG) {
             System.out.println("[PosComponent] New transaction started: " + this);
         }
+        List<ItemDto> quickItemDtos =
+                itemService.getRandomItems(ConstVals.QUICK_ITEMS_COUNT).stream().map(ItemDto::from).toList();
+        dispatchPosEvent(new PosEvent(PosEventType.UPDATE_QUICK_ITEMS, Map.of(ConstKeys.ITEM_DTOS, quickItemDtos)));
     }
 
     /**
@@ -383,6 +390,20 @@ public class PosComponent implements IComponent, IPosEventManager {
                     System.err.println("[PosComponent] Request to add item failed because item with UPC " + itemUpc +
                             " does not exist");
                 }
+            }
+
+            case REQUEST_UPDATE_QUICK_ITEMS -> {
+                if (transactionState != TransactionState.SCANNING_IN_PROGRESS) {
+                    System.err.println("[PosComponent] Request to update quick items not allowed when transaction " +
+                            "state is not NOT_STARTED");
+                    return;
+                }
+                Set<String> itemUpcsInTransaction =
+                        transaction.getLineItems().stream().map(LineItem::getItemUpc).collect(Collectors.toSet());
+                List<ItemDto> quickItemDtos = itemService.getRandomItemsNotIn(itemUpcsInTransaction,
+                        ConstVals.QUICK_ITEMS_COUNT).stream().map(ItemDto::from).toList();
+                dispatchPosEvent(new PosEvent(PosEventType.UPDATE_QUICK_ITEMS, Map.of(ConstKeys.ITEM_DTOS,
+                        quickItemDtos)));
             }
 
             case REQUEST_VOID_LINE_ITEMS -> {

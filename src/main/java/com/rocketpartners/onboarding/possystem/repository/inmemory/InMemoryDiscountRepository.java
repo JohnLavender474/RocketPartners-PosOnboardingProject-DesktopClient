@@ -2,8 +2,10 @@ package com.rocketpartners.onboarding.possystem.repository.inmemory;
 
 import com.rocketpartners.onboarding.possystem.model.Discount;
 import com.rocketpartners.onboarding.possystem.repository.DiscountRepository;
+import lombok.NonNull;
 import lombok.ToString;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,7 +19,7 @@ public class InMemoryDiscountRepository implements DiscountRepository {
     private final Map<String, Discount> discounts = new HashMap<>();
 
     @Override
-    public void saveDiscount(Discount discount) {
+    public void saveDiscount(@NonNull Discount discount) {
         if (discount.getId() == null) {
             String id = String.valueOf(discounts.size() + 1);
             discount.setId(id);
@@ -27,36 +29,54 @@ public class InMemoryDiscountRepository implements DiscountRepository {
 
     @Override
     public List<Discount> getAllDiscounts() {
-        return discounts.values().stream().toList();
+        return new ArrayList<>(discounts.values());
     }
 
     @Override
-    public void deleteDiscountById(String id) {
+    public void deleteDiscountById(@NonNull String id) {
         discounts.remove(id);
     }
 
     @Override
-    public Discount getDiscountById(String id) {
+    public Discount getDiscountById(@NonNull String id) {
         return discounts.get(id);
     }
 
     @Override
-    public boolean discountExists(String id) {
+    public boolean discountExists(@NonNull String id) {
         return discounts.containsKey(id);
     }
 
     @Override
-    public List<Discount> getDiscountsByType(String type) {
-        return discounts.values().stream().filter(discount -> discount.getType().equals(type)).toList();
+    public List<Discount> getDiscountsByType(@NonNull String type) {
+        List<Discount> discounts = new ArrayList<>();
+        this.discounts.values().forEach(it -> {
+            if (type.equals(it.getType())) {
+                discounts.add(it);
+            }
+        });
+        return discounts;
     }
 
     @Override
-    public List<Discount> getDiscountsByApplicableCategory(String category) {
-        return discounts.values().stream().filter(discount -> discount.getApplicableCategory().equals(category)).toList();
+    public List<Discount> getDiscountsByApplicableCategory(@NonNull String category) {
+        List<Discount> discounts = new ArrayList<>();
+        this.discounts.values().forEach(it -> {
+            if (category.equals(it.getApplicableCategory())) {
+                discounts.add(it);
+            }
+        });
+        return discounts;
     }
 
     @Override
-    public List<Discount> getDiscountsByApplicableUpc(String upc) {
-        return discounts.values().stream().filter(discount -> discount.getApplicableUpcs().contains(upc)).toList();
+    public List<Discount> getDiscountsByApplicableUpc(@NonNull String upc) {
+        List<Discount> discounts = new ArrayList<>();
+        this.discounts.values().forEach(it -> {
+            if (it.getApplicableUpcs().contains(upc)) {
+                discounts.add(it);
+            }
+        });
+        return discounts;
     }
 }

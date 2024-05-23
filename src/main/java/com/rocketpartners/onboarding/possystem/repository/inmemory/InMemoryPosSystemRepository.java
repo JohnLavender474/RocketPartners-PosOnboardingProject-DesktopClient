@@ -2,12 +2,10 @@ package com.rocketpartners.onboarding.possystem.repository.inmemory;
 
 import com.rocketpartners.onboarding.possystem.model.PosSystem;
 import com.rocketpartners.onboarding.possystem.repository.PosSystemRepository;
+import lombok.NonNull;
 import lombok.ToString;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 /**
  * An in-memory implementation of the {@link PosSystemRepository} interface.
@@ -18,7 +16,7 @@ public class InMemoryPosSystemRepository implements PosSystemRepository {
     private final Map<String, PosSystem> posSystems = new HashMap<>();
 
     @Override
-    public void savePosSystem(PosSystem posSystem) {
+    public void savePosSystem(@NonNull PosSystem posSystem) {
         if (posSystem.getId() == null) {
             String id = UUID.randomUUID().toString();
             posSystem.setId(id);
@@ -27,39 +25,45 @@ public class InMemoryPosSystemRepository implements PosSystemRepository {
     }
 
     @Override
-    public PosSystem getPosSystemById(String id) {
+    public PosSystem getPosSystemById(@NonNull String id) {
         return posSystems.get(id);
     }
 
     @Override
-    public void deletePosSystemById(String id) {
+    public void deletePosSystemById(@NonNull String id) {
         posSystems.remove(id);
     }
 
     @Override
-    public boolean posSystemExists(String id) {
+    public boolean posSystemExists(@NonNull String id) {
         return posSystems.containsKey(id);
     }
 
     @Override
     public List<PosSystem> getAllPosSystems() {
-        return posSystems.values().stream().toList();
+        return new ArrayList<>(posSystems.values());
     }
 
     @Override
-    public List<PosSystem> getPosSystemsByStoreName(String storeName) {
-        return posSystems.values().stream().filter(posSystem -> posSystem.getStoreName().equals(storeName)).toList();
+    public List<PosSystem> getPosSystemsByStoreName(@NonNull String storeName) {
+        List<PosSystem> posSystems = new ArrayList<>();
+        this.posSystems.values().forEach(posSystem -> {
+            if (posSystem.getStoreName().equals(storeName)) {
+                posSystems.add(posSystem);
+            }
+        });
+        return posSystems;
     }
 
     @Override
-    public PosSystem getPosSystemByStoreNameAndPosLane(String storeName, int posLane) {
+    public PosSystem getPosSystemByStoreNameAndPosLane(@NonNull String storeName, int posLane) {
         return posSystems.values().stream()
                 .filter(posSystem -> posSystem.getStoreName().equals(storeName) && posSystem.getPosLane() == posLane)
                 .findFirst().orElse(null);
     }
 
     @Override
-    public boolean posSystemExistsByStoreNameAndPosLane(String storeName, int posLane) {
+    public boolean posSystemExistsByStoreNameAndPosLane(@NonNull String storeName, int posLane) {
         return posSystems.values().stream()
                 .anyMatch(posSystem -> posSystem.getStoreName().equals(storeName) && posSystem.getPosLane() == posLane);
     }

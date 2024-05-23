@@ -3,6 +3,7 @@ package com.rocketpartners.onboarding.possystem.display;
 import com.rocketpartners.onboarding.possystem.Application;
 import com.rocketpartners.onboarding.possystem.constant.ConstKeys;
 import com.rocketpartners.onboarding.possystem.constant.TransactionState;
+import com.rocketpartners.onboarding.possystem.display.dto.ItemDto;
 import com.rocketpartners.onboarding.possystem.display.dto.LineItemDto;
 import com.rocketpartners.onboarding.possystem.event.IPosEventDispatcher;
 import com.rocketpartners.onboarding.possystem.event.PosEvent;
@@ -27,6 +28,7 @@ public class CustomerViewController implements IController {
             PosEventType.TRANSACTION_STARTED,
             PosEventType.TRANSACTION_VOIDED,
             PosEventType.TRANSACTION_COMPLETED,
+            PosEventType.UPDATE_QUICK_ITEMS,
             PosEventType.ITEM_ADDED,
             PosEventType.ITEM_REMOVED,
             PosEventType.LINE_ITEMS_VOIDED
@@ -86,6 +88,10 @@ public class CustomerViewController implements IController {
         switch (posEvent.getType()) {
             case POS_BOOTUP, POS_RESET -> setTransactionState(TransactionState.NOT_STARTED);
             case TRANSACTION_STARTED -> setTransactionState(TransactionState.SCANNING_IN_PROGRESS);
+            case UPDATE_QUICK_ITEMS -> {
+                List<ItemDto> itemDtos = (List<ItemDto>) posEvent.getProperty(ConstKeys.ITEM_DTOS);
+                customerView.updateQuickItems(itemDtos);
+            }
             case ITEM_ADDED, ITEM_REMOVED, LINE_ITEMS_VOIDED -> {
                 List<LineItemDto> lineitemDtos = (List<LineItemDto>) posEvent.getProperty(ConstKeys.LINE_ITEM_DTOS);
                 customerView.updateTransactionsTable(lineitemDtos);

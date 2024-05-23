@@ -6,7 +6,10 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 @RequiredArgsConstructor
 public class ItemService {
@@ -46,7 +49,7 @@ public class ItemService {
         item.setUnitPrice(unitPrice);
         item.setCategory(category);
         item.setDescription(description);
-        itemRepository.saveItem(item);
+        saveItem(item);
         return item;
     }
 
@@ -115,5 +118,43 @@ public class ItemService {
      */
     public boolean itemExists(String upc) {
         return itemRepository.itemExists(upc);
+    }
+
+    /**
+     * Retrieve a list of random Item objects from the repository. The number of items returned is limited by the max
+     * parameter. If the number of items in the repository is less than max, all available items will be returned. The
+     * order of the items is randomized.
+     *
+     * @param max the maximum number of items to return
+     * @return a list of random items
+     */
+    public List<Item> getRandomItems(int max) {
+        return getRandomItemsNotIn(Set.of(), max);
+    }
+
+    /**
+     * Retrieve a list of random Item objects from the repository that are not contained in the provided list of UPCs.
+     * The number of items returned is limited by the max parameter. If the number of items not contained in the list of
+     * UPCs is less than max, all available items will be returned. The order of the items is randomized.
+     *
+     * @param itemUpcs the list of UPCs to exclude
+     * @param max      the maximum number of items to return
+     * @return a list of random items not contained in the provided list of UPCs
+     */
+    public List<Item> getRandomItemsNotIn(Set<String> itemUpcs, int max) {
+        List<Item> allItems = itemRepository.getAllItems();
+        Collections.shuffle(allItems);
+        max = Math.min(max, allItems.size());
+        List<Item> itemsToReturn = new ArrayList<>();
+        for (Item item : allItems) {
+            if (itemUpcs.contains(item.getUpc())) {
+                continue;
+            }
+            itemsToReturn.add(item);
+            if (itemsToReturn.size() >= max) {
+                break;
+            }
+        }
+        return itemsToReturn;
     }
 }

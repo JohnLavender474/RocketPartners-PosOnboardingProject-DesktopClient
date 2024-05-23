@@ -35,7 +35,7 @@ public class PosSystemService {
         PosSystem posSystem = new PosSystem();
         posSystem.setStoreName(storeName);
         posSystem.setPosLane(posLane);
-        posSystemRepository.savePosSystem(posSystem);
+        savePosSystem(posSystem);
         if (Application.DEBUG) {
             System.out.println("[PosSystemService] Created POS system: " + posSystem);
         }
