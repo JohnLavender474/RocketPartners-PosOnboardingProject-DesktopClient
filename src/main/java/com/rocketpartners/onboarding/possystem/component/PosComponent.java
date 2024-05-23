@@ -1,6 +1,8 @@
 package com.rocketpartners.onboarding.possystem.component;
 
 import com.rocketpartners.onboarding.possystem.Application;
+import com.rocketpartners.onboarding.possystem.component.journal.IPosJournalListener;
+import com.rocketpartners.onboarding.possystem.component.journal.PosJournalComponent;
 import com.rocketpartners.onboarding.possystem.constant.ConstKeys;
 import com.rocketpartners.onboarding.possystem.constant.TransactionState;
 import com.rocketpartners.onboarding.possystem.display.IController;
@@ -29,6 +31,7 @@ public class PosComponent implements IComponent, IPosEventManager {
 
     private final TransactionService transactionService;
     private final ItemService itemService;
+    private final PosJournalComponent journalComponent;
     private final Map<PosEventType, List<PosEvent>> events;
     private final Set<IComponent> childComponents;
     private final Set<IPosEventListener> posEventListeners;
@@ -48,23 +51,75 @@ public class PosComponent implements IComponent, IPosEventManager {
     private boolean shuttingDown;
 
     /**
-     * Constructor that accepts a transaction factory. The method {@link #setPosSystem} must be called before the
-     * {@link #bootUp()} method is called or else an {@link IllegalStateException} will be thrown.
+     * Constructor that accepts a transaction service and an item service. Constructs a new {@link PosJournalComponent}
+     * instance. The transaction state is set to NOT_STARTED and the transaction number is set to 1.
      *
-     * @param transactionService The transaction factory.
+     * @param transactionService The transaction service.
+     * @param itemService        The item service.
      */
     public PosComponent(@NonNull TransactionService transactionService,
                         @NonNull ItemService itemService) {
+        this(transactionService, itemService, new PosJournalComponent());
+    }
+
+    /**
+     * Constructor that accepts a transaction service, an item service, and a POS journal component. The transaction
+     * state is set to NOT_STARTED and the transaction number is set to 1.
+     *
+     * @param transactionService The transaction service.
+     * @param itemService        The item service.
+     * @param journalComponent   The POS journal component.
+     */
+    public PosComponent(@NonNull TransactionService transactionService,
+                        @NonNull ItemService itemService,
+                        @NonNull PosJournalComponent journalComponent) {
         if (Application.DEBUG) {
             System.out.println("[PosComponent] Creating POS component");
         }
         this.transactionService = transactionService;
         this.itemService = itemService;
+        this.journalComponent = journalComponent;
         events = new EnumMap<>(PosEventType.class);
         childComponents = new LinkedHashSet<>();
         posEventListeners = new LinkedHashSet<>();
         transactionState = TransactionState.NOT_STARTED;
         transactionNumber = 1;
+    }
+
+    /**
+     * Add a journal listener to this component.
+     *
+     * @param listener The journal listener.
+     */
+    public void addJournalListener(@NonNull IPosJournalListener listener) {
+        journalComponent.addJournalListener(listener);
+    }
+
+    /**
+     * Remove a journal listener from this component.
+     *
+     * @param listener The journal listener.
+     */
+    public void removeJournalListener(@NonNull IPosJournalListener listener) {
+        journalComponent.removeJournalListener(listener);
+    }
+
+    /**
+     * Log a message to the journal.
+     *
+     * @param message The message to log.
+     */
+    public void logToJournal(@NonNull String message) {
+        journalComponent.log(message);
+    }
+
+    /**
+     * Log an error to the journal.
+     *
+     * @param message The error message.
+     */
+    public void errorToJournal(@NonNull String message) {
+        journalComponent.error(message);
     }
 
     /**
@@ -294,18 +349,35 @@ public class PosComponent implements IComponent, IPosEventManager {
                     List<LineItemDto> lineItemDtos = transaction.getLineItems().stream()
                             .map(lineItem -> {
                                 Item item = itemService.getItemByUpc(lineItem.getItemUpc());
-
-                                // TODO: should handle case where item is null here
-
                                 return LineItemDto.from(lineItem, item);
-                            })
-                            .toList();
+                            }).toList();
                     dispatchPosEvent(new PosEvent(PosEventType.ITEM_ADDED, Map.of(ConstKeys.LINE_ITEM_DTOS,
                             lineItemDtos)));
                 } else {
                     System.err.println("[PosComponent] Request to add item failed because item with UPC " + itemUpc +
                             " does not exist");
                 }
+            }
+
+            case REQUEST_VOID_LINE_ITEMS -> {
+                if (transactionState == TransactionState.NOT_STARTED) {
+                    System.err.println("[PosComponent] Request to void line items not allowed when transaction state" +
+                            " is NOT_STARTED");
+                    return;
+                }
+                Collection<String> itemUpcs = (Collection<String>) event.getProperty(ConstKeys.ITEM_UPCS);
+                if (itemUpcs == null) {
+                    System.err.println("[PosComponent] Request to void line items failed because item UPCs is null");
+                    return;
+                }
+                itemUpcs.forEach(it -> transactionService.voidLineItemInTransaction(transaction, it));
+                List<LineItemDto> lineItemDtos = transaction.getLineItems().stream()
+                        .map(lineItem -> {
+                            Item item = itemService.getItemByUpc(lineItem.getItemUpc());
+                            return LineItemDto.from(lineItem, item);
+                        }).toList();
+                dispatchPosEvent(new PosEvent(PosEventType.LINE_ITEMS_VOIDED, Map.of(ConstKeys.LINE_ITEM_DTOS,
+                        lineItemDtos)));
             }
 
             case REQUEST_VOID_TRANSACTION -> {

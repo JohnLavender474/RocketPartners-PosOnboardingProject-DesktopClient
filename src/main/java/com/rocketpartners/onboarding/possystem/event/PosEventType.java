@@ -4,6 +4,8 @@ package com.rocketpartners.onboarding.possystem.event;
  * Enum for POS event types.
  */
 public enum PosEventType {
+    LOG,
+    ERROR,
     POS_BOOTUP,
     POS_SHUTDOWN,
     REQUEST_START_TRANSACTION,
@@ -18,7 +20,7 @@ public enum PosEventType {
     REQUEST_ADD_ITEM,
     ITEM_ADDED,
     REQUEST_VOID_LINE_ITEMS,
-    LINE_ITEM_VOIDED,
+    LINE_ITEMS_VOIDED,
     REQUEST_PAY_WITH_CASH,
     REQUEST_INSERT_CASH,
     CASH_INSERTED,

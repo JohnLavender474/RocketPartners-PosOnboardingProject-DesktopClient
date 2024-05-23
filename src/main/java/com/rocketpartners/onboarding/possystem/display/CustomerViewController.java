@@ -28,7 +28,8 @@ public class CustomerViewController implements IController {
             PosEventType.TRANSACTION_VOIDED,
             PosEventType.TRANSACTION_COMPLETED,
             PosEventType.REQUEST_ADD_ITEM,
-            PosEventType.ITEM_ADDED
+            PosEventType.ITEM_ADDED,
+            PosEventType.LINE_ITEMS_VOIDED
     );
 
     @NonNull
@@ -85,7 +86,7 @@ public class CustomerViewController implements IController {
         switch (posEvent.getType()) {
             case POS_BOOTUP, POS_RESET -> setTransactionState(TransactionState.NOT_STARTED);
             case TRANSACTION_STARTED -> setTransactionState(TransactionState.SCANNING_IN_PROGRESS);
-            case ITEM_ADDED -> {
+            case ITEM_ADDED, LINE_ITEMS_VOIDED -> {
                 List<LineItemDto> lineitemDtos = (List<LineItemDto>) posEvent.getProperty(ConstKeys.LINE_ITEM_DTOS);
                 customerView.updateTransactionsTable(lineitemDtos);
             }

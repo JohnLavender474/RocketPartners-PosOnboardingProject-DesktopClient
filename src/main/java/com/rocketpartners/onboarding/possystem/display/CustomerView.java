@@ -10,6 +10,7 @@ import lombok.NonNull;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableModel;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
@@ -22,7 +23,7 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * The customer view of the POS system
+ * The customer view of the POS system.
  */
 public class CustomerView extends JFrame {
 
@@ -40,18 +41,19 @@ public class CustomerView extends JFrame {
          */
         public TransactionTableModel() {
             super(new String[]{
-                    TRANSACTION_TABLE_COLUMN_0_CHECKBOX,
-                    TRANSACTION_TABLE_COLUMN_1_UPC,
-                    TRANSACTION_TABLE_COLUMN_2_ITEM_NAME,
-                    TRANSACTION_TABLE_COLUMN_3_PRICE,
-                    TRANSACTION_TABLE_COLUMN_4_QUANTITY,
-                    TRANSACTION_TABLE_COLUMN_5_TOTAL
+                    TRANSACTION_TABLE_COLUMN_CHECKBOX,
+                    TRANSACTION_TABLE_COLUMN_STATUS,
+                    TRANSACTION_TABLE_COLUMN_UPC,
+                    TRANSACTION_TABLE_COLUMN_ITEM_NAME,
+                    TRANSACTION_TABLE_COLUMN_PRICE,
+                    TRANSACTION_TABLE_COLUMN_QUANTITY,
+                    TRANSACTION_TABLE_COLUMN_TOTAL
             }, 0);
         }
 
         @Override
         public boolean isCellEditable(int row, int column) {
-            return column == 0;
+            return column == 0 && STATUS_ADDED.equals(getValueAt(row, 1));
         }
 
         @Override
@@ -66,7 +68,7 @@ public class CustomerView extends JFrame {
         public void setValueAt(Object aValue, int row, int column) {
             super.setValueAt(aValue, row, column);
             if (aValue instanceof Boolean checked && column == 0) {
-                String upc = (String) getValueAt(row, 1);
+                String upc = (String) getValueAt(row, 2);
                 if (checked) {
                     selectedLineItemUpcs.add(upc);
                     if (Application.DEBUG) {
@@ -78,9 +80,35 @@ public class CustomerView extends JFrame {
                     if (Application.DEBUG) {
                         System.out.println("[CustomerView] Deselect upc on row " + row + ": " + upc + ". Selected upc" +
                                 "set size: " + selectedLineItemUpcs.size());
-                    }}
+                    }
+                }
                 updateVoidButtonText();
             }
+        }
+    }
+
+    /**
+     * A table cell renderer that renders the status column of the transactions table. This renderer is used to render
+     * the status column of the transactions table in the customer view. The status column displays the status of the
+     * line item. If the status is "ADDED", the checkbox in the first column is enabled. If the status is "VOIDED", the
+     * checkbox in the first column is disabled. The renderer is used to update the transactions table with line item
+     * DTOs. The renderer updates the transactions table with line item DTOs.
+     */
+    public static class StatusColumnRenderer extends JCheckBox implements TableCellRenderer {
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                                                       boolean hasFocus, int row, int column) {
+            if (value instanceof Boolean) {
+                this.setSelected((Boolean) value);
+                String status = (String) table.getModel().getValueAt(row, 1);
+                this.setEnabled(STATUS_ADDED.equals(status));
+            }
+            if (isSelected) {
+                setBackground(table.getSelectionBackground());
+            } else {
+                setBackground(table.getBackground());
+            }
+            return this;
         }
     }
 
@@ -106,12 +134,16 @@ public class CustomerView extends JFrame {
     private static final String AMOUNT_TENDERED_LABEL_TEXT = "Amount Tendered: ";
     private static final String CHANGE_DUE_LABEL_TEXT = "Change Due: ";
 
-    private static final String TRANSACTION_TABLE_COLUMN_0_CHECKBOX = "Select";
-    private static final String TRANSACTION_TABLE_COLUMN_1_UPC = "UPC";
-    private static final String TRANSACTION_TABLE_COLUMN_2_ITEM_NAME = "Item Name";
-    private static final String TRANSACTION_TABLE_COLUMN_3_PRICE = "Unit Price";
-    private static final String TRANSACTION_TABLE_COLUMN_4_QUANTITY = "Quantity";
-    private static final String TRANSACTION_TABLE_COLUMN_5_TOTAL = "Total";
+    private static final String TRANSACTION_TABLE_COLUMN_CHECKBOX = "Select";
+    private static final String TRANSACTION_TABLE_COLUMN_STATUS = "Status";
+    private static final String TRANSACTION_TABLE_COLUMN_UPC = "UPC";
+    private static final String TRANSACTION_TABLE_COLUMN_ITEM_NAME = "Item Name";
+    private static final String TRANSACTION_TABLE_COLUMN_PRICE = "Unit Price";
+    private static final String TRANSACTION_TABLE_COLUMN_QUANTITY = "Quantity";
+    private static final String TRANSACTION_TABLE_COLUMN_TOTAL = "Total";
+
+    private static final String STATUS_ADDED = "ADDED";
+    private static final String STATUS_VOIDED = "VOIDED";
 
     private static final String START_TRANSACTION_BUTTON_TEXT = "Start Transaction";
     private static final String OPEN_SCANNER_BUTTON_TEXT = "Open Scanner";
@@ -203,6 +235,7 @@ public class CustomerView extends JFrame {
         transactionTable.setRowSelectionAllowed(false);
         transactionTable.setColumnSelectionAllowed(false);
         transactionTable.setCellSelectionEnabled(false);
+        transactionTable.getColumnModel().getColumn(0).setCellRenderer(new StatusColumnRenderer());
 
         metadataArea = new JTextArea();
         metadataArea.setEditable(false);
@@ -282,20 +315,25 @@ public class CustomerView extends JFrame {
 
             String upc = it.getItemUpc();
             boolean isSelected = upcsPriorUpdate.contains(upc);
-            if (isSelected) {
+            if (!it.isVoided() && isSelected) {
                 selectedLineItemUpcs.add(upc);
             }
 
-            transactionTable.setValueAt(isSelected, row, 0);
-            transactionTable.setValueAt(upc, row, 1);
-            transactionTable.setValueAt(it.getItemName(), row, 2);
-            transactionTable.setValueAt(it.getUnitPrice(), row, 3);
-            transactionTable.setValueAt(it.getQuantity(), row, 4);
+            boolean checkBoxValue = !it.isVoided() && isSelected;
+            transactionTable.setValueAt(checkBoxValue, row, 0);
+
+            String status = it.isVoided() ? STATUS_VOIDED : STATUS_ADDED;
+            transactionTable.setValueAt(status, row, 1);
+
+            transactionTable.setValueAt(upc, row, 2);
+            transactionTable.setValueAt(it.getItemName(), row, 3);
+            transactionTable.setValueAt(it.getUnitPrice(), row, 4);
+            transactionTable.setValueAt(it.getQuantity(), row, 5);
 
             BigDecimal total = it.getUnitPrice().multiply(BigDecimal.valueOf(it.getQuantity()));
             NumberFormat currencyFormat = NumberFormat.getCurrencyInstance();
             String totalFormatted = currencyFormat.format(total);
-            transactionTable.setValueAt(totalFormatted, row, 5);
+            transactionTable.setValueAt(totalFormatted, row, 6);
         });
     }
 
@@ -430,7 +468,7 @@ public class CustomerView extends JFrame {
 
     private void voidTransaction() {
         if (Application.DEBUG) {
-            System.out.println("[CustomerView] Voiding transaction");
+            System.out.println("[CustomerView] Requesting to void transaction");
         }
         parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_VOID_TRANSACTION));
         clearTransactionsTableSelections();
@@ -438,10 +476,10 @@ public class CustomerView extends JFrame {
 
     private void voidSelectedLineItems() {
         if (Application.DEBUG) {
-            System.out.println("[CustomerView] Voiding selected line items: " + selectedLineItemUpcs);
+            System.out.println("[CustomerView] Requesting to void selected line items: " + selectedLineItemUpcs);
         }
         parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_VOID_LINE_ITEMS,
-                Map.of(ConstKeys.LINE_ITEM_UPCS, Set.of(selectedLineItemUpcs))));
+                Map.of(ConstKeys.ITEM_UPCS, new HashSet<>(selectedLineItemUpcs))));
         clearTransactionsTableSelections();
     }
 
