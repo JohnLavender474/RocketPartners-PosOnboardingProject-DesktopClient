@@ -105,6 +105,7 @@ public class CustomerView extends JFrame {
                     selectedLineItemUpcs.remove(upc);
                 }
                 updateVoidButtonText();
+                repaint();
             }
         }
     }
@@ -315,7 +316,7 @@ public class CustomerView extends JFrame {
             component.setForeground(Color.RED);
             component.setBackground(Color.DARK_GRAY);
         } else if (model.isSelected(row)) {
-            component.setForeground(Color.WHITE);
+            component.setForeground(Color.BLACK);
             component.setBackground(Color.WHITE);
         } else {
             component.setForeground(Color.WHITE);
