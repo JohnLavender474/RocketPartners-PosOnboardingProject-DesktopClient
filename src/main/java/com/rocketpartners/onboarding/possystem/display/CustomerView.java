@@ -52,6 +52,26 @@ public class CustomerView extends JFrame {
             }, 0);
         }
 
+        /**
+         * Returns if the line item at the specified row is voided.
+         *
+         * @param row The row index.
+         * @return True if the line item is voided, false otherwise.
+         */
+        public boolean isVoided(int row) {
+            if (row < 0 || row >= getRowCount()) {
+                return false;
+            }
+            return STATUS_VOIDED.equals(getValueAt(row, 1));
+        }
+
+        public boolean isSelected(int row) {
+            if (row < 0 || row >= getRowCount()) {
+                return false;
+            }
+            return (Boolean) getValueAt(row, 0);
+        }
+
         @Override
         public boolean isCellEditable(int row, int column) {
             if (!STATUS_ADDED.equals(getValueAt(row, 1))) {
@@ -97,6 +117,14 @@ public class CustomerView extends JFrame {
      * DTOs. The renderer updates the transactions table with line item DTOs.
      */
     static class StatusColumnRenderer extends JCheckBox implements TableCellRenderer {
+
+        private final TransactionTableModel model;
+
+        public StatusColumnRenderer(@NonNull TransactionTableModel model) {
+            this.model = model;
+            setOpaque(true);
+        }
+
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
                                                        boolean hasFocus, int row, int column) {
@@ -105,11 +133,7 @@ public class CustomerView extends JFrame {
                 String status = (String) table.getModel().getValueAt(row, 1);
                 this.setEnabled(STATUS_ADDED.equals(status));
             }
-            if (isSelected) {
-                setBackground(table.getSelectionBackground());
-            } else {
-                setBackground(table.getBackground());
-            }
+            setRowColors(this, model, row);
             return this;
         }
     }
@@ -122,13 +146,15 @@ public class CustomerView extends JFrame {
      */
     static class QuantityCellRenderer extends JPanel implements TableCellRenderer {
 
+        private final TransactionTableModel model;
         private final JButton decrementButton;
         private final JTextField quantityField;
 
         /**
          * Constructor that initializes the quantity cell renderer.
          */
-        public QuantityCellRenderer() {
+        public QuantityCellRenderer(@NonNull TransactionTableModel model) {
+            this.model = model;
             setLayout(new BorderLayout());
 
             //noinspection DuplicatedCode
@@ -160,6 +186,7 @@ public class CustomerView extends JFrame {
                 quantityField.setText(value.toString());
                 decrementButton.setEnabled((Integer) value > 1);
             }
+            setRowColors(this, model, row);
             return this;
         }
     }
@@ -251,6 +278,48 @@ public class CustomerView extends JFrame {
                 quantityField.setText(String.valueOf(quantity));
             }
             return panel;
+        }
+    }
+
+    /**
+     * A table cell renderer that renders the status column of the transactions table. This renderer is used to render
+     * the status column of the transactions table in the customer view. The status column displays the status of the
+     * line item. If the status is "ADDED", the checkbox in the first column is enabled. If the status is "VOIDED", the
+     * checkbox in the first column is disabled. The renderer is used to update the transactions table with line item
+     * DTOs. The renderer updates the transactions table with line item DTOs.
+     */
+    class StandardCellRenderer extends DefaultTableCellRenderer {
+
+        private final TransactionTableModel model;
+
+        /**
+         * Constructor that initializes the standard cell renderer.
+         *
+         * @param model The transaction table model.
+         */
+        public StandardCellRenderer(@NonNull TransactionTableModel model) {
+            this.model = model;
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected, boolean hasFocus,
+                                                       int row, int column) {
+            Component component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
+            setRowColors(component, model, row);
+            return component;
+        }
+    }
+
+    private static void setRowColors(@NonNull Component component, @NonNull TransactionTableModel model, int row) {
+        if (model.isVoided(row)) {
+            component.setForeground(Color.RED);
+            component.setBackground(Color.DARK_GRAY);
+        } else if (model.isSelected(row)) {
+            component.setForeground(Color.WHITE);
+            component.setBackground(Color.WHITE);
+        } else {
+            component.setForeground(Color.WHITE);
+            component.setBackground(Color.GRAY);
         }
     }
 
@@ -393,14 +462,23 @@ public class CustomerView extends JFrame {
         contentPanel = new JPanel();
         quickItemsPanel = new JPanel(new GridLayout(QUICK_ITEMS_ROWS_COUNT, QUICK_ITEMS_COLUMNS_COUNT));
 
-        transactionTable = new JTable(new TransactionTableModel());
+        TransactionTableModel model = new TransactionTableModel();
+        transactionTable = new JTable(model);
         transactionTable.setSize(TRANSACTION_TABLE_WIDTH, TRANSACTION_TABLE_HEIGHT);
         transactionTable.setRowSelectionAllowed(false);
         transactionTable.setColumnSelectionAllowed(false);
         transactionTable.setCellSelectionEnabled(false);
-        transactionTable.getColumnModel().getColumn(0).setCellRenderer(new StatusColumnRenderer());
-        transactionTable.getColumnModel().getColumn(5).setCellRenderer(new QuantityCellRenderer());
-        transactionTable.getColumnModel().getColumn(5).setCellEditor(new QuantityCellEditor());
+        transactionTable.setBackground(Color.LIGHT_GRAY);
+        transactionTable.setSelectionBackground(Color.WHITE);
+        TableColumnModel columnModel = transactionTable.getColumnModel();
+        columnModel.getColumn(0).setCellRenderer(new StatusColumnRenderer(model));
+        columnModel.getColumn(1).setCellRenderer(new StandardCellRenderer(model));
+        columnModel.getColumn(2).setCellRenderer(new StandardCellRenderer(model));
+        columnModel.getColumn(3).setCellRenderer(new StandardCellRenderer(model));
+        columnModel.getColumn(4).setCellRenderer(new StandardCellRenderer(model));
+        columnModel.getColumn(5).setCellRenderer(new QuantityCellRenderer(model));
+        columnModel.getColumn(5).setCellEditor(new QuantityCellEditor());
+        columnModel.getColumn(6).setCellRenderer(new StandardCellRenderer(model));
 
         paymentInfoTable = new JTable();
         TableModel paymentInfoTableModel = new DefaultTableModel(PAYMENT_INFO_TABLE_ROWS_COUNT,
