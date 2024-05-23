@@ -344,14 +344,40 @@ public class PosComponent implements IComponent, IPosEventManager {
                     System.err.println("[PosComponent] Request to add item failed because item UPC is null");
                     return;
                 }
-                if (itemService.itemExists(itemUpc)) {
-                    transactionService.addItemToTransaction(transaction, itemUpc);
+                if (itemService.itemExists(itemUpc) && transactionService.addItemToTransaction(transaction, itemUpc)) {
                     List<LineItemDto> lineItemDtos = transaction.getLineItems().stream()
                             .map(lineItem -> {
                                 Item item = itemService.getItemByUpc(lineItem.getItemUpc());
                                 return LineItemDto.from(lineItem, item);
                             }).toList();
                     dispatchPosEvent(new PosEvent(PosEventType.ITEM_ADDED, Map.of(ConstKeys.LINE_ITEM_DTOS,
+                            lineItemDtos)));
+                } else {
+                    System.err.println("[PosComponent] Request to add item failed because item with UPC " + itemUpc +
+                            " does not exist");
+                }
+            }
+
+            case REQUEST_REMOVE_ITEM -> {
+                if (transactionState != TransactionState.SCANNING_IN_PROGRESS) {
+                    System.err.println("[PosComponent] Request to remove item not allowed when transaction state is " +
+                            "not " +
+                            "SCANNING_IN_PROGRESS");
+                    return;
+                }
+                String itemUpc = event.getProperty(ConstKeys.ITEM_UPC, String.class);
+                if (itemUpc == null) {
+                    System.err.println("[PosComponent] Request to add item failed because item UPC is null");
+                    return;
+                }
+                if (itemService.itemExists(itemUpc) && transactionService.removeItemFromTransaction(transaction,
+                        itemUpc)) {
+                    List<LineItemDto> lineItemDtos = transaction.getLineItems().stream()
+                            .map(lineItem -> {
+                                Item item = itemService.getItemByUpc(lineItem.getItemUpc());
+                                return LineItemDto.from(lineItem, item);
+                            }).toList();
+                    dispatchPosEvent(new PosEvent(PosEventType.ITEM_REMOVED, Map.of(ConstKeys.LINE_ITEM_DTOS,
                             lineItemDtos)));
                 } else {
                     System.err.println("[PosComponent] Request to add item failed because item with UPC " + itemUpc +

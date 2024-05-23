@@ -13,6 +13,13 @@ public interface IPosJournalListener {
     void onLog(String entry);
 
     /**
+     * Called when a debug entry is logged.
+     *
+     * @param entry The debug entry.
+     */
+    void onDebug(String entry);
+
+    /**
      * Called when an error occurs.
      *
      * @param entry The error message.

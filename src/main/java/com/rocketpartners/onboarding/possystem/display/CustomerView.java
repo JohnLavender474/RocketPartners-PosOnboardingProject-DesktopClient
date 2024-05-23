@@ -10,6 +10,7 @@ import lombok.NonNull;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableCellRenderer;
 import javax.swing.table.TableModel;
 import java.awt.*;
@@ -34,7 +35,7 @@ public class CustomerView extends JFrame {
      * price of the item. The fifth column is the quantity of the item. The sixth column is the total price of the item.
      * The table model is used to update the transactions table with line item DTOs.
      */
-    public final class TransactionTableModel extends DefaultTableModel {
+    class TransactionTableModel extends DefaultTableModel {
 
         /**
          * Constructor that initializes the transactions table model.
@@ -53,7 +54,10 @@ public class CustomerView extends JFrame {
 
         @Override
         public boolean isCellEditable(int row, int column) {
-            return column == 0 && STATUS_ADDED.equals(getValueAt(row, 1));
+            if (!STATUS_ADDED.equals(getValueAt(row, 1))) {
+                return false;
+            }
+            return column == 0 || column == 5;
         }
 
         @Override
@@ -94,7 +98,7 @@ public class CustomerView extends JFrame {
      * checkbox in the first column is disabled. The renderer is used to update the transactions table with line item
      * DTOs. The renderer updates the transactions table with line item DTOs.
      */
-    public static class StatusColumnRenderer extends JCheckBox implements TableCellRenderer {
+    static class StatusColumnRenderer extends JCheckBox implements TableCellRenderer {
         @Override
         public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
                                                        boolean hasFocus, int row, int column) {
@@ -112,12 +116,158 @@ public class CustomerView extends JFrame {
         }
     }
 
+    /**
+     * A table cell renderer that renders the quantity column of the transactions table. This renderer is used to render
+     * the quantity column of the transactions table in the customer view. The quantity column displays the quantity of
+     * the line item. The renderer is used to update the transactions table with line item DTOs. The renderer updates
+     * the transactions table with line item DTOs.
+     */
+    static class QuantityCellRenderer extends JPanel implements TableCellRenderer {
+
+        private final JButton decrementButton;
+        private final JTextField quantityField;
+
+        /**
+         * Constructor that initializes the quantity cell renderer.
+         */
+        public QuantityCellRenderer() {
+            setLayout(new BorderLayout());
+
+            //noinspection DuplicatedCode
+            decrementButton = new JButton("-");
+            quantityField = new JTextField("1", 3);
+            JButton incrementButton = new JButton("+");
+
+            quantityField.setPreferredSize(new Dimension(QUANTITY_FIELD_WIDTH, QUANTITY_FIELD_HEIGHT));
+            quantityField.setHorizontalAlignment(SwingConstants.CENTER);
+            quantityField.setEditable(false);
+
+            Dimension buttonSize = new Dimension(INCREMENT_DECREMENT_BUTTON_WIDTH, INCREMENT_DECREMENT_BUTTON_HEIGHT);
+            decrementButton.setPreferredSize(buttonSize);
+            incrementButton.setPreferredSize(buttonSize);
+            decrementButton.setFont(decrementButton.getFont().deriveFont(INCREMENT_DECREMENT_BUTTON_FONT_SIZE));
+            incrementButton.setFont(incrementButton.getFont().deriveFont(INCREMENT_DECREMENT_BUTTON_FONT_SIZE));
+
+            decrementButton.setEnabled(false);
+
+            add(decrementButton, BorderLayout.WEST);
+            add(quantityField, BorderLayout.CENTER);
+            add(incrementButton, BorderLayout.EAST);
+        }
+
+        @Override
+        public Component getTableCellRendererComponent(JTable table, Object value, boolean isSelected,
+                                                       boolean hasFocus, int row, int column) {
+            if (value instanceof Integer) {
+                quantityField.setText(value.toString());
+                decrementButton.setEnabled((Integer) value > 1);
+            }
+            return this;
+        }
+    }
+
+    /**
+     * A table cell editor that edits the quantity column of the transactions table. This editor is used to edit the
+     * quantity column of the transactions table in the customer view. The quantity column displays the quantity of the
+     * line item. The editor is used to update the transactions table with line item DTOs. The editor updates the
+     * transactions table with line item DTOs.
+     */
+    class QuantityCellEditor extends AbstractCellEditor implements TableCellEditor {
+
+        private final JPanel panel;
+        private final JButton decrementButton;
+        private final JTextField quantityField;
+
+        /**
+         * Constructor that initializes the quantity cell editor.
+         */
+        public QuantityCellEditor() {
+            panel = new JPanel(new BorderLayout());
+
+            //noinspection DuplicatedCode
+            decrementButton = new JButton("-");
+            quantityField = new JTextField("1", 3);
+            JButton incrementButton = new JButton("+");
+
+            quantityField.setPreferredSize(new Dimension(QUANTITY_FIELD_WIDTH, QUANTITY_FIELD_HEIGHT));
+            quantityField.setHorizontalAlignment(SwingConstants.CENTER);
+            quantityField.setEditable(false);
+
+            Dimension buttonSize = new Dimension(INCREMENT_DECREMENT_BUTTON_WIDTH, INCREMENT_DECREMENT_BUTTON_HEIGHT);
+            decrementButton.setPreferredSize(buttonSize);
+            incrementButton.setPreferredSize(buttonSize);
+            decrementButton.setFont(decrementButton.getFont().deriveFont(INCREMENT_DECREMENT_BUTTON_FONT_SIZE));
+            incrementButton.setFont(incrementButton.getFont().deriveFont(INCREMENT_DECREMENT_BUTTON_FONT_SIZE));
+
+            panel.add(decrementButton, BorderLayout.WEST);
+            panel.add(quantityField, BorderLayout.CENTER);
+            panel.add(incrementButton, BorderLayout.EAST);
+
+            decrementButton.addActionListener(e -> {
+                String upc = (String) transactionTable.getModel().getValueAt(transactionTable.getEditingRow(), 2);
+                if (Application.DEBUG) {
+                    System.out.println("[CustomerView] Decrementing quantity of line item: " + upc);
+                }
+                int value = Integer.parseInt(quantityField.getText());
+                if (value > 1) {
+                    value--;
+                    if (Application.DEBUG) {
+                        System.out.println("[CustomerView] Quantity decremented to: " + value);
+                    }
+                    quantityField.setText(String.valueOf(value));
+                    decrementButton.setEnabled(value > 1);
+                    parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_REMOVE_ITEM,
+                            Map.of(ConstKeys.ITEM_UPC, upc)));
+                } else if (Application.DEBUG) {
+                    System.out.println("[CustomerView] Quantity cannot be less than 1");
+                }
+            });
+
+            incrementButton.addActionListener(e -> {
+                String upc = (String) transactionTable.getModel().getValueAt(transactionTable.getEditingRow(), 2);
+                if (Application.DEBUG) {
+                    System.out.println("[CustomerView] Incrementing quantity of line item: " + upc);
+                }
+                int value = Integer.parseInt(quantityField.getText());
+                value++;
+                if (Application.DEBUG) {
+                    System.out.println("[CustomerView] Quantity incremented to: " + value);
+                }
+                quantityField.setText(String.valueOf(value));
+                decrementButton.setEnabled(value > 1);
+                parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_ADD_ITEM,
+                        Map.of(ConstKeys.ITEM_UPC, upc)));
+            });
+        }
+
+        @Override
+        public Object getCellEditorValue() {
+            return Integer.parseInt(quantityField.getText());
+        }
+
+        @Override
+        public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row,
+                                                     int column) {
+            if (value instanceof Integer) {
+                int quantity = (Integer) value;
+                quantityField.setText(String.valueOf(quantity));
+            }
+            return panel;
+        }
+    }
+
     private static final int CUSTOMER_VIEW_FRAME_WIDTH = 800;
     private static final int CUSTOMER_VIEW_FRAME_HEIGHT = 600;
     private static final int TRANSACTION_TABLE_WIDTH = 800;
     private static final int TRANSACTION_TABLE_HEIGHT = 200;
     private static final int PAYMENT_INFO_TABLE_GRID_ROWS_COUNT = 2;
     private static final int PAYMENT_INFO_TABLE_GRID_COLUMNS_COUNT = 1;
+
+    private static final int QUANTITY_FIELD_WIDTH = 30;
+    private static final int QUANTITY_FIELD_HEIGHT = 20;
+    private static final int INCREMENT_DECREMENT_BUTTON_WIDTH = 20;
+    private static final int INCREMENT_DECREMENT_BUTTON_HEIGHT = 20;
+    private static final float INCREMENT_DECREMENT_BUTTON_FONT_SIZE = 8.0f;
 
     private static final String WELCOME_BANNER_TEXT = "WELCOME TO %s";
     private static final String NO_TRANSACTION_IN_PROGRESS_CONTENT_EXT = "PLEASE CLICK THE BUTTON TO START A " +
@@ -229,13 +379,14 @@ public class CustomerView extends JFrame {
         bannerLabel = new JLabel("", SwingConstants.CENTER);
         contentPanel = new JPanel();
 
-        TableModel transactionTableModel = new TransactionTableModel();
-        transactionTable = new JTable(transactionTableModel);
+        transactionTable = new JTable(new TransactionTableModel());
         transactionTable.setSize(TRANSACTION_TABLE_WIDTH, TRANSACTION_TABLE_HEIGHT);
         transactionTable.setRowSelectionAllowed(false);
         transactionTable.setColumnSelectionAllowed(false);
         transactionTable.setCellSelectionEnabled(false);
         transactionTable.getColumnModel().getColumn(0).setCellRenderer(new StatusColumnRenderer());
+        transactionTable.getColumnModel().getColumn(5).setCellRenderer(new QuantityCellRenderer());
+        transactionTable.getColumnModel().getColumn(5).setCellEditor(new QuantityCellEditor());
 
         metadataArea = new JTextArea();
         metadataArea.setEditable(false);

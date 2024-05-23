@@ -62,7 +62,7 @@ public class TransactionService {
      * @param transaction the transaction to add the item to
      * @param itemUpc     the UPC of the item to add
      */
-    public void addItemToTransaction(@NonNull Transaction transaction, @NonNull String itemUpc) {
+    public boolean addItemToTransaction(@NonNull Transaction transaction, @NonNull String itemUpc) {
         List<LineItem> lineItems = transaction.getLineItems();
         LineItem lineItem = null;
         for (LineItem item : lineItems) {
@@ -83,6 +83,7 @@ public class TransactionService {
         if (Application.DEBUG) {
             System.out.println("[TransactionService] Added item with UPC " + itemUpc + " to transaction: " + transaction);
         }
+        return true;
     }
 
     /**
@@ -91,8 +92,9 @@ public class TransactionService {
      *
      * @param transaction the transaction to remove the item from
      * @param itemUpc     the UPC of the item to remove
+     * @return true if the item was removed, false if the item was not removed
      */
-    public void removeItemFromTransaction(@NonNull Transaction transaction, @NonNull String itemUpc) {
+    public boolean removeItemFromTransaction(@NonNull Transaction transaction, @NonNull String itemUpc) {
         List<LineItem> lineItems = transaction.getLineItems();
         LineItem lineItem = null;
         for (LineItem item : lineItems) {
@@ -101,17 +103,27 @@ public class TransactionService {
                 break;
             }
         }
+        boolean decremented = false;
         if (lineItem != null) {
-            lineItem.setQuantity(lineItem.getQuantity() - 1);
-            if (lineItem.getQuantity() == 0) {
-                lineItems.remove(lineItem);
+            int newQuantity = lineItem.getQuantity() - 1;
+            if (newQuantity <= 0) {
+                lineItem.setQuantity(1);
+                if (Application.DEBUG) {
+                    System.err.println("[TransactionService] Attempted to remove item with UPC " + itemUpc + ", but " +
+                            "quantity cannot be less than one. To remove the item, void the line item instead.");
+                }
+            } else {
+                lineItem.setQuantity(newQuantity);
+                if (Application.DEBUG) {
+                    System.out.println("[TransactionService] Removed item with UPC " + itemUpc + " from transaction: "
+                            + transaction);
+                }
+                decremented = true;
             }
             transaction.setLineItems(lineItems);
             saveTransaction(transaction);
-            if (Application.DEBUG) {
-                System.out.println("[TransactionService] Removed item with UPC " + itemUpc + " from transaction: " + transaction);
-            }
         }
+        return decremented;
     }
 
     /**
@@ -121,7 +133,7 @@ public class TransactionService {
      * @param transaction the transaction to void the line item in
      * @param itemUpc     the UPC of the line item to void
      */
-    public void voidLineItemInTransaction(@NonNull Transaction transaction, @NonNull String itemUpc) {
+    public boolean voidLineItemInTransaction(@NonNull Transaction transaction, @NonNull String itemUpc) {
         List<LineItem> lineItems = transaction.getLineItems();
         LineItem lineItem = null;
         for (LineItem item : lineItems) {
@@ -138,5 +150,6 @@ public class TransactionService {
                 System.out.println("[TransactionService] Voided line item with UPC " + itemUpc + " in transaction: " + transaction);
             }
         }
+        return true;
     }
 }

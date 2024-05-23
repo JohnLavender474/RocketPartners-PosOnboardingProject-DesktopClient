@@ -47,6 +47,15 @@ public class PosJournalComponent implements IComponent {
     }
 
     /**
+     * Logs a debug entry.
+     *
+     * @param entry The debug entry.
+     */
+    public void debug(String entry) {
+        journalListeners.forEach(listener -> listener.onDebug(entry));
+    }
+
+    /**
      * Logs an error.
      *
      * @param entry The error message.
