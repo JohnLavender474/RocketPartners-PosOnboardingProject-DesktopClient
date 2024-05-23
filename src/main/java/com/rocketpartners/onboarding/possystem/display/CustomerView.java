@@ -12,10 +12,7 @@ import lombok.NonNull;
 import org.apache.commons.collections4.queue.CircularFifoQueue;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
-import javax.swing.table.TableCellEditor;
-import javax.swing.table.TableCellRenderer;
-import javax.swing.table.TableModel;
+import javax.swing.table.*;
 import java.awt.*;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
@@ -78,125 +75,11 @@ public class CustomerView extends JFrame {
                 String upc = (String) getValueAt(row, 2);
                 if (checked) {
                     selectedLineItemUpcs.add(upc);
-                    if (Application.DEBUG) {
-                        System.out.println("[CustomerView] Select upc on row " + row + ": " + upc + ". Selected upc " +
-                                "set size: " + selectedLineItemUpcs.size());
-                    }
                 } else {
                     selectedLineItemUpcs.remove(upc);
-                    if (Application.DEBUG) {
-                        System.out.println("[CustomerView] Deselect upc on row " + row + ": " + upc + ". Selected upc" +
-                                "set size: " + selectedLineItemUpcs.size());
-                    }
                 }
                 updateVoidButtonText();
             }
-        }
-    }
-
-    /**
-     * A table model that represents the quick items table. This table model is used to display the quick items table in
-     * the customer view. The table model is used to update the quick items table with item DTOs.
-     */
-    class QuickItemsTableModel extends DefaultTableModel {
-
-        /**
-         * Constructor that initializes the quick items table model.
-         */
-        public QuickItemsTableModel() {
-            super(QUICK_ITEMS_TABLE_ROWS_COUNT, QUICK_ITEMS_TABLE_COLUMNS_COUNT);
-        }
-
-        @Override
-        public boolean isCellEditable(int row, int column) {
-            return false;
-        }
-
-        @Override
-        public Class<?> getColumnClass(int columnIndex) {
-            return JButton.class;
-        }
-
-        @Override
-        public void setValueAt(Object aValue, int row, int column) {
-            super.setValueAt(aValue, row, column);
-            if (aValue instanceof JButton button) {
-                button.addActionListener(e -> {
-                    int index = (row * QUICK_ITEMS_TABLE_COLUMNS_COUNT) + column;
-                    if (index >= quickItemDtos.size()) {
-                        System.err.println("[CustomerView] Invalid quick item index for button action listener: " + index);
-                    }
-                    ItemDto itemDto = quickItemDtos.get(index);
-                    if (Application.DEBUG) {
-                        System.out.println("[CustomerView] Click on quick add item button at [" + row + ", " + column +
-                                "]: " + itemDto.getName());
-                    }
-                    parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_ADD_ITEM,
-                            Map.of(ConstKeys.ITEM_UPC, itemDto.getUpc())));
-                });
-            }
-        }
-    }
-
-    /**
-     * A table cell renderer that renders the quick items table. This renderer is used to render the quick items
-     * table in the customer view. The quick items table displays the quick items that can be added to the transaction.
-     * The renderer is used to update the quick items table with item DTOs. The renderer updates the quick items table
-     * with item DTOs.
-     */
-    static class QuickItemCellRenderer extends JButton implements TableCellRenderer {
-
-        /**
-         * Constructor that initializes the quick item cell renderer.
-         */
-        public QuickItemCellRenderer() {
-            setOpaque(true);
-            setPreferredSize(new Dimension(STANDARD_BUTTON_WIDTH, STANDARD_BUTTON_HEIGHT));
-            setMinimumSize(new Dimension(STANDARD_BUTTON_WIDTH, STANDARD_BUTTON_HEIGHT));
-            setMaximumSize(new Dimension(STANDARD_BUTTON_WIDTH, STANDARD_BUTTON_HEIGHT));
-        }
-
-        @Override
-        public Component getTableCellRendererComponent(JTable table, Object value,
-                                                       boolean isSelected, boolean hasFocus, int row, int column) {
-            if (value != null) {
-                setText(value.toString());
-            }
-            return this;
-        }
-    }
-
-    /**
-     * A table cell editor that edits the quick items table. This editor is used to edit the quick items table in the
-     * customer view. The quick items table displays the quick items that can be added to the transaction. The editor is
-     * used to update the quick items table with item DTOs. The editor updates the quick items table with item DTOs.
-     */
-    static class QuickItemCellEditor extends AbstractCellEditor implements TableCellEditor {
-
-        private final JButton button;
-        private String currentLabel;
-
-        /**
-         * Constructor that initializes the quick item cell editor.
-         */
-        public QuickItemCellEditor() {
-            button = new JButton();
-            button.setPreferredSize(new Dimension(STANDARD_BUTTON_WIDTH, STANDARD_BUTTON_HEIGHT));
-            button.setMinimumSize(new Dimension(STANDARD_BUTTON_WIDTH, STANDARD_BUTTON_HEIGHT));
-            button.setMaximumSize(new Dimension(STANDARD_BUTTON_WIDTH, STANDARD_BUTTON_HEIGHT));
-        }
-
-        @Override
-        public Component getTableCellEditorComponent(JTable table, Object value,
-                                                     boolean isSelected, int row, int column) {
-            currentLabel = (value != null) ? value.toString() : "";
-            button.setText(currentLabel);
-            return button;
-        }
-
-        @Override
-        public Object getCellEditorValue() {
-            return currentLabel;
         }
     }
 
@@ -366,7 +249,7 @@ public class CustomerView extends JFrame {
     }
 
     private static final int CUSTOMER_VIEW_FRAME_WIDTH = 800;
-    private static final int CUSTOMER_VIEW_FRAME_HEIGHT = 600;
+    private static final int CUSTOMER_VIEW_FRAME_HEIGHT = 750;
 
     private static final int GRID_LAYOUT_ROWS = 4;
     private static final int GRID_LAYOUT_COLUMNS = 1;
@@ -395,6 +278,7 @@ public class CustomerView extends JFrame {
     private static final String AMOUNT_TENDERED_LABEL_TEXT = "Amount Tendered: ";
     private static final String CHANGE_DUE_LABEL_TEXT = "Change Due: ";
 
+    private static final String TRANSACTION_TABLE_TITLE = "Transaction";
     private static final int TRANSACTION_TABLE_WIDTH = 800;
     private static final int TRANSACTION_TABLE_HEIGHT = 800;
     private static final String TRANSACTION_TABLE_COLUMN_CHECKBOX = "Select";
@@ -405,8 +289,8 @@ public class CustomerView extends JFrame {
     private static final String TRANSACTION_TABLE_COLUMN_QUANTITY = "Quantity";
     private static final String TRANSACTION_TABLE_COLUMN_TOTAL = "Total";
 
-    private static final int QUICK_ITEMS_TABLE_ROWS_COUNT = 2;
-    private static final int QUICK_ITEMS_TABLE_COLUMNS_COUNT = 4;
+    private static final int QUICK_ITEMS_ROWS_COUNT = 2;
+    private static final int QUICK_ITEMS_COLUMNS_COUNT = 4;
 
     private static final int PAYMENT_INFO_TABLE_ROWS_COUNT = 2;
     private static final int PAYMENT_INFO_TABLE_COLUMNS_COUNT = 1;
@@ -434,12 +318,12 @@ public class CustomerView extends JFrame {
     private JLabel bannerLabel;
 
     private JPanel contentPanel;
+    private JPanel quickItemsPanel;
 
     private JTextArea metadataArea;
     private JTextArea totalsArea;
 
     private JTable transactionTable;
-    private JTable quickItemsTable;
     private JTable paymentInfoTable;
 
     private JTextArea amountTenderedArea;
@@ -471,7 +355,7 @@ public class CustomerView extends JFrame {
         this.parentEventDispatcher = parentEventDispatcher;
         this.storeName = storeName;
 
-        setSize(CUSTOMER_VIEW_FRAME_WIDTH, CUSTOMER_VIEW_FRAME_HEIGHT);
+        setMinimumSize(new Dimension(CUSTOMER_VIEW_FRAME_WIDTH, CUSTOMER_VIEW_FRAME_HEIGHT));
         setResizable(true);
 
         initializeComponents();
@@ -499,7 +383,9 @@ public class CustomerView extends JFrame {
 
     private void initializeComponents() {
         bannerLabel = new JLabel("", SwingConstants.CENTER);
+
         contentPanel = new JPanel();
+        quickItemsPanel = new JPanel(new GridLayout(QUICK_ITEMS_ROWS_COUNT, QUICK_ITEMS_COLUMNS_COUNT));
 
         transactionTable = new JTable(new TransactionTableModel());
         transactionTable.setSize(TRANSACTION_TABLE_WIDTH, TRANSACTION_TABLE_HEIGHT);
@@ -509,16 +395,6 @@ public class CustomerView extends JFrame {
         transactionTable.getColumnModel().getColumn(0).setCellRenderer(new StatusColumnRenderer());
         transactionTable.getColumnModel().getColumn(5).setCellRenderer(new QuantityCellRenderer());
         transactionTable.getColumnModel().getColumn(5).setCellEditor(new QuantityCellEditor());
-
-        quickItemsTable = new JTable();
-        TableModel quickItemsTableModel = new QuickItemsTableModel();
-        quickItemsTable.setModel(quickItemsTableModel);
-        for (int i = 0; i < quickItemsTable.getColumnCount(); i++) {
-            quickItemsTable.getColumnModel().getColumn(i).setCellRenderer(new QuickItemCellRenderer());
-            quickItemsTable.getColumnModel().getColumn(i).setCellEditor(new QuickItemCellEditor());
-            quickItemsTable.getColumnModel().getColumn(i).setPreferredWidth(STANDARD_BUTTON_WIDTH);
-        }
-        quickItemsTable.setRowHeight(STANDARD_BUTTON_HEIGHT);
 
         paymentInfoTable = new JTable();
         TableModel paymentInfoTableModel = new DefaultTableModel(PAYMENT_INFO_TABLE_ROWS_COUNT,
@@ -633,21 +509,11 @@ public class CustomerView extends JFrame {
     }
 
     public void updateQuickItems(@NonNull List<ItemDto> itemDtos) {
-        // TODO: clear quick items table and update with new itemDtos
-        // TODO: table renderer should include a button to add the item to the transaction
-        // TODO: table renderer should internally store the item dto and dispatch an event to add the item to the
-        //  transaction when the button is clicked
         if (Application.DEBUG) {
             System.out.println("[CustomerView] Updating quick items table with item DTOs: " + itemDtos);
         }
         quickItemDtos.addAll(itemDtos);
-        int elementCount = Math.min(ConstVals.QUICK_ITEMS_COUNT, itemDtos.size());
-        for (int i = 0; i < elementCount; i++) {
-            ItemDto itemDto = itemDtos.get(i);
-            int row = i / QUICK_ITEMS_TABLE_COLUMNS_COUNT;
-            int column = i % QUICK_ITEMS_TABLE_COLUMNS_COUNT;
-            quickItemsTable.setValueAt(itemDto.getName(), row, column);
-        }
+        resetQuickItemsPanel();
     }
 
     /**
@@ -677,7 +543,7 @@ public class CustomerView extends JFrame {
         contentPanel.removeAll();
         contentPanel.setLayout(new GridLayout(GRID_LAYOUT_ROWS, GRID_LAYOUT_COLUMNS));
         addTransactionTableToContentPanel(true);
-        addQuickItemsTableToContentPanel();
+        contentPanel.add(resetQuickItemsPanel());
         addMetadataAndTotalsToContentPanel();
         addButtonsToContentPanel();
         revalidate();
@@ -845,14 +711,50 @@ public class CustomerView extends JFrame {
     }
 
     private void addTransactionTableToContentPanel(boolean enabled) {
-        JScrollPane scrollPane = new JScrollPane(transactionTable);
-        scrollPane.setSize(TRANSACTION_TABLE_WIDTH, TRANSACTION_TABLE_HEIGHT);
-        contentPanel.add(scrollPane);
         transactionTable.setEnabled(enabled);
+        JPanel panel = createScrollableTablePanel(transactionTable, TRANSACTION_TABLE_TITLE);
+        contentPanel.add(panel);
     }
 
-    private void addQuickItemsTableToContentPanel() {
-        contentPanel.add(new JScrollPane(quickItemsTable), BorderLayout.CENTER);
+    private JPanel createScrollableTablePanel(@NonNull JTable table,
+                                              @SuppressWarnings("SameParameterValue") @NonNull String tableTitle) {
+        JScrollPane scrollPane = new JScrollPane(table);
+        JLabel titleLabel = new JLabel(tableTitle, SwingConstants.CENTER);
+        titleLabel.setFont(titleLabel.getFont().deriveFont(16.0f));
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.add(titleLabel, BorderLayout.NORTH);
+        mainPanel.add(scrollPane, BorderLayout.CENTER);
+        return mainPanel;
+    }
+
+    private JPanel resetQuickItemsPanel() {
+        quickItemsPanel.removeAll();
+        for (int i = 0; i < QUICK_ITEMS_ROWS_COUNT; i++) {
+            for (int j = 0; j < QUICK_ITEMS_COLUMNS_COUNT; j++) {
+                int index = (i * QUICK_ITEMS_COLUMNS_COUNT) + j;
+                if (index >= quickItemDtos.size()) {
+                    break;
+                }
+                ItemDto item = quickItemDtos.get(index);
+                JButton button = getQuickItem(item);
+                quickItemsPanel.add(button);
+            }
+        }
+        return quickItemsPanel;
+    }
+
+    private JButton getQuickItem(@NonNull ItemDto item) {
+        JButton button = new JButton(item.getName());
+        button.setPreferredSize(new Dimension(STANDARD_BUTTON_WIDTH, STANDARD_BUTTON_HEIGHT));
+        button.addActionListener(e -> {
+            if (Application.DEBUG) {
+                System.out.println("[CustomerView] Click on quick add item button: " + item.getName());
+            }
+            parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_ADD_ITEM,
+                    Map.of(ConstKeys.ITEM_UPC, item.getUpc())));
+
+        });
+        return button;
     }
 
     private void addMetadataAndTotalsToContentPanel() {
