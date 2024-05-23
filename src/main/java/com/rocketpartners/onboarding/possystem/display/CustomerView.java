@@ -73,6 +73,12 @@ public class CustomerView extends JFrame {
             super.setValueAt(aValue, row, column);
             if (aValue instanceof Boolean checked && column == 0) {
                 String upc = (String) getValueAt(row, 2);
+                if (upc == null) {
+                    // TODO: Every time the table is updated, this method is called when the values are null.
+                    //  Therefore, this error will trigger (sometimes multiple times) every time the table is updated.
+                    System.err.println("[CustomerView] UPC is null at row " + row + ", column " + column);
+                    return;
+                }
                 if (checked) {
                     selectedLineItemUpcs.add(upc);
                 } else {
