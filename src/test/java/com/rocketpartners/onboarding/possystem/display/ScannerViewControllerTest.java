@@ -21,7 +21,7 @@ public class ScannerViewControllerTest {
     @BeforeEach
     public void setUp() {
         parentPosEventDispatcher = Mockito.mock(IPosEventDispatcher.class);
-        scannerView = Mockito.spy(new ScannerView(parentPosEventDispatcher));
+        scannerView = Mockito.spy(new ScannerView("Scanner View", parentPosEventDispatcher));
         scannerViewController = new ScannerViewController(parentPosEventDispatcher, scannerView);
     }
 

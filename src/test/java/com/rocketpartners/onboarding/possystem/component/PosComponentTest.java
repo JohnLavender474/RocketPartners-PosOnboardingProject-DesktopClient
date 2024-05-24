@@ -26,12 +26,14 @@ import static org.mockito.Mockito.*;
 
 public class PosComponentTest {
 
+    private ItemBookLoaderComponent itemBookLoaderComponent;
     private TransactionService transactionService;
     private ItemService itemService;
     private PosComponent posComponent;
 
     @BeforeEach
     void setUp() {
+        itemBookLoaderComponent = mock(ItemBookLoaderComponent.class);
         transactionService = mock(TransactionService.class);
         when(transactionService.createAndPersist(anyString(), anyInt())).thenAnswer(invocation -> {
             int transactionNumber = invocation.getArgument(1);
@@ -57,7 +59,7 @@ public class PosComponentTest {
                     item.setDescription(itemDescription);
                     return item;
                 });
-        posComponent = Mockito.spy(new PosComponent(transactionService, itemService));
+        posComponent = Mockito.spy(new PosComponent(itemBookLoaderComponent, transactionService, itemService));
         PosSystem posSystem = new PosSystem();
         posSystem.setId("1");
         posSystem.setPosLane(1);
@@ -71,6 +73,10 @@ public class PosComponentTest {
         assertTrue(posComponent.isOn());
         assertNull(posComponent.getTransaction());
         assertEquals(TransactionState.NOT_STARTED, posComponent.getTransactionState());
+
+        ArgumentCaptor<ItemService> itemServiceCaptor = ArgumentCaptor.forClass(ItemService.class);
+        verify(itemBookLoaderComponent).loadItemBook(itemServiceCaptor.capture());
+        assertEquals(itemService, itemServiceCaptor.getValue());
 
         ArgumentCaptor<PosEvent> eventCaptor = ArgumentCaptor.forClass(PosEvent.class);
         verify(posComponent).dispatchPosEvent(eventCaptor.capture());
@@ -111,7 +117,7 @@ public class PosComponentTest {
         assertEquals(3, capturedEvents.size());
         assertEquals(PosEventType.POS_BOOTUP, capturedEvents.get(0).getType());
         assertEquals(PosEventType.TRANSACTION_STARTED, capturedEvents.get(1).getType());
-        assertEquals(PosEventType.UPDATE_QUICK_ITEMS, capturedEvents.get(2).getType());
+        assertEquals(PosEventType.DO_UPDATE_QUICK_ITEMS, capturedEvents.get(2).getType());
     }
 
 
@@ -129,7 +135,7 @@ public class PosComponentTest {
         assertEquals(4, capturedEvents.size());
         assertEquals(PosEventType.POS_BOOTUP, capturedEvents.get(0).getType());
         assertEquals(PosEventType.TRANSACTION_STARTED, capturedEvents.get(1).getType());
-        assertEquals(PosEventType.UPDATE_QUICK_ITEMS, capturedEvents.get(2).getType());
+        assertEquals(PosEventType.DO_UPDATE_QUICK_ITEMS, capturedEvents.get(2).getType());
         assertEquals(PosEventType.TRANSACTION_VOIDED, capturedEvents.get(3).getType());
     }
 
@@ -147,7 +153,7 @@ public class PosComponentTest {
         assertEquals(4, capturedEvents.size());
         assertEquals(PosEventType.POS_BOOTUP, capturedEvents.get(0).getType());
         assertEquals(PosEventType.TRANSACTION_STARTED, capturedEvents.get(1).getType());
-        assertEquals(PosEventType.UPDATE_QUICK_ITEMS, capturedEvents.get(2).getType());
+        assertEquals(PosEventType.DO_UPDATE_QUICK_ITEMS, capturedEvents.get(2).getType());
         assertEquals(PosEventType.TRANSACTION_COMPLETED, capturedEvents.get(3).getType());
     }
 
@@ -167,7 +173,7 @@ public class PosComponentTest {
         assertEquals(5, capturedEvents.size());
         assertEquals(PosEventType.POS_BOOTUP, capturedEvents.get(0).getType());
         assertEquals(PosEventType.TRANSACTION_STARTED, capturedEvents.get(1).getType());
-        assertEquals(PosEventType.UPDATE_QUICK_ITEMS, capturedEvents.get(2).getType());
+        assertEquals(PosEventType.DO_UPDATE_QUICK_ITEMS, capturedEvents.get(2).getType());
         assertEquals(PosEventType.TRANSACTION_COMPLETED, capturedEvents.get(3).getType());
         assertEquals(PosEventType.POS_RESET, capturedEvents.get(4).getType());
     }

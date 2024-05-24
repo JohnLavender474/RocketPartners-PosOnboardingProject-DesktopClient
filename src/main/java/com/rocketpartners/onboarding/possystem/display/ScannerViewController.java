@@ -1,5 +1,6 @@
 package com.rocketpartners.onboarding.possystem.display;
 
+import com.rocketpartners.onboarding.possystem.Application;
 import com.rocketpartners.onboarding.possystem.constant.TransactionState;
 import com.rocketpartners.onboarding.possystem.event.IPosEventDispatcher;
 import com.rocketpartners.onboarding.possystem.event.PosEvent;
@@ -9,6 +10,7 @@ import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
 
+import java.awt.*;
 import java.util.EnumSet;
 import java.util.Set;
 
@@ -25,7 +27,8 @@ public class ScannerViewController implements IController {
             PosEventType.TRANSACTION_VOIDED,
             PosEventType.TRANSACTION_COMPLETED,
             PosEventType.REQUEST_ADD_ITEM,
-            PosEventType.ITEM_ADDED
+            PosEventType.ITEM_ADDED,
+            PosEventType.DO_OPEN_SCANNER
     );
 
     @NonNull
@@ -44,9 +47,9 @@ public class ScannerViewController implements IController {
      *
      * @param parentPosEventDispatcher The parent POS event dispatcher.
      */
-    public ScannerViewController(@NonNull IPosEventDispatcher parentPosEventDispatcher) {
+    public ScannerViewController(@NonNull String frameTitle, @NonNull IPosEventDispatcher parentPosEventDispatcher) {
         this.parentPosEventDispatcher = parentPosEventDispatcher;
-        scannerView = new ScannerView(this);
+        scannerView = new ScannerView(frameTitle, this);
         transactionState = TransactionState.NOT_STARTED;
     }
 
@@ -64,6 +67,24 @@ public class ScannerViewController implements IController {
         transactionState = TransactionState.NOT_STARTED;
     }
 
+    /**
+     * Add the scanner view to the keyboard focus manager.
+     *
+     * @param keyboardFocusManager The keyboard focus manager.
+     */
+    public void addScannerViewKeyboardFocusManager(@NonNull KeyboardFocusManager keyboardFocusManager) {
+        keyboardFocusManager.addKeyEventDispatcher(scannerView);
+    }
+
+    /**
+     * Remove the scanner view from the keyboard focus manager.
+     *
+     * @param keyboardFocusManager The keyboard focus manager.
+     */
+    public void removeScannerViewKeyboardFocusManager(@NonNull KeyboardFocusManager keyboardFocusManager) {
+        keyboardFocusManager.removeKeyEventDispatcher(scannerView);
+    }
+
     @Override
     public @NonNull Set<PosEventType> getEventTypesToListenFor() {
         return eventsToListenFor;
@@ -77,6 +98,12 @@ public class ScannerViewController implements IController {
     @Override
     public void onPosEvent(@NonNull PosEvent event) {
         switch (event.getType()) {
+            case DO_OPEN_SCANNER -> {
+                if (Application.DEBUG) {
+                    System.out.println("[ScannerViewController] Received DO_OPEN_SCANNER event");
+                }
+                scannerView.requestUserFocus();
+            }
             case REQUEST_OPEN_SCANNER -> scannerView.setVisible(true);
             case TRANSACTION_STARTED -> {
                 scannerView.setVisible(true);

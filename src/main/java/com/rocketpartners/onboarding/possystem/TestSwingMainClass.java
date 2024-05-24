@@ -46,7 +46,7 @@ public class TestSwingMainClass {
 
     private static void testScannerView() {
         SwingUtilities.invokeLater(() -> {
-            ScannerView scannerView = new ScannerView(new MockPosEventDispatcher());
+            ScannerView scannerView = new ScannerView("Scanner View", new MockPosEventDispatcher());
             scannerView.setVisible(true);
             // scannerView.setActive();
             scannerView.setInactive();

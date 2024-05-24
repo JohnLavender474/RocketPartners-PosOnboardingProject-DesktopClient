@@ -1,5 +1,6 @@
 package com.rocketpartners.onboarding.possystem.display;
 
+import com.rocketpartners.onboarding.possystem.Application;
 import com.rocketpartners.onboarding.possystem.constant.ConstKeys;
 import com.rocketpartners.onboarding.possystem.event.IPosEventDispatcher;
 import com.rocketpartners.onboarding.possystem.event.PosEvent;
@@ -8,6 +9,7 @@ import lombok.NonNull;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.util.Map;
@@ -15,11 +17,11 @@ import java.util.Map;
 /**
  * View for the scanner. This class is responsible for displaying the scanner view and handling user input.
  */
-public class ScannerView extends JFrame {
+public class ScannerView extends JFrame implements KeyEventDispatcher {
 
     private static final int MIN_WIDTH = 400;
     private static final int MIN_HEIGHT = 150;
-    private static final String FRAME_TITLE = "Scanner View";
+    private static final int TEXT_FIELD_COLUMNS = 30;
     private static final String ENTER_BUTTON_TEXT = "Enter";
     private static final String NOT_IN_PROGRESS_TEXT = "Scanning not currently in progress";
 
@@ -34,8 +36,8 @@ public class ScannerView extends JFrame {
      * and
      * an enter button. The scanner view is set to not active by default.
      */
-    public ScannerView(@NonNull IPosEventDispatcher parentPosDispatcher) {
-        super(FRAME_TITLE);
+    public ScannerView(@NonNull String frameTitle, @NonNull IPosEventDispatcher parentPosDispatcher) {
+        super(frameTitle);
         this.parentPosDispatcher = parentPosDispatcher;
 
         setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
@@ -53,7 +55,7 @@ public class ScannerView extends JFrame {
         setMinimumSize(new Dimension(MIN_WIDTH, MIN_HEIGHT));
         setResizable(true);
 
-        scannerInput = new JTextField(20);
+        scannerInput = new JTextField(TEXT_FIELD_COLUMNS);
 
         enterButton = new JButton(ENTER_BUTTON_TEXT);
         enterButton.addActionListener(e -> onEnterButtonClick());
@@ -79,6 +81,25 @@ public class ScannerView extends JFrame {
         setLocationRelativeTo(null);
     }
 
+    @Override
+    public boolean dispatchKeyEvent(@NonNull KeyEvent e) {
+        if (e.getID() == KeyEvent.KEY_TYPED) {
+            char c = e.getKeyChar();
+            if (c == KeyEvent.CHAR_UNDEFINED) {
+                return false;
+            }
+            requestUserFocus();
+            if (c == KeyEvent.VK_ENTER) {
+                onEnterButtonClick();
+                return true;
+            }
+            if (Character.isDigit(c) || Character.isLetter(c)) {
+                scannerInput.setText(scannerInput.getText() + c);
+            }
+        }
+        return false;
+    }
+
     /**
      * Set the scanner view to active.
      */
@@ -91,6 +112,17 @@ public class ScannerView extends JFrame {
      */
     public void setInactive() {
         setActive(false);
+    }
+
+    /**
+     * Request user focus on the scanner input field.
+     */
+    public void requestUserFocus() {
+        if (Application.DEBUG) {
+            System.out.println("[ScannerView] Requesting user focus");
+        }
+        toFront();
+        scannerInput.requestFocusInWindow();
     }
 
     private void setActive(boolean scanningActive) {

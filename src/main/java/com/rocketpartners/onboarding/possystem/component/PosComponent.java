@@ -33,9 +33,11 @@ import java.util.stream.Collectors;
 @ToString
 public class PosComponent implements IComponent, IPosEventManager {
 
+    private final ItemBookLoaderComponent itemBookLoaderComponent;
     private final TransactionService transactionService;
     private final ItemService itemService;
     private final PosJournalComponent journalComponent;
+
     private final Map<PosEventType, List<PosEvent>> events;
     private final Set<IComponent> childComponents;
     private final Set<IPosEventListener> posEventListeners;
@@ -61,9 +63,10 @@ public class PosComponent implements IComponent, IPosEventManager {
      * @param transactionService The transaction service.
      * @param itemService        The item service.
      */
-    public PosComponent(@NonNull TransactionService transactionService,
+    public PosComponent(@NonNull ItemBookLoaderComponent itemBookLoaderComponent,
+                        @NonNull TransactionService transactionService,
                         @NonNull ItemService itemService) {
-        this(transactionService, itemService, new PosJournalComponent());
+        this(itemBookLoaderComponent, transactionService, itemService, new PosJournalComponent());
     }
 
     /**
@@ -74,12 +77,14 @@ public class PosComponent implements IComponent, IPosEventManager {
      * @param itemService        The item service.
      * @param journalComponent   The POS journal component.
      */
-    public PosComponent(@NonNull TransactionService transactionService,
+    public PosComponent(@NonNull ItemBookLoaderComponent itemBookLoaderComponent,
+                        @NonNull TransactionService transactionService,
                         @NonNull ItemService itemService,
                         @NonNull PosJournalComponent journalComponent) {
         if (Application.DEBUG) {
             System.out.println("[PosComponent] Creating POS component");
         }
+        this.itemBookLoaderComponent = itemBookLoaderComponent;
         this.transactionService = transactionService;
         this.itemService = itemService;
         this.journalComponent = journalComponent;
@@ -146,6 +151,9 @@ public class PosComponent implements IComponent, IPosEventManager {
         if (Application.DEBUG) {
             System.out.println("[PosComponent] Booting up POS component: " + this);
         }
+
+        itemBookLoaderComponent.loadItemBook(itemService);
+
         on = true;
         transaction = null;
         transactionState = TransactionState.NOT_STARTED;
@@ -214,7 +222,7 @@ public class PosComponent implements IComponent, IPosEventManager {
         }
         List<ItemDto> quickItemDtos =
                 itemService.getRandomItems(ConstVals.QUICK_ITEMS_COUNT).stream().map(ItemDto::from).toList();
-        dispatchPosEvent(new PosEvent(PosEventType.UPDATE_QUICK_ITEMS, Map.of(ConstKeys.ITEM_DTOS, quickItemDtos)));
+        dispatchPosEvent(new PosEvent(PosEventType.DO_UPDATE_QUICK_ITEMS, Map.of(ConstKeys.ITEM_DTOS, quickItemDtos)));
     }
 
     /**
@@ -340,6 +348,13 @@ public class PosComponent implements IComponent, IPosEventManager {
                 startTransaction();
             }
 
+            case REQUEST_OPEN_SCANNER -> {
+                if (Application.DEBUG) {
+                    System.out.println("[PosComponent] Request to open scanner");
+                }
+                dispatchPosEvent(new PosEvent(PosEventType.DO_OPEN_SCANNER));
+            }
+
             case REQUEST_ADD_ITEM -> {
                 if (transactionState != TransactionState.SCANNING_IN_PROGRESS) {
                     System.err.println("[PosComponent] Request to add item not allowed when transaction state is not " +
@@ -402,7 +417,7 @@ public class PosComponent implements IComponent, IPosEventManager {
                         transaction.getLineItems().stream().map(LineItem::getItemUpc).collect(Collectors.toSet());
                 List<ItemDto> quickItemDtos = itemService.getRandomItemsNotIn(itemUpcsInTransaction,
                         ConstVals.QUICK_ITEMS_COUNT).stream().map(ItemDto::from).toList();
-                dispatchPosEvent(new PosEvent(PosEventType.UPDATE_QUICK_ITEMS, Map.of(ConstKeys.ITEM_DTOS,
+                dispatchPosEvent(new PosEvent(PosEventType.DO_UPDATE_QUICK_ITEMS, Map.of(ConstKeys.ITEM_DTOS,
                         quickItemDtos)));
             }
 

@@ -4,7 +4,6 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.formdev.flatlaf.FlatLightLaf;
-import com.rocketpartners.onboarding.possystem.component.BackOfficeComponent;
 import com.rocketpartners.onboarding.possystem.component.ItemBookLoaderComponent;
 import com.rocketpartners.onboarding.possystem.component.LocalTestTsvItemBookLoaderComponent;
 import com.rocketpartners.onboarding.possystem.component.PosComponent;
@@ -26,11 +25,12 @@ import lombok.Setter;
 import lombok.ToString;
 
 import javax.swing.*;
+import java.awt.*;
 import java.util.Arrays;
 
 /**
- * The main entry point for the Point of Sale application. Starts up a new {@link BackOfficeComponent} with the
- * specified number of POS lanes.
+ * The main entry point for the Point of Sale application. Starts up a new {@link PosComponent} with the
+ * specified pos lane number.
  */
 public class Application {
 
@@ -46,19 +46,19 @@ public class Application {
 
         private static final String DEFAULT_APP_MODE = "dev";
         private static final String DEFAULT_STORE_NAME = "Rocket Partners Store";
-        private static final int DEFAULT_NUMBER_LANES = 1;
+        private static final int DEFAULT_LANE_NUMBER = 1;
 
         @Parameter(names = "-debug", description = "Enable debug mode")
         private boolean debug = DEBUG;
 
-        @Parameter(names = "-mode", description = "The mode of the application")
-        private String mode = DEFAULT_APP_MODE;
+        @Parameter(names = "-appMode", description = "The mode of the application")
+        private String appMode = DEFAULT_APP_MODE;
 
         @Parameter(names = "-storeName", description = "The name of the store")
         private String storeName = DEFAULT_STORE_NAME;
 
-        @Parameter(names = "-lanes", description = "The number of POS lanes")
-        private int lanes = DEFAULT_NUMBER_LANES;
+        @Parameter(names = "-laneNumber", description = "The POS lane number")
+        private int laneNumber = DEFAULT_LANE_NUMBER;
     }
 
     /**
@@ -85,7 +85,7 @@ public class Application {
 
         DEBUG = arguments.isDebug();
 
-        String mode = arguments.getMode();
+        String mode = arguments.getAppMode();
         if (mode.equals("dev")) {
             // Starts the application with data in memory, which means that all data is lost when the app is stopped.
             startDevApplication(arguments);
@@ -111,41 +111,33 @@ public class Application {
 
             PosSystemRepository posSystemRepository = new InMemoryPosSystemRepository();
             PosSystemService posSystemService = new PosSystemService(posSystemRepository);
-
             TransactionRepository transactionRepository = new InMemoryTransactionRepository();
             TransactionService transactionService = new TransactionService(transactionRepository);
-
             ItemRepository itemRepository = new InMemoryItemRepository();
             ItemService itemService = new ItemService(itemRepository);
 
             ItemBookLoaderComponent itemBookLoaderComponent = new LocalTestTsvItemBookLoaderComponent();
-
-            BackOfficeComponent backOfficeComponent = new BackOfficeComponent(itemBookLoaderComponent, itemService);
-
-            // For each lane, there should be a separate pos component with its own pos system and customer view
             String storeName = arguments.getStoreName();
-            int lanes = arguments.getLanes();
-            for (int lane = 1; lane <= lanes; lane++) {
-                PosComponent posComponent = new PosComponent(transactionService, itemService);
-                backOfficeComponent.addPosComponent(posComponent);
+            int laneNumber = arguments.getLaneNumber();
 
-                PosSystem posSystem = posSystemService.createAndPersist(storeName, lane);
-                posComponent.setPosSystem(posSystem);
+            PosComponent posComponent = new PosComponent(itemBookLoaderComponent, transactionService, itemService);
+            PosSystem posSystem = posSystemService.createAndPersist(storeName, laneNumber);
+            posComponent.setPosSystem(posSystem);
 
-                CustomerViewController customerViewController = new CustomerViewController(posComponent, storeName,
-                        lane);
-                posComponent.registerChildController(customerViewController);
+            CustomerViewController customerViewController = new CustomerViewController(posComponent, storeName, laneNumber);
+            posComponent.registerChildController(customerViewController);
 
-                ScannerViewController scannerViewController = new ScannerViewController(posComponent);
-                posComponent.registerChildController(scannerViewController);
-            }
+            ScannerViewController scannerViewController =
+                    new ScannerViewController("Scanner View - Lane " + laneNumber, posComponent);
+            scannerViewController.addScannerViewKeyboardFocusManager(KeyboardFocusManager.getCurrentKeyboardFocusManager());
+            posComponent.registerChildController(scannerViewController);
 
-            backOfficeComponent.bootUp();
+            posComponent.bootUp();
 
             // According to ChatGPT, the javax.swing.Timer ensures that the action performed in the ActionListener is
             // executed on the Event Dispatch Thread (EDT). Also, by default, the javax.swing.Timer ensures that the
             // next update is scheduled only after the previous one completes because it runs on the same thread.
-            Timer timer = new Timer(1000, e -> backOfficeComponent.update());
+            Timer timer = new Timer(500, e -> posComponent.update());
             timer.setRepeats(true);
             timer.start();
         });
