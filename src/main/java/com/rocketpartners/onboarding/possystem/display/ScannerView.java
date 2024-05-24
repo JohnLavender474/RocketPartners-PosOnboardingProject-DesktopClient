@@ -54,8 +54,11 @@ public class ScannerView extends JFrame {
         setResizable(true);
 
         scannerInput = new JTextField(20);
+
         enterButton = new JButton(ENTER_BUTTON_TEXT);
         enterButton.addActionListener(e -> onEnterButtonClick());
+        getRootPane().setDefaultButton(enterButton);
+
         scannerPanel = new JPanel();
         scannerPanel.add(scannerInput);
         scannerPanel.add(enterButton);
