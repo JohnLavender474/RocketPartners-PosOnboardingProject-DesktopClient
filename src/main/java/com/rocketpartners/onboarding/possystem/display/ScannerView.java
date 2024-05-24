@@ -19,17 +19,18 @@ import java.util.Map;
  */
 public class ScannerView extends JFrame implements KeyEventDispatcher {
 
-    private static final int MIN_WIDTH = 400;
-    private static final int MIN_HEIGHT = 150;
+    private static final int MIN_WIDTH = 675;
+    private static final int MIN_HEIGHT = 200;
     private static final int TEXT_FIELD_COLUMNS = 30;
     private static final String ENTER_BUTTON_TEXT = "Enter";
     private static final String NOT_IN_PROGRESS_TEXT = "Scanning not currently in progress";
+    private static final String PROMPT_TEXT = "Scan a barcode or input the barcode manually. Press Enter to submit.";
 
     private final IPosEventDispatcher parentPosDispatcher;
     private final JTextField scannerInput;
+    private final JTextArea promptArea;
     private final JButton enterButton;
     private final JPanel scannerPanel;
-    private final JPanel statusPanel;
 
     /**
      * Constructor that accepts a parent POS event dispatcher. The scanner view is created with a scanner input field
@@ -53,7 +54,10 @@ public class ScannerView extends JFrame implements KeyEventDispatcher {
             }
         });
         setMinimumSize(new Dimension(MIN_WIDTH, MIN_HEIGHT));
-        setResizable(true);
+        setResizable(false);
+
+        promptArea = new JTextArea(PROMPT_TEXT);
+        promptArea.setEditable(false);
 
         scannerInput = new JTextField(TEXT_FIELD_COLUMNS);
 
@@ -64,15 +68,10 @@ public class ScannerView extends JFrame implements KeyEventDispatcher {
         scannerPanel = new JPanel();
         scannerPanel.add(scannerInput);
         scannerPanel.add(enterButton);
-        scannerPanel.setVisible(false);
 
-        JLabel notInProgressLabel = new JLabel(NOT_IN_PROGRESS_TEXT);
-        statusPanel = new JPanel();
-        statusPanel.add(notInProgressLabel);
-
-        setLayout(new CardLayout());
-        add(scannerPanel, "ScannerPanel");
-        add(statusPanel, "StatusPanel");
+        setLayout(new GridLayout(2, 1));
+        add(promptArea);
+        add(scannerPanel);
 
         setInactive();
 
@@ -126,9 +125,9 @@ public class ScannerView extends JFrame implements KeyEventDispatcher {
     }
 
     private void setActive(boolean scanningActive) {
-        scannerPanel.setVisible(scanningActive);
-        statusPanel.setVisible(!scanningActive);
-        enterButton.setVisible(scanningActive);
+        promptArea.setText(scanningActive ? PROMPT_TEXT : NOT_IN_PROGRESS_TEXT);
+        scannerPanel.setEnabled(scanningActive);
+        enterButton.setEnabled(scanningActive);
         pack();
     }
 

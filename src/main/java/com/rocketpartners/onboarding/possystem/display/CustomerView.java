@@ -18,8 +18,10 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.math.BigDecimal;
 import java.text.NumberFormat;
-import java.util.*;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * The customer view of the POS system.
@@ -323,15 +325,12 @@ public class CustomerView extends JFrame {
         }
     }
 
-    private static final int CUSTOMER_VIEW_FRAME_WIDTH = 800;
+    private static final int CUSTOMER_VIEW_FRAME_WIDTH = 1250;
     private static final int CUSTOMER_VIEW_FRAME_HEIGHT = 750;
 
-    private static final int GRID_LAYOUT_ROWS = 4;
-    private static final int GRID_LAYOUT_COLUMNS = 1;
-
-    private static final int STANDARD_BUTTON_WIDTH = 50;
-    private static final int STANDARD_BUTTON_HEIGHT = 75;
-    private static final Font STANDARD_BUTTON_FONT = new Font("Courier New", Font.BOLD, 24);
+    private static final int STANDARD_BUTTON_WIDTH = 35;
+    private static final int STANDARD_BUTTON_HEIGHT = 65;
+    private static final Font STANDARD_BUTTON_FONT = new Font("Courier New", Font.BOLD, 18);
 
     private static final int QUANTITY_FIELD_WIDTH = 30;
     private static final int QUANTITY_FIELD_HEIGHT = 20;
@@ -355,8 +354,6 @@ public class CustomerView extends JFrame {
     private static final String CHANGE_DUE_LABEL_TEXT = "Change Due: ";
 
     private static final String TRANSACTION_TABLE_TITLE = "Transaction";
-    private static final int TRANSACTION_TABLE_WIDTH = 800;
-    private static final int TRANSACTION_TABLE_HEIGHT = 800;
     private static final String TRANSACTION_TABLE_COLUMN_CHECKBOX = "Select";
     private static final String TRANSACTION_TABLE_COLUMN_STATUS = "Status";
     private static final String TRANSACTION_TABLE_COLUMN_UPC = "UPC";
@@ -433,7 +430,7 @@ public class CustomerView extends JFrame {
         this.storeName = storeName;
 
         setMinimumSize(new Dimension(CUSTOMER_VIEW_FRAME_WIDTH, CUSTOMER_VIEW_FRAME_HEIGHT));
-        setResizable(true);
+        setResizable(false);
 
         initializeComponents();
 
@@ -466,7 +463,6 @@ public class CustomerView extends JFrame {
 
         TransactionTableModel model = new TransactionTableModel();
         transactionTable = new JTable(model);
-        transactionTable.setSize(TRANSACTION_TABLE_WIDTH, TRANSACTION_TABLE_HEIGHT);
         transactionTable.setRowSelectionAllowed(false);
         transactionTable.setColumnSelectionAllowed(false);
         transactionTable.setCellSelectionEnabled(false);
@@ -481,6 +477,7 @@ public class CustomerView extends JFrame {
         columnModel.getColumn(5).setCellRenderer(new QuantityCellRenderer(model));
         columnModel.getColumn(5).setCellEditor(new QuantityCellEditor());
         columnModel.getColumn(6).setCellRenderer(new StandardCellRenderer(model));
+        transactionTable.getTableHeader().setReorderingAllowed(false);
 
         paymentInfoTable = new JTable();
         TableModel paymentInfoTableModel = new DefaultTableModel(PAYMENT_INFO_TABLE_ROWS_COUNT,
@@ -505,7 +502,8 @@ public class CustomerView extends JFrame {
         cardPinNumberArea = new JTextArea();
         cardPinNumberArea.setEditable(false);
 
-        startTransactionButton = createButton(START_TRANSACTION_BUTTON_TEXT, Color.getHSBColor(200f / 360f, 0.9f, 0.85f));
+        startTransactionButton = createButton(START_TRANSACTION_BUTTON_TEXT, Color.getHSBColor(200f / 360f, 0.9f,
+                0.85f));
         startTransactionButton.addActionListener(e ->
                 SwingUtilities.invokeLater(() ->
                         parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_START_TRANSACTION))
@@ -622,7 +620,7 @@ public class CustomerView extends JFrame {
             System.out.println("[CustomerView] Updating quick items table with item DTOs: " + itemDtos);
         }
         quickItemDtos.addAll(itemDtos);
-        resetQuickItemsPanel();
+        loadResetQuickItemsPanel();
     }
 
     /**
@@ -641,6 +639,33 @@ public class CustomerView extends JFrame {
         repaint();
     }
 
+    private void showFourRowView(@NonNull JPanel p1, @NonNull JPanel p2, @NonNull JPanel p3, @NonNull JPanel p4) {
+        contentPanel.removeAll();
+        contentPanel.setLayout(new GridBagLayout());
+
+        GridBagConstraints constraints = new GridBagConstraints();
+        constraints.fill = GridBagConstraints.BOTH;
+
+        constraints.gridy = 0;
+        constraints.weighty = 0.5;
+        contentPanel.add(p1, constraints);
+
+        constraints.gridy = 1;
+        constraints.weighty = 0.2;
+        contentPanel.add(p2, constraints);
+
+        constraints.gridy = 2;
+        constraints.weighty = 0.2;
+        contentPanel.add(p3, constraints);
+
+        constraints.gridy = 3;
+        constraints.weighty = 0.1;
+        contentPanel.add(p4, constraints);
+
+        revalidate();
+        repaint();
+    }
+
     /**
      * Show the scanning in progress view.
      */
@@ -649,14 +674,8 @@ public class CustomerView extends JFrame {
             System.out.println("[CustomerView] Showing scanning in progress");
         }
         bannerLabel.setText(TRANSACTION_IN_PROGRESS_BANNER_TEXT);
-        contentPanel.removeAll();
-        contentPanel.setLayout(new GridLayout(GRID_LAYOUT_ROWS, GRID_LAYOUT_COLUMNS));
-        addTransactionTableToContentPanel(true);
-        contentPanel.add(resetQuickItemsPanel());
-        addMetadataAndTotalsToContentPanel();
-        addBottomButtonsPanel();
-        revalidate();
-        repaint();
+        showFourRowView(loadTransactionsTablePanel(true), loadResetQuickItemsPanel(),
+                loadMetadataAndTotalsToContentPanel(), loadBottomButtonsPanel());
     }
 
     /**
@@ -666,11 +685,6 @@ public class CustomerView extends JFrame {
         if (Application.DEBUG) {
             System.out.println("[CustomerView] Showing awaiting cash payment");
         }
-        contentPanel.removeAll();
-        contentPanel.setLayout(new GridLayout(GRID_LAYOUT_ROWS, GRID_LAYOUT_COLUMNS));
-        bannerLabel.setText(AWAITING_PAYMENT_BANNER_TEXT);
-        addTransactionTableToContentPanel(false);
-        addMetadataAndTotalsToContentPanel();
         showAwaitingPayment();
         cardNumberArea.setText(CARD_NUMBER_LABEL_TEXT);
         setAwaitingPaymentTableRow1Object(cardNumberArea);
@@ -687,11 +701,6 @@ public class CustomerView extends JFrame {
         if (Application.DEBUG) {
             System.out.println("[CustomerView] Showing awaiting card payment");
         }
-        bannerLabel.setText(AWAITING_PAYMENT_BANNER_TEXT);
-        contentPanel.removeAll();
-        contentPanel.setLayout(new GridLayout(GRID_LAYOUT_ROWS, GRID_LAYOUT_COLUMNS));
-        addTransactionTableToContentPanel(true);
-        addMetadataAndTotalsToContentPanel();
         showAwaitingPayment();
         amountTenderedArea.setText(AMOUNT_TENDERED_LABEL_TEXT);
         setAwaitingPaymentTableRow1Object(amountTenderedArea);
@@ -699,6 +708,23 @@ public class CustomerView extends JFrame {
         setAwaitingPaymentTableRow2Object(changeDueArea);
         revalidate();
         repaint();
+    }
+
+    private void setAwaitingPaymentTableRow1Object(Object o) {
+        paymentInfoTable.setValueAt(o, 0, 0);
+    }
+
+    private void setAwaitingPaymentTableRow2Object(Object o) {
+        paymentInfoTable.setValueAt(o, 1, 0);
+    }
+
+    private void showAwaitingPayment() {
+        if (Application.DEBUG) {
+            System.out.println("[CustomerView] Showing awaiting payment");
+        }
+        bannerLabel.setText(AWAITING_PAYMENT_BANNER_TEXT);
+        showFourRowView(loadTransactionsTablePanel(false), loadResetQuickItemsPanel(),
+                loadMetadataAndTotalsToContentPanel(), loadPaymentInformationToContentPanel());
     }
 
     /**
@@ -747,20 +773,6 @@ public class CustomerView extends JFrame {
         repaint();
     }
 
-    private void showAwaitingPayment() {
-        if (Application.DEBUG) {
-            System.out.println("[CustomerView] Showing awaiting payment");
-        }
-        bannerLabel.setText(AWAITING_PAYMENT_BANNER_TEXT);
-        contentPanel.removeAll();
-        contentPanel.setLayout(new GridLayout(3, 1));
-        addTransactionTableToContentPanel(false);
-        addMetadataAndTotalsToContentPanel();
-        addPaymentInformationToContentPanel();
-        revalidate();
-        repaint();
-    }
-
     private void voidAction() {
         if (selectedLineItemUpcs.isEmpty()) {
             voidTransaction();
@@ -802,14 +814,6 @@ public class CustomerView extends JFrame {
         }
     }
 
-    private void setAwaitingPaymentTableRow1Object(Object o) {
-        paymentInfoTable.setValueAt(o, 0, 0);
-    }
-
-    private void setAwaitingPaymentTableRow2Object(Object o) {
-        paymentInfoTable.setValueAt(o, 1, 0);
-    }
-
     private void clearTransactionTableRows() {
         ((DefaultTableModel) transactionTable.getModel()).setRowCount(0);
     }
@@ -819,10 +823,15 @@ public class CustomerView extends JFrame {
         ((DefaultTableModel) transactionTable.getModel()).setRowCount(rows + 1);
     }
 
-    private void addTransactionTableToContentPanel(boolean enabled) {
+    private JPanel loadTransactionsTablePanel(boolean enabled) {
         transactionTable.setEnabled(enabled);
         JPanel panel = createScrollableTablePanel(transactionTable, TRANSACTION_TABLE_TITLE);
-        contentPanel.add(panel);
+        JButton clearSelectionsButton = new JButton("Clear Transaction Selections");
+        clearSelectionsButton.setBackground(Color.YELLOW);
+        clearSelectionsButton.setFont(STANDARD_BUTTON_FONT);
+        clearSelectionsButton.addActionListener(e -> clearTransactionsTableSelections());
+        panel.add(clearSelectionsButton, BorderLayout.SOUTH);
+        return panel;
     }
 
     private JPanel createScrollableTablePanel(@NonNull JTable table,
@@ -836,7 +845,7 @@ public class CustomerView extends JFrame {
         return mainPanel;
     }
 
-    private JPanel resetQuickItemsPanel() {
+    private JPanel loadResetQuickItemsPanel() {
         quickItemsPanel.removeAll();
         for (int i = 0; i < QUICK_ITEMS_ROWS_COUNT; i++) {
             for (int j = 0; j < QUICK_ITEMS_COLUMNS_COUNT; j++) {
@@ -866,23 +875,23 @@ public class CustomerView extends JFrame {
         return button;
     }
 
-    private void addMetadataAndTotalsToContentPanel() {
+    private JPanel loadMetadataAndTotalsToContentPanel() {
         JPanel metadataAndTotalsPanel = new JPanel(new GridLayout(1, 2));
         metadataAndTotalsPanel.add(new JScrollPane(metadataArea));
         metadataAndTotalsPanel.add(new JScrollPane(totalsArea));
-        contentPanel.add(metadataAndTotalsPanel);
+        return metadataAndTotalsPanel;
     }
 
-    private void addBottomButtonsPanel() {
+    private JPanel loadBottomButtonsPanel() {
         JPanel buttonsPanel = new JPanel(new GridLayout(2, 4));
         buttonsPanel.add(voidButton);
         buttonsPanel.add(openScannerButton);
         buttonsPanel.add(payWithCardButton);
         buttonsPanel.add(payWithCashButton);
-        contentPanel.add(buttonsPanel);
+        return buttonsPanel;
     }
 
-    private void addPaymentInformationToContentPanel() {
+    private JPanel loadPaymentInformationToContentPanel() {
         JPanel paymentPanel = new JPanel(new GridLayout(1, 2));
         paymentPanel.add(paymentInfoTable);
 
@@ -891,6 +900,6 @@ public class CustomerView extends JFrame {
         paymentButtonsPanel.add(finalizeButton);
 
         paymentPanel.add(paymentButtonsPanel);
-        contentPanel.add(paymentPanel);
+        return paymentPanel;
     }
 }
