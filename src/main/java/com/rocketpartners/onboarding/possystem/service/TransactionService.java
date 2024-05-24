@@ -87,8 +87,9 @@ public class TransactionService {
     }
 
     /**
-     * Remove an item from a transaction. If the item is in the transaction, the quantity of the line item is
-     * decremented by one. If the quantity of the line item is zero, the line item is removed from the transaction.
+     * Remove one item from a transaction. If the item is in the transaction, the quantity of the line item is
+     * decremented by one. The quantity of the line item cannot be less than one. If the quantity would be less than
+     * one, the quantity is set to one. To completely remove an item from a transaction, void the line item instead.
      *
      * @param transaction the transaction to remove the item from
      * @param itemUpc     the UPC of the item to remove
@@ -96,24 +97,24 @@ public class TransactionService {
      */
     public boolean removeItemFromTransaction(@NonNull Transaction transaction, @NonNull String itemUpc) {
         List<LineItem> lineItems = transaction.getLineItems();
-        LineItem lineItem = null;
-        for (LineItem item : lineItems) {
-            if (item.getItemUpc().equals(itemUpc) && !item.isVoided()) {
-                lineItem = item;
+        LineItem foundLineItem = null;
+        for (LineItem lineItem : lineItems) {
+            if (itemUpc.equals(lineItem.getItemUpc()) && !lineItem.isVoided()) {
+                foundLineItem = lineItem;
                 break;
             }
         }
         boolean decremented = false;
-        if (lineItem != null) {
-            int newQuantity = lineItem.getQuantity() - 1;
+        if (foundLineItem != null) {
+            int newQuantity = foundLineItem.getQuantity() - 1;
             if (newQuantity <= 0) {
-                lineItem.setQuantity(1);
+                foundLineItem.setQuantity(1);
                 if (Application.DEBUG) {
                     System.err.println("[TransactionService] Attempted to remove item with UPC " + itemUpc + ", but " +
                             "quantity cannot be less than one. To remove the item, void the line item instead.");
                 }
             } else {
-                lineItem.setQuantity(newQuantity);
+                foundLineItem.setQuantity(newQuantity);
                 if (Application.DEBUG) {
                     System.out.println("[TransactionService] Removed item with UPC " + itemUpc + " from transaction: "
                             + transaction);

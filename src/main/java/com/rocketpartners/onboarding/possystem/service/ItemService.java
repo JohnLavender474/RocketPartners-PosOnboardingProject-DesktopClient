@@ -58,7 +58,7 @@ public class ItemService {
      *
      * @param item the item to be saved
      */
-    public void saveItem(Item item) {
+    public void saveItem(@NonNull Item item) {
         itemRepository.saveItem(item);
     }
 
@@ -68,7 +68,7 @@ public class ItemService {
      * @param upc the UPC of the item to be retrieved
      * @return the item with the specified UPC, or null if no such item exists
      */
-    public Item getItemByUpc(String upc) {
+    public Item getItemByUpc(@NonNull String upc) {
         return itemRepository.getItemByUpc(upc);
     }
 
@@ -86,7 +86,7 @@ public class ItemService {
      *
      * @param upc the UPC of the item to be deleted
      */
-    public void deleteItemByUpc(String upc) {
+    public void deleteItemByUpc(@NonNull String upc) {
         itemRepository.deleteItemByUpc(upc);
     }
 
@@ -96,7 +96,7 @@ public class ItemService {
      * @param name the name of the items to be retrieved
      * @return a list of items with the specified name
      */
-    public List<Item> getItemsByName(String name) {
+    public List<Item> getItemsByName(@NonNull String name) {
         return itemRepository.getItemsByName(name);
     }
 
@@ -106,7 +106,7 @@ public class ItemService {
      * @param category the category of the items to be retrieved
      * @return a list of items with the specified category
      */
-    public List<Item> getItemsByCategory(String category) {
+    public List<Item> getItemsByCategory(@NonNull String category) {
         return itemRepository.getItemsByCategory(category);
     }
 
@@ -116,7 +116,7 @@ public class ItemService {
      * @param upc the UPC of the item to check for
      * @return true if an item with the specified UPC exists, false otherwise
      */
-    public boolean itemExists(String upc) {
+    public boolean itemExists(@NonNull String upc) {
         return itemRepository.itemExists(upc);
     }
 
@@ -141,8 +141,8 @@ public class ItemService {
      * @param max      the maximum number of items to return
      * @return a list of random items not contained in the provided list of UPCs
      */
-    public List<Item> getRandomItemsNotIn(Set<String> itemUpcs, int max) {
-        List<Item> allItems = itemRepository.getAllItems();
+    public List<Item> getRandomItemsNotIn(@NonNull Set<String> itemUpcs, int max) {
+        List<Item> allItems = new ArrayList<>(itemRepository.getAllItems());
         Collections.shuffle(allItems);
         max = Math.min(max, allItems.size());
         List<Item> itemsToReturn = new ArrayList<>();

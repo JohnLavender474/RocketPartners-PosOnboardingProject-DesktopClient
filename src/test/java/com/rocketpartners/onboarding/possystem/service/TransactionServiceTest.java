@@ -25,6 +25,7 @@ public class TransactionServiceTest {
     @Test
     public void testAddItemToTransaction_NewItem() {
         Transaction transaction = new Transaction();
+        transaction.setId("tx1");
         String itemUpc = "1234567890";
 
         transactionService.addItemToTransaction(transaction, itemUpc);
@@ -55,6 +56,7 @@ public class TransactionServiceTest {
     @Test
     public void testAddItemToTransaction_VoidedItem() {
         Transaction transaction = new Transaction();
+        transaction.setId("tx1");
         String itemUpc = "1234567890";
         LineItem voidedItem = new LineItem(itemUpc, "tx1", 1, true, false);
         transaction.getLineItems().add(voidedItem);
@@ -75,6 +77,7 @@ public class TransactionServiceTest {
     @Test
     public void testAddMultipleItemsWithDifferentUPCs() {
         Transaction transaction = new Transaction();
+        transaction.setId("tx1");
         String itemUpc1 = "1234567890";
         String itemUpc2 = "0987654321";
 
@@ -89,6 +92,7 @@ public class TransactionServiceTest {
     @Test
     public void testAddItemMultipleTimes() {
         Transaction transaction = new Transaction();
+        transaction.setId("tx1");
         String itemUpc = "1234567890";
 
         transactionService.addItemToTransaction(transaction, itemUpc);
@@ -117,13 +121,14 @@ public class TransactionServiceTest {
     @Test
     public void testRemoveItemFromTransaction_RemoveLineItem() {
         Transaction transaction = new Transaction();
+        transaction.setId("tx1");
         String itemUpc = "1234567890";
-        LineItem existingItem = new LineItem(itemUpc, "tx1", 1, false, false);
+        LineItem existingItem = new LineItem(itemUpc, "tx1", 2, false, false);
         transaction.getLineItems().add(existingItem);
 
         transactionService.removeItemFromTransaction(transaction, itemUpc);
 
-        assertTrue(transaction.getLineItems().isEmpty());
+        assertEquals(1, transaction.getLineItems().get(0).getQuantity());
     }
 
     @Test
@@ -168,6 +173,7 @@ public class TransactionServiceTest {
     @Test
     public void testAddItemToTransaction_OnlyVoidedItems() {
         Transaction transaction = new Transaction();
+        transaction.setId("tx1");
         String itemUpc = "1234567890";
         LineItem voidedItem = new LineItem(itemUpc, "tx1", 1, true, false);
         transaction.getLineItems().add(voidedItem);
@@ -186,15 +192,29 @@ public class TransactionServiceTest {
     }
 
     @Test
-    public void testRemoveItemFromTransaction_OnlyOneQuantity() {
+    public void testRemoveItemFromTransaction_OnlyOneQuantity1() {
         Transaction transaction = new Transaction();
+        transaction.setId("tx1");
+        String itemUpc = "1234567890";
+        LineItem existingItem = new LineItem(itemUpc, "tx1", 2, false, false);
+        transaction.getLineItems().add(existingItem);
+
+        transactionService.removeItemFromTransaction(transaction, itemUpc);
+
+        assertEquals(1, transaction.getLineItems().get(0).getQuantity());
+    }
+
+    @Test
+    public void testRemoveItemFromTransaction_OnlyOneQuantity2() {
+        Transaction transaction = new Transaction();
+        transaction.setId("tx1");
         String itemUpc = "1234567890";
         LineItem existingItem = new LineItem(itemUpc, "tx1", 1, false, false);
         transaction.getLineItems().add(existingItem);
 
         transactionService.removeItemFromTransaction(transaction, itemUpc);
 
-        assertTrue(transaction.getLineItems().isEmpty());
+        assertEquals(1, transaction.getLineItems().get(0).getQuantity());
     }
 
     @Test
@@ -215,6 +235,7 @@ public class TransactionServiceTest {
     @Test
     public void testAddItemToTransaction_DoesNotChangeVoidedQuantity() {
         Transaction transaction = new Transaction();
+        transaction.setId("tx1");
         String itemUpc = "1234567890";
         LineItem voidedItem = new LineItem(itemUpc, "tx1", 5, true, false);
         transaction.getLineItems().add(voidedItem);
@@ -256,6 +277,7 @@ public class TransactionServiceTest {
     @Test
     public void testTransactionPersistence_AddItem() {
         Transaction transaction = new Transaction();
+        transaction.setId("tx1");
         String itemUpc = "1234567890";
 
         transactionService.addItemToTransaction(transaction, itemUpc);
