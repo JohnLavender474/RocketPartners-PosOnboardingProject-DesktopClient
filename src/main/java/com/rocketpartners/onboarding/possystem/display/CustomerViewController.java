@@ -116,7 +116,10 @@ public class CustomerViewController implements IController {
 
     private void updateView() {
         switch (transactionState) {
-            case NOT_STARTED -> customerView.showTransactionNotStarted();
+            case NOT_STARTED -> {
+                customerView.reset();
+                customerView.showTransactionNotStarted();
+            }
             case SCANNING_IN_PROGRESS -> customerView.showScanningInProgress();
             case AWAITING_CARD_PAYMENT -> customerView.showAwaitingCardPayment();
             case AWAITING_CASH_PAYMENT -> customerView.showAwaitingCashPayment();

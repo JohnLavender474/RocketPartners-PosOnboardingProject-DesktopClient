@@ -275,9 +275,8 @@ public class CustomerView extends JFrame {
         @Override
         public Component getTableCellEditorComponent(JTable table, Object value, boolean isSelected, int row,
                                                      int column) {
-            if (value instanceof Integer) {
-                int quantity = (Integer) value;
-                quantityField.setText(String.valueOf(quantity));
+            if (value instanceof Integer i) {
+                quantityField.setText(String.valueOf(i));
             }
             return panel;
         }
@@ -430,6 +429,7 @@ public class CustomerView extends JFrame {
         this.storeName = storeName;
 
         setMinimumSize(new Dimension(CUSTOMER_VIEW_FRAME_WIDTH, CUSTOMER_VIEW_FRAME_HEIGHT));
+        setPreferredSize(new Dimension(CUSTOMER_VIEW_FRAME_WIDTH, CUSTOMER_VIEW_FRAME_HEIGHT));
         setResizable(false);
 
         initializeComponents();
@@ -532,7 +532,7 @@ public class CustomerView extends JFrame {
         );
 
         voidButton = createButton(VOID_TRANSACTION_BUTTON_TEXT, Color.getHSBColor(7f / 360f, 0.9f, 0.8f));
-        voidButton.addActionListener(e -> SwingUtilities.invokeLater(this::voidAction));
+        voidButton.addActionListener(e -> SwingUtilities.invokeLater(this::requestVoidButtonAction));
 
         cancelPaymentButton = createButton(CANCEL_PAYMENT_BUTTON_TEXT, Color.getHSBColor(7f / 360f, 0.9f, 0.8f));
         cancelPaymentButton.addActionListener(e ->
@@ -564,6 +564,17 @@ public class CustomerView extends JFrame {
         button.setBackground(backgroundColor);
         button.setForeground(Color.WHITE);
         return button;
+    }
+
+    public void reset() {
+        if (Application.DEBUG) {
+            System.out.println("[CustomerView] Resetting customer view");
+        }
+        selectedLineItemUpcs.clear();
+        quickItemDtos.clear();
+        clearTransactionTableRows();
+        revalidate();
+        repaint();
     }
 
     @Override
@@ -735,8 +746,6 @@ public class CustomerView extends JFrame {
             System.out.println("[CustomerView] Showing transaction voided");
         }
         bannerLabel.setText(TRANSACTION_VOIDED_BANNER_TEXT);
-        contentPanel.removeAll();
-        contentPanel.setLayout(new BorderLayout());
         JLabel voidedMessage = new JLabel(TRANSACTION_ENDED_TEXT, SwingConstants.CENTER);
         showContinue(voidedMessage);
     }
@@ -749,8 +758,6 @@ public class CustomerView extends JFrame {
             System.out.println("[CustomerView] Showing transaction completed");
         }
         bannerLabel.setText(TRANSACTION_COMPLETED_BANNER_TEXT);
-        contentPanel.removeAll();
-        contentPanel.setLayout(new BorderLayout());
         JLabel completedMessage = new JLabel(TRANSACTION_COMPLETED_MESSAGE, SwingConstants.CENTER);
         showContinue(completedMessage);
     }
@@ -764,7 +771,8 @@ public class CustomerView extends JFrame {
         if (Application.DEBUG) {
             System.out.println("[CustomerView] Showing continue");
         }
-        continueButton = new JButton(CONTINUE_BUTTON_TEXT);
+        contentPanel.removeAll();
+        contentPanel.setLayout(new BorderLayout());
         JPanel continuePanel = new JPanel(new GridLayout(2, 1));
         continuePanel.add(continueMessage);
         continuePanel.add(continueButton);
@@ -773,29 +781,43 @@ public class CustomerView extends JFrame {
         repaint();
     }
 
-    private void voidAction() {
+    private void requestVoidButtonAction() {
         if (selectedLineItemUpcs.isEmpty()) {
-            voidTransaction();
+            requestVoidTransaction();
         } else {
-            voidSelectedLineItems();
+            requestVoidSelectedLineItems();
         }
     }
 
-    private void voidTransaction() {
+    private void requestVoidTransaction() {
         if (Application.DEBUG) {
             System.out.println("[CustomerView] Requesting to void transaction");
         }
-        parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_VOID_TRANSACTION));
-        clearTransactionsTableSelections();
+        if (JOptionPane.showConfirmDialog(CustomerView.this,
+                "Are you sure you want to void this transaction?", "Void Transaction?",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION) {
+            SwingUtilities.invokeLater(() -> {
+                parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_VOID_TRANSACTION));
+                clearTransactionsTableSelections();
+            });
+        }
     }
 
-    private void voidSelectedLineItems() {
+    private void requestVoidSelectedLineItems() {
         if (Application.DEBUG) {
             System.out.println("[CustomerView] Requesting to void selected line items: " + selectedLineItemUpcs);
         }
-        parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_VOID_LINE_ITEMS,
-                Map.of(ConstKeys.ITEM_UPCS, new HashSet<>(selectedLineItemUpcs))));
-        clearTransactionsTableSelections();
+        if (JOptionPane.showConfirmDialog(CustomerView.this,
+                "Are you sure you want to void the selected line items?", "Void Line Items?",
+                JOptionPane.YES_NO_OPTION,
+                JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION) {
+            SwingUtilities.invokeLater(() -> {
+                parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_VOID_LINE_ITEMS,
+                        Map.of(ConstKeys.ITEM_UPCS, new HashSet<>(selectedLineItemUpcs))));
+                clearTransactionsTableSelections();
+            });
+        }
     }
 
     private void clearTransactionsTableSelections() {
@@ -826,11 +848,14 @@ public class CustomerView extends JFrame {
     private JPanel loadTransactionsTablePanel(boolean enabled) {
         transactionTable.setEnabled(enabled);
         JPanel panel = createScrollableTablePanel(transactionTable, TRANSACTION_TABLE_TITLE);
-        JButton clearSelectionsButton = new JButton("Clear Transaction Selections");
-        clearSelectionsButton.setBackground(Color.YELLOW);
-        clearSelectionsButton.setFont(STANDARD_BUTTON_FONT);
-        clearSelectionsButton.addActionListener(e -> clearTransactionsTableSelections());
-        panel.add(clearSelectionsButton, BorderLayout.SOUTH);
+        panel.setPreferredSize(new Dimension(CUSTOMER_VIEW_FRAME_WIDTH, 300));
+        if (enabled) {
+            JButton clearSelectionsButton = new JButton("Clear Transaction Selections");
+            clearSelectionsButton.setBackground(Color.YELLOW);
+            clearSelectionsButton.setFont(STANDARD_BUTTON_FONT);
+            clearSelectionsButton.addActionListener(e -> clearTransactionsTableSelections());
+            panel.add(clearSelectionsButton, BorderLayout.SOUTH);
+        }
         return panel;
     }
 

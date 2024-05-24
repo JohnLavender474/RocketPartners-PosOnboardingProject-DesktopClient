@@ -45,19 +45,24 @@ public class Application {
     public static class Arguments {
 
         private static final String DEFAULT_APP_MODE = "dev";
+        private static final String DEFAULT_DB_SOURCE = "inmemory";
         private static final String DEFAULT_STORE_NAME = "Rocket Partners Store";
         private static final int DEFAULT_LANE_NUMBER = 1;
 
-        @Parameter(names = "-debug", description = "Enable debug mode")
+        @Parameter(names = "-debug", description = "Enable debug mode. Values: true, false. Default: false.")
         private boolean debug = DEBUG;
 
-        @Parameter(names = "-appMode", description = "The mode of the application")
+        @Parameter(names = "-dbsource", description = "The source of the database. Values: inmemory, mysql. Default: " +
+                "inmemory.")
+        private String dbSource = DEFAULT_DB_SOURCE;
+
+        @Parameter(names = "-appMode", description = "The mode of the application. Values: dev, prod. Default: dev.")
         private String appMode = DEFAULT_APP_MODE;
 
-        @Parameter(names = "-storeName", description = "The name of the store")
+        @Parameter(names = "-storeName", description = "The name of the store. Default: Rocket Partners Store.")
         private String storeName = DEFAULT_STORE_NAME;
 
-        @Parameter(names = "-laneNumber", description = "The POS lane number")
+        @Parameter(names = "-laneNumber", description = "The POS lane number. Default: 1.")
         private int laneNumber = DEFAULT_LANE_NUMBER;
     }
 
@@ -124,7 +129,8 @@ public class Application {
             PosSystem posSystem = posSystemService.createAndPersist(storeName, laneNumber);
             posComponent.setPosSystem(posSystem);
 
-            CustomerViewController customerViewController = new CustomerViewController(posComponent, storeName, laneNumber);
+            CustomerViewController customerViewController = new CustomerViewController(posComponent, storeName,
+                    laneNumber);
             posComponent.registerChildController(customerViewController);
 
             ScannerViewController scannerViewController =

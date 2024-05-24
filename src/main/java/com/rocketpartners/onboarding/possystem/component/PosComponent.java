@@ -96,6 +96,184 @@ public class PosComponent implements IComponent, IPosEventManager {
     }
 
     /**
+     * {@inheritDoc}
+     * <p>
+     * In this implementation, this {@link PosComponent} instance listens and acts on the event immediately. However,
+     * {@link IPosEventListener} instances do not receive the event until the {@link #update()} method call is made.
+     *
+     * @param event The event to dispatch.
+     */
+    @Override
+    public void dispatchPosEvent(@NonNull PosEvent event) {
+        handlePosEvent(event);
+
+        PosEventType type = event.getType();
+        List<PosEvent> eventsOfType = events.getOrDefault(type, new ArrayList<>());
+        eventsOfType.add(event);
+        events.put(type, eventsOfType);
+    }
+
+    private void handlePosEvent(@NonNull PosEvent event) {
+        switch (event.getType()) {
+            case REQUEST_START_TRANSACTION -> {
+                if (transactionState != TransactionState.NOT_STARTED) {
+                    System.err.println("[PosComponent] Request to start transaction not allowed when transaction " +
+                            "state is not NOT_STARTED");
+                    return;
+                }
+                startTransaction();
+            }
+
+            case REQUEST_OPEN_SCANNER -> {
+                if (Application.DEBUG) {
+                    System.out.println("[PosComponent] Request to open scanner");
+                }
+                dispatchPosEvent(new PosEvent(PosEventType.DO_OPEN_SCANNER));
+            }
+
+            case REQUEST_ADD_ITEM -> {
+                if (transactionState != TransactionState.SCANNING_IN_PROGRESS || !isTransactionEditable()) {
+                    if (transactionState != TransactionState.SCANNING_IN_PROGRESS) {
+                        System.err.println("[PosComponent] Request to add item not allowed when transaction state is " +
+                                "not SCANNING_IN_PROGRESS: " + transactionState);
+                    }
+                    if (!isTransactionEditable()) {
+                        System.err.println("[PosComponent] Request to add item not allowed when transaction is not " +
+                                "editable: " + transaction);
+                    }
+                    return;
+                }
+
+                String itemUpc = event.getProperty(ConstKeys.ITEM_UPC, String.class);
+                if (itemUpc == null) {
+                    System.err.println("[PosComponent] Request to add item failed because item UPC is null");
+                    return;
+                }
+
+                if (itemService.itemExists(itemUpc) && transactionService.addItemToTransaction(transaction, itemUpc)) {
+                    List<LineItemDto> lineItemDtos = transaction.getLineItems().stream()
+                            .map(lineItem -> {
+                                Item item = itemService.getItemByUpc(lineItem.getItemUpc());
+                                return LineItemDto.from(lineItem, item);
+                            }).toList();
+                    dispatchPosEvent(new PosEvent(PosEventType.ITEM_ADDED, Map.of(ConstKeys.LINE_ITEM_DTOS,
+                            lineItemDtos)));
+                } else {
+                    System.err.println("[PosComponent] Request to add item failed because item with UPC " + itemUpc +
+                            " does not exist");
+                }
+            }
+
+            case REQUEST_REMOVE_ITEM -> {
+                if (transactionState != TransactionState.SCANNING_IN_PROGRESS || !isTransactionEditable()) {
+                    if (transactionState != TransactionState.SCANNING_IN_PROGRESS) {
+                        System.err.println("[PosComponent] Request to remove item not allowed when transaction state " +
+                                "is not SCANNING_IN_PROGRESS");
+                    }
+                    if (!isTransactionEditable()) {
+                        System.err.println("[PosComponent] Request to remove item not allowed when transaction is not" +
+                                " editable");
+                    }
+                    return;
+                }
+
+                String itemUpc = event.getProperty(ConstKeys.ITEM_UPC, String.class);
+                if (itemUpc == null) {
+                    System.err.println("[PosComponent] Request to add item failed because item UPC is null");
+                    return;
+                }
+
+                if (itemService.itemExists(itemUpc) && transactionService.removeItemFromTransaction(transaction,
+                        itemUpc)) {
+                    List<LineItemDto> lineItemDtos = transaction.getLineItems().stream()
+                            .map(lineItem -> {
+                                Item item = itemService.getItemByUpc(lineItem.getItemUpc());
+                                return LineItemDto.from(lineItem, item);
+                            }).toList();
+                    dispatchPosEvent(new PosEvent(PosEventType.ITEM_REMOVED, Map.of(ConstKeys.LINE_ITEM_DTOS,
+                            lineItemDtos)));
+                } else {
+                    System.err.println("[PosComponent] Request to add item failed because item with UPC " + itemUpc +
+                            " does not exist");
+                }
+            }
+
+            case REQUEST_UPDATE_QUICK_ITEMS -> {
+                if (transactionState != TransactionState.SCANNING_IN_PROGRESS) {
+                    System.err.println("[PosComponent] Request to update quick items not allowed when transaction " +
+                            "state is not NOT_STARTED");
+                    return;
+                }
+
+                Set<String> itemUpcsInTransaction =
+                        transaction.getLineItems().stream().map(LineItem::getItemUpc).collect(Collectors.toSet());
+                List<ItemDto> quickItemDtos = itemService.getRandomItemsNotIn(itemUpcsInTransaction,
+                        ConstVals.QUICK_ITEMS_COUNT).stream().map(ItemDto::from).toList();
+
+                dispatchPosEvent(new PosEvent(PosEventType.DO_UPDATE_QUICK_ITEMS, Map.of(ConstKeys.ITEM_DTOS,
+                        quickItemDtos)));
+            }
+
+            case REQUEST_VOID_LINE_ITEMS -> {
+                if (transactionState == TransactionState.NOT_STARTED || !isTransactionEditable()) {
+                    if (transactionState == TransactionState.NOT_STARTED) {
+                        System.err.println("[PosComponent] Request to void line items not allowed when transaction " +
+                                "state is NOT_STARTED");
+                    }
+                    if (!isTransactionEditable()) {
+                        System.err.println("[PosComponent] Request to void line items not allowed when transaction " +
+                                "is not editable");
+                    }
+                    return;
+                }
+
+                Collection<String> itemUpcs = (Collection<String>) event.getProperty(ConstKeys.ITEM_UPCS);
+                if (itemUpcs == null) {
+                    System.err.println("[PosComponent] Request to void line items failed because item UPCs is null");
+                    return;
+                }
+
+                itemUpcs.forEach(it -> transactionService.voidLineItemInTransaction(transaction, it));
+
+                List<LineItemDto> lineItemDtos = transaction.getLineItems().stream()
+                        .map(lineItem -> {
+                            Item item = itemService.getItemByUpc(lineItem.getItemUpc());
+                            return LineItemDto.from(lineItem, item);
+                        }).toList();
+                dispatchPosEvent(new PosEvent(PosEventType.LINE_ITEMS_VOIDED, Map.of(ConstKeys.LINE_ITEM_DTOS,
+                        lineItemDtos)));
+            }
+
+            case REQUEST_VOID_TRANSACTION -> {
+                if (transactionState == TransactionState.NOT_STARTED || !isTransactionEditable()) {
+                    if (transactionState == TransactionState.NOT_STARTED) {
+                        System.err.println("[PosComponent] Request to void transaction not allowed when transaction " +
+                                "state is NOT_STARTED");
+                    }
+                    if (!isTransactionEditable()) {
+                        System.err.println("[PosComponent] Request to void transaction not allowed when transaction " +
+                                "is not editable");
+                    }
+                    return;
+                }
+
+                voidTransaction();
+            }
+
+            case REQUEST_COMPLETE_TRANSACTION -> {
+                if (!transactionState.isAwaitingPayment()) {
+                    System.err.println("[PosComponent] Request to complete transaction not allowed when transaction " +
+                            "state is not AWAITING_CARD_PAYMENT or AWAITING_CASH_PAYMENT");
+                    return;
+                }
+                completeTransaction();
+            }
+
+            case REQUEST_RESET_POS -> resetPos();
+        }
+    }
+
+    /**
      * Add a journal listener to this component.
      *
      * @param listener The journal listener.
@@ -141,6 +319,33 @@ public class PosComponent implements IComponent, IPosEventManager {
         if (Application.DEBUG) {
             System.out.println("[PosComponent] Set POS system for POS component: " + posSystem);
         }
+    }
+
+    /**
+     * Check if a transaction is voided.
+     *
+     * @return True if the transaction is non-null and voided, false otherwise.
+     */
+    public boolean isTransactionVoided() {
+        return transaction != null && transaction.isVoided();
+    }
+
+    /**
+     * Check if a transaction is completed.
+     *
+     * @return True if the transaction is non-null and completed, false otherwise.
+     */
+    public boolean isTransactionTendered() {
+        return transaction != null && transaction.isTendered();
+    }
+
+    /**
+     * Check if a transaction is editable. A transaction is editable if it is not voided and not tendered.
+     *
+     * @return True if the transaction is non-null and editable, false otherwise.
+     */
+    public boolean isTransactionEditable() {
+        return !isTransactionVoided() && !isTransactionTendered();
     }
 
     @Override
@@ -230,6 +435,8 @@ public class PosComponent implements IComponent, IPosEventManager {
      */
     void voidTransaction() {
         transactionState = TransactionState.VOIDED;
+        transaction.setVoided(true);
+        transactionService.saveTransaction(transaction);
         dispatchPosEvent(new PosEvent(PosEventType.TRANSACTION_VOIDED));
         if (Application.DEBUG) {
             System.out.println("[PosComponent] Transaction voided: " + this);
@@ -241,6 +448,8 @@ public class PosComponent implements IComponent, IPosEventManager {
      */
     void completeTransaction() {
         transactionState = TransactionState.COMPLETED;
+        transaction.setTendered(true);
+        transactionService.saveTransaction(transaction);
         dispatchPosEvent(new PosEvent(PosEventType.TRANSACTION_COMPLETED));
         if (Application.DEBUG) {
             System.out.println("[PosComponent] Transaction completed: " + this);
@@ -290,24 +499,6 @@ public class PosComponent implements IComponent, IPosEventManager {
     /**
      * {@inheritDoc}
      * <p>
-     * In this implementation, this {@link PosComponent} instance listens and acts on the event immediately. However,
-     * {@link IPosEventListener} instances do not receive the event until the {@link #update()} method call is made.
-     *
-     * @param event The event to dispatch.
-     */
-    @Override
-    public void dispatchPosEvent(@NonNull PosEvent event) {
-        handlePosEvent(event);
-
-        PosEventType type = event.getType();
-        List<PosEvent> eventsOfType = events.getOrDefault(type, new ArrayList<>());
-        eventsOfType.add(event);
-        events.put(type, eventsOfType);
-    }
-
-    /**
-     * {@inheritDoc}
-     * <p>
      * If the listener is an {@link IController} instance, then you should use the {@link #registerChildController} and
      * {@link #unregisterChildController} methods instead.
      *
@@ -334,140 +525,6 @@ public class PosComponent implements IComponent, IPosEventManager {
         posEventListeners.remove(listener);
         if (Application.DEBUG) {
             System.out.println("[PosComponent] Unregistered POS event listener: " + listener);
-        }
-    }
-
-    private void handlePosEvent(@NonNull PosEvent event) {
-        switch (event.getType()) {
-            case REQUEST_START_TRANSACTION -> {
-                if (transactionState != TransactionState.NOT_STARTED) {
-                    System.err.println("[PosComponent] Request to start transaction not allowed when transaction " +
-                            "state is not NOT_STARTED");
-                    return;
-                }
-                startTransaction();
-            }
-
-            case REQUEST_OPEN_SCANNER -> {
-                if (Application.DEBUG) {
-                    System.out.println("[PosComponent] Request to open scanner");
-                }
-                dispatchPosEvent(new PosEvent(PosEventType.DO_OPEN_SCANNER));
-            }
-
-            case REQUEST_ADD_ITEM -> {
-                if (transactionState != TransactionState.SCANNING_IN_PROGRESS) {
-                    System.err.println("[PosComponent] Request to add item not allowed when transaction state is not " +
-                            "SCANNING_IN_PROGRESS");
-                    return;
-                }
-                String itemUpc = event.getProperty(ConstKeys.ITEM_UPC, String.class);
-                if (itemUpc == null) {
-                    System.err.println("[PosComponent] Request to add item failed because item UPC is null");
-                    return;
-                }
-                if (itemService.itemExists(itemUpc) && transactionService.addItemToTransaction(transaction, itemUpc)) {
-                    List<LineItemDto> lineItemDtos = transaction.getLineItems().stream()
-                            .map(lineItem -> {
-                                Item item = itemService.getItemByUpc(lineItem.getItemUpc());
-                                return LineItemDto.from(lineItem, item);
-                            }).toList();
-                    dispatchPosEvent(new PosEvent(PosEventType.ITEM_ADDED, Map.of(ConstKeys.LINE_ITEM_DTOS,
-                            lineItemDtos)));
-                } else {
-                    System.err.println("[PosComponent] Request to add item failed because item with UPC " + itemUpc +
-                            " does not exist");
-                }
-            }
-
-            case REQUEST_REMOVE_ITEM -> {
-                if (transactionState != TransactionState.SCANNING_IN_PROGRESS) {
-                    System.err.println("[PosComponent] Request to remove item not allowed when transaction state is " +
-                            "not " +
-                            "SCANNING_IN_PROGRESS");
-                    return;
-                }
-                String itemUpc = event.getProperty(ConstKeys.ITEM_UPC, String.class);
-                if (itemUpc == null) {
-                    System.err.println("[PosComponent] Request to add item failed because item UPC is null");
-                    return;
-                }
-                if (itemService.itemExists(itemUpc) && transactionService.removeItemFromTransaction(transaction,
-                        itemUpc)) {
-                    List<LineItemDto> lineItemDtos = transaction.getLineItems().stream()
-                            .map(lineItem -> {
-                                Item item = itemService.getItemByUpc(lineItem.getItemUpc());
-                                return LineItemDto.from(lineItem, item);
-                            }).toList();
-                    dispatchPosEvent(new PosEvent(PosEventType.ITEM_REMOVED, Map.of(ConstKeys.LINE_ITEM_DTOS,
-                            lineItemDtos)));
-                } else {
-                    System.err.println("[PosComponent] Request to add item failed because item with UPC " + itemUpc +
-                            " does not exist");
-                }
-            }
-
-            case REQUEST_UPDATE_QUICK_ITEMS -> {
-                if (transactionState != TransactionState.SCANNING_IN_PROGRESS) {
-                    System.err.println("[PosComponent] Request to update quick items not allowed when transaction " +
-                            "state is not NOT_STARTED");
-                    return;
-                }
-                Set<String> itemUpcsInTransaction =
-                        transaction.getLineItems().stream().map(LineItem::getItemUpc).collect(Collectors.toSet());
-                List<ItemDto> quickItemDtos = itemService.getRandomItemsNotIn(itemUpcsInTransaction,
-                        ConstVals.QUICK_ITEMS_COUNT).stream().map(ItemDto::from).toList();
-                dispatchPosEvent(new PosEvent(PosEventType.DO_UPDATE_QUICK_ITEMS, Map.of(ConstKeys.ITEM_DTOS,
-                        quickItemDtos)));
-            }
-
-            case REQUEST_VOID_LINE_ITEMS -> {
-                if (transactionState == TransactionState.NOT_STARTED) {
-                    System.err.println("[PosComponent] Request to void line items not allowed when transaction state" +
-                            " is NOT_STARTED");
-                    return;
-                }
-                Collection<String> itemUpcs = (Collection<String>) event.getProperty(ConstKeys.ITEM_UPCS);
-                if (itemUpcs == null) {
-                    System.err.println("[PosComponent] Request to void line items failed because item UPCs is null");
-                    return;
-                }
-                itemUpcs.forEach(it -> transactionService.voidLineItemInTransaction(transaction, it));
-                List<LineItemDto> lineItemDtos = transaction.getLineItems().stream()
-                        .map(lineItem -> {
-                            Item item = itemService.getItemByUpc(lineItem.getItemUpc());
-                            return LineItemDto.from(lineItem, item);
-                        }).toList();
-                dispatchPosEvent(new PosEvent(PosEventType.LINE_ITEMS_VOIDED, Map.of(ConstKeys.LINE_ITEM_DTOS,
-                        lineItemDtos)));
-            }
-
-            case REQUEST_VOID_TRANSACTION -> {
-                if (transactionState == TransactionState.NOT_STARTED) {
-                    System.err.println("[PosComponent] Request to void transaction not allowed when transaction state" +
-                            " is NOT_STARTED");
-                    return;
-                }
-                voidTransaction();
-            }
-
-            case REQUEST_COMPLETE_TRANSACTION -> {
-                if (!transactionState.isAwaitingPayment()) {
-                    System.err.println("[PosComponent] Request to complete transaction not allowed when transaction " +
-                            "state is not AWAITING_CARD_PAYMENT or AWAITING_CASH_PAYMENT");
-                    return;
-                }
-                completeTransaction();
-            }
-
-            case REQUEST_RESET_POS -> {
-                if (!transactionState.isEnded()) {
-                    System.err.println("[PosComponent] Request to reset POS not allowed when transaction state is not" +
-                            " VOIDED or COMPLETED");
-                    return;
-                }
-                resetPos();
-            }
         }
     }
 }
