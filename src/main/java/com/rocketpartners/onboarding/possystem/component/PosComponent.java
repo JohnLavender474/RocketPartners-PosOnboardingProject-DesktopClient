@@ -9,6 +9,7 @@ import com.rocketpartners.onboarding.possystem.constant.TransactionState;
 import com.rocketpartners.onboarding.possystem.display.IController;
 import com.rocketpartners.onboarding.possystem.display.dto.ItemDto;
 import com.rocketpartners.onboarding.possystem.display.dto.LineItemDto;
+import com.rocketpartners.onboarding.possystem.display.dto.TransactionDto;
 import com.rocketpartners.onboarding.possystem.event.IPosEventListener;
 import com.rocketpartners.onboarding.possystem.event.IPosEventManager;
 import com.rocketpartners.onboarding.possystem.event.PosEvent;
@@ -21,7 +22,6 @@ import com.rocketpartners.onboarding.possystem.service.ItemService;
 import com.rocketpartners.onboarding.possystem.service.TransactionService;
 import lombok.*;
 
-import javax.swing.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -129,8 +129,10 @@ public class PosComponent implements IComponent, IPosEventManager {
 
     private void handleRequestStartTransaction(@NonNull PosEvent event) {
         if (transactionState != TransactionState.NOT_STARTED) {
-            System.err.println("[PosComponent] Request to start transaction not allowed when transaction " + "state " +
-                    "is not NOT_STARTED");
+            String error = "Cannot start transaction when transaction state is not NOT_STARTED. Current transaction " +
+                    "state: " + transactionState;
+            System.err.println(error);
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
             return;
         }
         startTransaction(event);
@@ -154,73 +156,169 @@ public class PosComponent implements IComponent, IPosEventManager {
 
         if (transactionState != TransactionState.SCANNING_IN_PROGRESS || !isTransactionEditable()) {
             if (transactionState != TransactionState.SCANNING_IN_PROGRESS) {
-                System.err.println("[PosComponent] Request to add item not allowed when transaction state is " + "not" +
-                        " SCANNING_IN_PROGRESS: " + transactionState);
+                String error = "Cannot add item to transaction when transaction state is not SCANNING_IN_PROGRESS. " +
+                        "Current transaction state: " + transactionState;
+                System.err.println(error);
+                dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
             }
+
             if (!isTransactionEditable()) {
-                System.err.println("[PosComponent] Request to add item not allowed when transaction is not " +
-                        "editable: " + transaction);
+                String error = "Cannot add item to transaction when transaction is not editable. Current " +
+                        "transaction state: " + transactionState;
+                System.err.println(error);
+                dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
             }
+
             return;
         }
 
         String itemUpc = event.getProperty(ConstKeys.ITEM_UPC, String.class);
         if (itemUpc == null) {
-            System.err.println("[PosComponent] Request to add item failed because item UPC is null");
+            String error = "Cannot add item to transaction because item UPC is null";
+            System.err.println(error);
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
             return;
         }
 
         if (itemService.itemExists(itemUpc) && transactionService.addItemToTransaction(transaction, itemUpc)) {
-            List<LineItemDto> lineItemDtos = transaction.getLineItems().stream().map(lineItem -> {
-                Item item = itemService.getItemByUpc(lineItem.getItemUpc());
-                return LineItemDto.from(lineItem, item);
-            }).toList();
-            dispatchPosEvent(new PosEvent(PosEventType.ITEM_ADDED, Map.of(ConstKeys.LINE_ITEM_DTOS, lineItemDtos)));
+            List<LineItemDto> lineItemDtos = getLineItemDtos();
+            TransactionDto transactionDto = TransactionDto.from(
+                    lineItemDtos,
+                    transaction.getSubtotal(),
+                    transaction.getDiscounts(),
+                    transaction.getTaxes(),
+                    transaction.getTotal()
+            );
+
+            dispatchPosEvent(new PosEvent(PosEventType.ITEM_ADDED, Map.of(ConstKeys.TRANSACTION_DTO, transactionDto)));
 
             if (Application.DEBUG) {
                 System.out.println("[PosComponent] Item added to transaction: " + itemUpc);
             }
         } else {
-            System.err.println("[PosComponent] Request to add item failed because item with UPC " + itemUpc + " does " +
-                    "not exist");
+            String error = "Cannot add item to transaction because item with UPC " + itemUpc + " does not exist";
+            System.err.println(error);
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
         }
     }
 
     private void handleRequestRemoveItem(@NonNull PosEvent event) {
         if (transactionState != TransactionState.SCANNING_IN_PROGRESS || !isTransactionEditable()) {
             if (transactionState != TransactionState.SCANNING_IN_PROGRESS) {
-                System.err.println("[PosComponent] Request to remove item not allowed when transaction state " + "is " +
-                        "not SCANNING_IN_PROGRESS");
+                String error = "Cannot remove item from transaction when transaction state is not " +
+                        "SCANNING_IN_PROGRESS. " +
+                        "Current transaction state: " + transactionState;
+                System.err.println(error);
+                dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
             }
+
             if (!isTransactionEditable()) {
-                System.err.println("[PosComponent] Request to remove item not allowed when transaction is not" + " " +
-                        "editable");
+                String error = "Cannot remove item from transaction when transaction is not editable. Current " +
+                        "transaction state: " + transactionState;
+                System.err.println(error);
+                dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
             }
+
             return;
         }
 
         String itemUpc = event.getProperty(ConstKeys.ITEM_UPC, String.class);
         if (itemUpc == null) {
-            System.err.println("[PosComponent] Request to add item failed because item UPC is null");
+            String error = "Cannot remove item from transaction because item UPC is null";
+            System.err.println(error);
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
             return;
         }
 
         if (itemService.itemExists(itemUpc) && transactionService.removeItemFromTransaction(transaction, itemUpc)) {
-            List<LineItemDto> lineItemDtos = transaction.getLineItems().stream().map(lineItem -> {
-                Item item = itemService.getItemByUpc(lineItem.getItemUpc());
-                return LineItemDto.from(lineItem, item);
-            }).toList();
-            dispatchPosEvent(new PosEvent(PosEventType.ITEM_REMOVED, Map.of(ConstKeys.LINE_ITEM_DTOS, lineItemDtos)));
+            List<LineItemDto> lineItemDtos = getLineItemDtos();
+            TransactionDto transactionDto = TransactionDto.from(
+                    lineItemDtos,
+                    transaction.getSubtotal(),
+                    transaction.getDiscounts(),
+                    transaction.getTaxes(),
+                    transaction.getTotal()
+            );
+
+            dispatchPosEvent(new PosEvent(PosEventType.ITEM_REMOVED,
+                    Map.of(ConstKeys.TRANSACTION_DTO, transactionDto)));
         } else {
-            System.err.println("[PosComponent] Request to add item failed because item with UPC " + itemUpc + " does " +
-                    "not exist");
+            String error = "Cannot remove item from transaction because item with UPC " + itemUpc + " does not exist";
+            System.err.println(error);
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
         }
+    }
+
+    private void handleRequestVoidLineItems(@NonNull PosEvent event) {
+        if (transactionState == TransactionState.NOT_STARTED || !isTransactionEditable()) {
+            if (transactionState == TransactionState.NOT_STARTED) {
+                String error = "Cannot void line items when transaction is not in progress. Current " +
+                        "transaction state: " + transactionState;
+                System.err.println(error);
+                dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
+            }
+
+            if (!isTransactionEditable()) {
+                String error = "Cannot void line items when transaction is not editable. Current " +
+                        "transaction state: " + transactionState;
+                System.err.println(error);
+                dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
+            }
+
+            return;
+        }
+
+        Collection<String> itemUpcs = (Collection<String>) event.getProperty(ConstKeys.ITEM_UPCS);
+        if (itemUpcs == null) {
+            String error = "Cannot void line items because item UPCs is null";
+            System.err.println(error);
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
+            return;
+        }
+
+        itemUpcs.forEach(it -> transactionService.voidLineItemInTransaction(transaction, it));
+
+        List<LineItemDto> lineItemDtos = getLineItemDtos();
+        TransactionDto transactionDto = TransactionDto.from(
+                lineItemDtos,
+                transaction.getSubtotal(),
+                transaction.getDiscounts(),
+                transaction.getTaxes(),
+                transaction.getTotal()
+        );
+
+        dispatchPosEvent(new PosEvent(PosEventType.LINE_ITEMS_VOIDED,
+                Map.of(ConstKeys.TRANSACTION_DTO, transactionDto)));
+    }
+
+    private void handleRequestVoidTransaction() {
+        if (transactionState == TransactionState.NOT_STARTED || !isTransactionEditable()) {
+            if (transactionState == TransactionState.NOT_STARTED) {
+                String error = "Cannot void transaction when transaction is not in progress. Current " +
+                        "transaction state: " + transactionState;
+                System.err.println(error);
+                dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
+            }
+
+            if (!isTransactionEditable()) {
+                String error = "Cannot void transaction when transaction is not editable. Current " +
+                        "transaction state: " + transactionState;
+                System.err.println(error);
+                dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
+            }
+
+            return;
+        }
+
+        voidTransaction();
     }
 
     private void handleRequestUpdateQuickItems() {
         if (transactionState != TransactionState.SCANNING_IN_PROGRESS) {
-            System.err.println("[PosComponent] Request to update quick items not allowed when transaction " + "state " +
-                    "is not NOT_STARTED");
+            String error = "Cannot update quick items when transaction state is not SCANNING_IN_PROGRESS. Current " +
+                    "transaction state: " + transactionState;
+            System.err.println(error);
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
             return;
         }
 
@@ -232,94 +330,29 @@ public class PosComponent implements IComponent, IPosEventManager {
         dispatchPosEvent(new PosEvent(PosEventType.DO_UPDATE_QUICK_ITEMS, Map.of(ConstKeys.ITEM_DTOS, quickItemDtos)));
     }
 
-    private void handleRequestVoidLineItems(@NonNull PosEvent event) {
-        if (transactionState == TransactionState.NOT_STARTED || !isTransactionEditable()) {
-            if (transactionState == TransactionState.NOT_STARTED) {
-                System.err.println("[PosComponent] Request to void line items not allowed when transaction state" +
-                        " is NOT_STARTED. Current transaction state: " + transactionState);
-                JOptionPane.showMessageDialog(null, "Cannot void line items when transaction is " +
-                                "not in progress. Current transaction state: " + transactionState, "Error",
-                        JOptionPane.ERROR_MESSAGE);
-            }
-
-            if (!isTransactionEditable()) {
-                System.err.println("[PosComponent] Request to void line items not allowed when transaction " + "is " +
-                        "not editable. Current transaction state: " + transactionState);
-                JOptionPane.showMessageDialog(null, "Cannot void line items when transaction is not " +
-                                "editable. Current transaction state: " + transactionState, "Error",
-                        JOptionPane.ERROR_MESSAGE);
-            }
-
-            return;
-        }
-
-        Collection<String> itemUpcs = (Collection<String>) event.getProperty(ConstKeys.ITEM_UPCS);
-        if (itemUpcs == null) {
-            System.err.println("[PosComponent] Request to void line items failed because item UPCs is null");
-            JOptionPane.showMessageDialog(null, "Cannot void line items because item UPCs is " +
-                    "null", "Error", JOptionPane.ERROR_MESSAGE);
-            return;
-        }
-
-        itemUpcs.forEach(it -> transactionService.voidLineItemInTransaction(transaction, it));
-
-        List<LineItemDto> lineItemDtos = transaction.getLineItems().stream().map(lineItem -> {
-            Item item = itemService.getItemByUpc(lineItem.getItemUpc());
-            return LineItemDto.from(lineItem, item);
-        }).toList();
-
-        dispatchPosEvent(new PosEvent(PosEventType.LINE_ITEMS_VOIDED, Map.of(ConstKeys.LINE_ITEM_DTOS, lineItemDtos)));
-    }
-
-    private void handleRequestVoidTransaction() {
-        if (transactionState == TransactionState.NOT_STARTED || !isTransactionEditable()) {
-            if (transactionState == TransactionState.NOT_STARTED) {
-                System.err.println("[PosComponent] Request to void transaction not allowed when transaction " +
-                        "state is NOT_STARTED. Current transaction state: " + transactionState);
-                JOptionPane.showMessageDialog(null, "Cannot void transaction when transaction is " +
-                                "not in progress. Current transaction state: " + transactionState, "Error",
-                        JOptionPane.ERROR_MESSAGE);
-            }
-
-            if (!isTransactionEditable()) {
-                System.err.println("[PosComponent] Request to void transaction not allowed when transaction " + "is " +
-                        "not editable. Current transaction state: " + transactionState);
-                JOptionPane.showMessageDialog(null, "Cannot void transaction when transaction is not " +
-                        "editable. Current transaction state: " + transactionState, "Error", JOptionPane.ERROR_MESSAGE);
-            }
-
-            return;
-        }
-
-        voidTransaction();
-    }
-
     private void handleRequestStartPayWithCardProcess() {
         if (Application.DEBUG) {
             System.out.println("[PosComponent] Request to start card payment process");
         }
 
         if (transactionState != TransactionState.SCANNING_IN_PROGRESS) {
-            System.err.println("[PosComponent] Request to start card payment process not allowed when " +
-                    "transaction state is not SCANNING_IN_PROGRESS");
-            JOptionPane.showMessageDialog(null, "Cannot start card payment process when " +
-                    "transaction is not in progress", "Error", JOptionPane.ERROR_MESSAGE);
+            String error = "Cannot start card payment process when transaction state is not SCANNING_IN_PROGRESS";
+            System.err.println(error);
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
             return;
         }
 
         if (transaction.getLineItems().isEmpty()) {
-            System.err.println("[PosComponent] Request to start card payment process not allowed when " +
-                    "transaction has no line items");
-            JOptionPane.showMessageDialog(null, "Cannot start card payment process when " +
-                    "transaction has no line items", "Error", JOptionPane.ERROR_MESSAGE);
+            String error = "Cannot start card payment process when transaction has no line items";
+            System.err.println(error);
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
             return;
         }
 
         if (transaction.getLineItems().stream().allMatch(LineItem::isVoided)) {
-            System.err.println("[PosComponent] Request to start card payment process not allowed when " +
-                    "transaction has only voided line items");
-            JOptionPane.showMessageDialog(null, "Cannot start card payment process when " +
-                    "transaction has only voided line items", "Error", JOptionPane.ERROR_MESSAGE);
+            String error = "Cannot start card payment process when transaction has only voided line items";
+            System.err.println(error);
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
             return;
         }
 
@@ -330,19 +363,18 @@ public class PosComponent implements IComponent, IPosEventManager {
 
     private void handleRequestEnterCardNumber(@NonNull PosEvent event) {
         if (transactionState != TransactionState.AWAITING_CARD_PAYMENT) {
-            System.err.println("[PosComponent] Request to enter card number not allowed when transaction state " +
-                    "is not AWAITING_CARD_PAYMENT. Current transaction state: " + transactionState);
-            JOptionPane.showMessageDialog(null, "Cannot enter card number when transaction is " +
-                            "not awaiting card payment. Current transaction state: " + transactionState, "Error",
-                    JOptionPane.ERROR_MESSAGE);
+            String error = "Cannot enter card number when transaction state is not AWAITING_CARD_PAYMENT. " +
+                    "Current transaction state: " + transactionState;
+            System.err.println(error);
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
             return;
         }
 
         String cardNumber = event.getProperty(ConstKeys.CARD_NUMBER, String.class);
         if (cardNumber == null) {
-            System.err.println("[PosComponent] Request to enter card number failed because card number is null");
-            JOptionPane.showMessageDialog(null, "Cannot enter card number because card number " +
-                    "is null", "Error", JOptionPane.ERROR_MESSAGE);
+            String error = "Cannot enter card number because card number is null";
+            System.err.println(error);
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
             return;
         }
 
@@ -351,11 +383,10 @@ public class PosComponent implements IComponent, IPosEventManager {
 
     private void handleRequestCancelPayment() {
         if (!transactionState.isAwaitingPayment()) {
-            System.err.println("[PosComponent] Request to cancel payment not allowed when transaction state " + "is " +
-                    "not AWAITING_CARD_PAYMENT or AWAITING_CASH_PAYMENT. Current transaction state: " + transactionState);
-            JOptionPane.showMessageDialog(null, "Cannot cancel payment when transaction is not " +
-                            "awaiting payment. Current transaction state: " + transactionState, "Error",
-                    JOptionPane.ERROR_MESSAGE);
+            String error = "Cannot cancel payment when transaction is not awaiting payment. Current transaction " +
+                    "state: " + transactionState;
+            System.err.println(error);
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
             return;
         }
 
@@ -365,11 +396,11 @@ public class PosComponent implements IComponent, IPosEventManager {
 
     private void handleRequestCompleteTransaction() {
         if (!transactionState.isAwaitingPayment()) {
-            System.err.println("[PosComponent] Request to complete transaction not allowed when transaction " +
-                    "state is not AWAITING_CARD_PAYMENT or AWAITING_CASH_PAYMENT. Current transactions state: " + transactionState);
-            JOptionPane.showMessageDialog(null, "Cannot complete transaction when transaction is not " +
-                            "awaiting payment. Current transaction state: " + transactionState, "Error",
-                    JOptionPane.ERROR_MESSAGE);
+            String error = "Cannot complete transaction when transaction is not awaiting payment. Current transaction" +
+                    " " +
+                    "state: " + transactionState;
+            System.err.println(error);
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
             return;
         }
 
@@ -580,6 +611,13 @@ public class PosComponent implements IComponent, IPosEventManager {
         if (Application.DEBUG) {
             System.out.println("[PosComponent] POS component reset: " + this);
         }
+    }
+
+    private List<LineItemDto> getLineItemDtos() {
+        return transaction.getLineItems().stream().map(lineItem -> {
+            Item item = itemService.getItemByUpc(lineItem.getItemUpc());
+            return LineItemDto.from(lineItem, item);
+        }).toList();
     }
 
     /**

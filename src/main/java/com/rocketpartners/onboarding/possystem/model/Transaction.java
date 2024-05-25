@@ -25,21 +25,33 @@ public class Transaction {
     @NonNull
     private List<LineItem> lineItems;
     @NonNull
-    private List<Discount> discountsApplied;
     private int transactionNumber;
-    private LocalDateTime timeCreated;
-    private LocalDateTime timeCompleted;
+    @NonNull
     private BigDecimal subtotal;
+    @NonNull
     private BigDecimal taxes;
+    @NonNull
+    private BigDecimal discounts;
+    @NonNull
     private BigDecimal total;
+    @NonNull
     private BigDecimal amountTendered;
+    @NonNull
     private BigDecimal changeDue;
+
     private String customerId;
     private boolean voided;
     private boolean tendered;
+    private LocalDateTime timeCreated;
+    private LocalDateTime timeCompleted;
 
     public Transaction() {
         lineItems = new ArrayList<>();
-        discountsApplied = new ArrayList<>();
+        subtotal = BigDecimal.ZERO;
+        taxes = BigDecimal.ZERO;
+        discounts = BigDecimal.ZERO;
+        total = BigDecimal.ZERO;
+        amountTendered = BigDecimal.ZERO;
+        changeDue = BigDecimal.ZERO;
     }
 }

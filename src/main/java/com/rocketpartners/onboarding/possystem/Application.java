@@ -8,18 +8,19 @@ import com.rocketpartners.onboarding.possystem.component.ItemBookLoaderComponent
 import com.rocketpartners.onboarding.possystem.component.LocalTestTsvItemBookLoaderComponent;
 import com.rocketpartners.onboarding.possystem.component.PosComponent;
 import com.rocketpartners.onboarding.possystem.display.CustomerViewController;
+import com.rocketpartners.onboarding.possystem.display.ErrorPopupViewController;
 import com.rocketpartners.onboarding.possystem.display.KeypadViewController;
 import com.rocketpartners.onboarding.possystem.display.ScannerViewController;
 import com.rocketpartners.onboarding.possystem.model.PosSystem;
+import com.rocketpartners.onboarding.possystem.repository.DiscountRepository;
 import com.rocketpartners.onboarding.possystem.repository.ItemRepository;
 import com.rocketpartners.onboarding.possystem.repository.PosSystemRepository;
 import com.rocketpartners.onboarding.possystem.repository.TransactionRepository;
+import com.rocketpartners.onboarding.possystem.repository.inmemory.InMemoryDiscountRepository;
 import com.rocketpartners.onboarding.possystem.repository.inmemory.InMemoryItemRepository;
 import com.rocketpartners.onboarding.possystem.repository.inmemory.InMemoryPosSystemRepository;
 import com.rocketpartners.onboarding.possystem.repository.inmemory.InMemoryTransactionRepository;
-import com.rocketpartners.onboarding.possystem.service.ItemService;
-import com.rocketpartners.onboarding.possystem.service.PosSystemService;
-import com.rocketpartners.onboarding.possystem.service.TransactionService;
+import com.rocketpartners.onboarding.possystem.service.*;
 import lombok.Getter;
 import lombok.NonNull;
 import lombok.Setter;
@@ -117,10 +118,18 @@ public class Application {
 
             PosSystemRepository posSystemRepository = new InMemoryPosSystemRepository();
             PosSystemService posSystemService = new PosSystemService(posSystemRepository);
-            TransactionRepository transactionRepository = new InMemoryTransactionRepository();
-            TransactionService transactionService = new TransactionService(transactionRepository);
+
             ItemRepository itemRepository = new InMemoryItemRepository();
             ItemService itemService = new ItemService(itemRepository);
+
+            DiscountRepository discountRepository = new InMemoryDiscountRepository();
+            DiscountService discountService = new DiscountService(discountRepository);
+
+            TaxService taxService = new TaxService();
+
+            TransactionRepository transactionRepository = new InMemoryTransactionRepository();
+            TransactionService transactionService = new TransactionService(
+                    transactionRepository, discountService, itemService, taxService);
 
             ItemBookLoaderComponent itemBookLoaderComponent = new LocalTestTsvItemBookLoaderComponent();
             String storeName = arguments.getStoreName();
@@ -130,8 +139,8 @@ public class Application {
             PosSystem posSystem = posSystemService.createAndPersist(storeName, laneNumber);
             posComponent.setPosSystem(posSystem);
 
-            CustomerViewController customerViewController = new CustomerViewController(posComponent, storeName,
-                    laneNumber);
+            CustomerViewController customerViewController = new CustomerViewController(
+                    posComponent, storeName, laneNumber);
             posComponent.registerChildController(customerViewController);
 
             ScannerViewController scannerViewController =
@@ -142,6 +151,9 @@ public class Application {
             KeypadViewController keypadViewController =
                     new KeypadViewController("Keypad View - Lane " + laneNumber, posComponent);
             posComponent.registerChildController(keypadViewController);
+
+            ErrorPopupViewController errorPopupViewController = new ErrorPopupViewController();
+            posComponent.registerChildController(errorPopupViewController);
 
             posComponent.bootUp();
 

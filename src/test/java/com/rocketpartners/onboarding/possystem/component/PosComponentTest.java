@@ -216,16 +216,17 @@ public class PosComponentTest {
 
         ArgumentCaptor<PosEvent> eventCaptor = ArgumentCaptor.forClass(PosEvent.class);
         posComponent.dispatchPosEvent(addItemEvent);
-        verify(posComponent, times(5)).dispatchPosEvent(eventCaptor.capture());
+        verify(posComponent, times(6)).dispatchPosEvent(eventCaptor.capture());
         List<PosEvent> capturedEvents = eventCaptor.getAllValues();
         System.out.println(capturedEvents);
 
-        assertEquals(5, capturedEvents.size());
+        assertEquals(6, capturedEvents.size());
         assertEquals(PosEventType.REQUEST_ADD_ITEM, capturedEvents.get(0).getType());
         assertEquals(PosEventType.REQUEST_START_TRANSACTION, capturedEvents.get(1).getType());
         assertEquals(PosEventType.TRANSACTION_STARTED, capturedEvents.get(2).getType());
         assertEquals(PosEventType.DO_UPDATE_QUICK_ITEMS, capturedEvents.get(3).getType());
         assertEquals(PosEventType.REQUEST_ADD_ITEM, capturedEvents.get(4).getType());
+        assertEquals(PosEventType.ERROR, capturedEvents.get(5).getType());
         verify(itemService).itemExists(anyString());
         verify(transactionService, never()).addItemToTransaction(any(Transaction.class), anyString());
     }

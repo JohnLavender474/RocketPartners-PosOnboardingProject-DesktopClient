@@ -4,7 +4,7 @@ import com.rocketpartners.onboarding.possystem.Application;
 import com.rocketpartners.onboarding.possystem.constant.ConstKeys;
 import com.rocketpartners.onboarding.possystem.constant.TransactionState;
 import com.rocketpartners.onboarding.possystem.display.dto.ItemDto;
-import com.rocketpartners.onboarding.possystem.display.dto.LineItemDto;
+import com.rocketpartners.onboarding.possystem.display.dto.TransactionDto;
 import com.rocketpartners.onboarding.possystem.event.IPosEventDispatcher;
 import com.rocketpartners.onboarding.possystem.event.PosEvent;
 import com.rocketpartners.onboarding.possystem.event.PosEventType;
@@ -87,8 +87,14 @@ public class CustomerViewController implements IController {
                 customerView.updateQuickItems(itemDtos);
             }
             case ITEM_ADDED, ITEM_REMOVED, LINE_ITEMS_VOIDED -> {
-                List<LineItemDto> lineitemDtos = (List<LineItemDto>) posEvent.getProperty(ConstKeys.LINE_ITEM_DTOS);
-                customerView.updateTransactionsTable(lineitemDtos);
+                TransactionDto transactionDto = posEvent.getProperty(ConstKeys.TRANSACTION_DTO, TransactionDto.class);
+                customerView.updateTransactionsTable(transactionDto.getLineItemDtos());
+                customerView.updateTransactionMetadata(
+                        transactionDto.getSubtotal(),
+                        transactionDto.getDiscounts(),
+                        transactionDto.getTaxes(),
+                        transactionDto.getTotal()
+                );
             }
             case START_PAY_WITH_CARD_PROCESS -> setTransactionState(TransactionState.AWAITING_CARD_PAYMENT);
             case TRANSACTION_VOIDED -> setTransactionState(TransactionState.VOIDED);

@@ -19,5 +19,4 @@ public class LineItem {
     private String transactionId;
     private int quantity;
     private boolean voided;
-    private boolean purchased;
 }

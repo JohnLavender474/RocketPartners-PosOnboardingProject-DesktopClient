@@ -4,13 +4,16 @@ import com.rocketpartners.onboarding.possystem.constant.ConstKeys;
 import com.rocketpartners.onboarding.possystem.constant.TransactionState;
 import com.rocketpartners.onboarding.possystem.display.dto.ItemDto;
 import com.rocketpartners.onboarding.possystem.display.dto.LineItemDto;
+import com.rocketpartners.onboarding.possystem.display.dto.TransactionDto;
 import com.rocketpartners.onboarding.possystem.event.IPosEventDispatcher;
 import com.rocketpartners.onboarding.possystem.event.PosEvent;
 import com.rocketpartners.onboarding.possystem.event.PosEventType;
+import com.rocketpartners.onboarding.possystem.model.LineItem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.ListIterator;
 import java.util.Map;
 
 import static org.mockito.Mockito.mock;
@@ -67,27 +70,46 @@ public class CustomerViewControllerTest {
 
     @Test
     public void testOnPosEvent_ItemAdded() {
-        List<LineItemDto> lineItemDtos = List.of(new LineItemDto());
+        TransactionDto transactionDto = new TransactionDto();
+        LineItemDto lineItemDto = new LineItemDto();
+        lineItemDto.setItemUpc("item1");
+        List<LineItemDto> lineItemDtos = List.of(lineItemDto);
+        transactionDto.setLineItemDtos(lineItemDtos);
+
         PosEvent posEvent = new PosEvent(PosEventType.ITEM_ADDED,
-                Map.of(ConstKeys.LINE_ITEM_DTOS, lineItemDtos));
+                Map.of(ConstKeys.TRANSACTION_DTO, transactionDto));
         customerViewController.onPosEvent(posEvent);
+
         verify(customerViewMock).updateTransactionsTable(lineItemDtos);
     }
 
     @Test
     public void testOnPosEvent_ItemRemoved() {
-        List<LineItemDto> lineItemDtos = List.of(new LineItemDto());
-        PosEvent posEvent = new PosEvent(PosEventType.ITEM_REMOVED, Map.of(ConstKeys.LINE_ITEM_DTOS, lineItemDtos));
+        TransactionDto transactionDto = new TransactionDto();
+        LineItemDto lineItemDto = new LineItemDto();
+        lineItemDto.setItemUpc("item1");
+        List<LineItemDto> lineItemDtos = List.of(lineItemDto);
+        transactionDto.setLineItemDtos(lineItemDtos);
+
+        PosEvent posEvent = new PosEvent(PosEventType.ITEM_REMOVED,
+                Map.of(ConstKeys.TRANSACTION_DTO, transactionDto));
         customerViewController.onPosEvent(posEvent);
+
         verify(customerViewMock).updateTransactionsTable(lineItemDtos);
     }
 
     @Test
     public void testOnPosEvent_LineItemsVoided() {
-        List<LineItemDto> lineItemDtos = List.of(new LineItemDto());
-        PosEvent posEvent = new PosEvent(PosEventType.LINE_ITEMS_VOIDED, Map.of(ConstKeys.LINE_ITEM_DTOS,
-                lineItemDtos));
+        TransactionDto transactionDto = new TransactionDto();
+        LineItemDto lineItemDto = new LineItemDto();
+        lineItemDto.setItemUpc("item1");
+        List<LineItemDto> lineItemDtos = List.of(lineItemDto);
+        transactionDto.setLineItemDtos(lineItemDtos);
+
+        PosEvent posEvent = new PosEvent(PosEventType.LINE_ITEMS_VOIDED,
+                Map.of(ConstKeys.TRANSACTION_DTO, transactionDto));
         customerViewController.onPosEvent(posEvent);
+
         verify(customerViewMock).updateTransactionsTable(lineItemDtos);
     }
 

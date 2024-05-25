@@ -380,6 +380,7 @@ public class CustomerView extends JFrame {
     private final IPosEventDispatcher parentEventDispatcher;
     @NonNull
     private final String storeName;
+    private final int posLane;
     private final Set<String> selectedLineItemUpcs;
     private final CircularFifoQueue<ItemDto> quickItemDtos;
 
@@ -388,8 +389,14 @@ public class CustomerView extends JFrame {
     private JPanel contentPanel;
     private JPanel quickItemsPanel;
 
-    private JTextArea metadataArea;
-    private JTextArea totalsArea;
+    private JTextArea storeNameTextArea;
+    private JTextArea posInfoTextArea;
+    private JTextArea transactionTextArea;
+
+    private JTextArea subtotalTextArea;
+    private JTextArea discountsTextArea;
+    private JTextArea taxesTextArea;
+    private JTextArea totalTextArea;
 
     private JTable transactionTable;
 
@@ -416,6 +423,7 @@ public class CustomerView extends JFrame {
         }
         this.parentEventDispatcher = parentEventDispatcher;
         this.storeName = storeName;
+        this.posLane = posLane;
 
         setMinimumSize(new Dimension(CUSTOMER_VIEW_FRAME_WIDTH, CUSTOMER_VIEW_FRAME_HEIGHT));
         setPreferredSize(new Dimension(CUSTOMER_VIEW_FRAME_WIDTH, CUSTOMER_VIEW_FRAME_HEIGHT));
@@ -469,11 +477,28 @@ public class CustomerView extends JFrame {
         columnModel.getColumn(6).setCellRenderer(new StandardCellRenderer(model));
         transactionTable.getTableHeader().setReorderingAllowed(false);
 
-        metadataArea = new JTextArea();
-        metadataArea.setEditable(false);
+        storeNameTextArea = new JTextArea();
+        storeNameTextArea.setEditable(false);
+        storeNameTextArea.setText(storeName);
 
-        totalsArea = new JTextArea();
-        totalsArea.setEditable(false);
+        posInfoTextArea = new JTextArea();
+        posInfoTextArea.setEditable(false);
+        posInfoTextArea.setText("POS Lane: " + posLane);
+
+        transactionTextArea = new JTextArea();
+        transactionTextArea.setEditable(false);
+
+        subtotalTextArea = new JTextArea();
+        subtotalTextArea.setEditable(false);
+
+        discountsTextArea = new JTextArea();
+        discountsTextArea.setEditable(false);
+
+        taxesTextArea = new JTextArea();
+        taxesTextArea.setEditable(false);
+
+        totalTextArea = new JTextArea();
+        totalTextArea.setEditable(false);
 
         startTransactionButton = createButton(START_TRANSACTION_BUTTON_TEXT, Color.getHSBColor(200f / 360f, 0.9f,
                 0.85f));
@@ -608,6 +633,26 @@ public class CustomerView extends JFrame {
     }
 
     /**
+     * Update the transaction metadata with the provided subtotal, discounts, taxes, and total.
+     *
+     * @param subtotal  The subtotal.
+     * @param discounts The discounts.
+     * @param taxes     The taxes.
+     * @param total     The total.
+     */
+    public void updateTransactionMetadata(@NonNull BigDecimal subtotal, @NonNull BigDecimal discounts,
+                                          @NonNull BigDecimal taxes, @NonNull BigDecimal total) {
+        if (Application.DEBUG) {
+            System.out.println("[CustomerView] Updating metadata and totals");
+        }
+        NumberFormat currencyFormat = NumberFormat.getCurrencyInstance();
+        subtotalTextArea.setText("Subtotal: " + currencyFormat.format(subtotal));
+        discountsTextArea.setText("Discounts: " + currencyFormat.format(discounts));
+        taxesTextArea.setText("Taxes: " + currencyFormat.format(taxes));
+        totalTextArea.setText("Total: " + currencyFormat.format(total));
+    }
+
+    /**
      * Show the transaction not started view.
      */
     public void showTransactionNotStarted() {
@@ -632,7 +677,7 @@ public class CustomerView extends JFrame {
         }
         bannerLabel.setText(TRANSACTION_IN_PROGRESS_BANNER_TEXT);
         showFourRowView(loadTransactionsTablePanel(true), loadQuickItemsPanel(),
-                loadMetadataAndTotalsToContentPanel(), loadOnScanningBottomButtonsPanel());
+                loadMetadataPanel(), loadOnScanningBottomButtonsPanel());
     }
 
     /**
@@ -643,7 +688,7 @@ public class CustomerView extends JFrame {
             System.out.println("[CustomerView] Showing awaiting cash payment");
         }
         bannerLabel.setText(AWAITING_PAYMENT_BANNER_TEXT);
-        showThreeRowView(loadTransactionsTablePanel(false), loadMetadataAndTotalsToContentPanel(),
+        showThreeRowView(loadTransactionsTablePanel(false), loadMetadataPanel(),
                 loadPaymentButtonsPanel());
         revalidate();
         repaint();
@@ -849,11 +894,28 @@ public class CustomerView extends JFrame {
         return button;
     }
 
-    private JPanel loadMetadataAndTotalsToContentPanel() {
-        JPanel metadataAndTotalsPanel = new JPanel(new GridLayout(2, 1));
-        metadataAndTotalsPanel.add(new JScrollPane(metadataArea));
-        metadataAndTotalsPanel.add(new JScrollPane(totalsArea));
-        return metadataAndTotalsPanel;
+    private JPanel loadMetadataPanel() {
+        JPanel metadataPanel = new JPanel(new GridLayout(1, 2));
+
+        JScrollPane scrollPane1 = new JScrollPane();
+        JPanel gridPane1 = new JPanel(new GridLayout(3, 1));
+        gridPane1.add(storeNameTextArea);
+        gridPane1.add(posInfoTextArea);
+        gridPane1.add(transactionTextArea);
+        scrollPane1.add(gridPane1);
+
+        JScrollPane scrollPane2 = new JScrollPane();
+        JPanel gridPane2 = new JPanel(new GridLayout(4, 1));
+        gridPane2.add(subtotalTextArea);
+        gridPane2.add(discountsTextArea);
+        gridPane2.add(taxesTextArea);
+        gridPane2.add(totalTextArea);
+        scrollPane2.add(gridPane2);
+
+        metadataPanel.add(scrollPane1);
+        metadataPanel.add(scrollPane2);
+
+        return metadataPanel;
     }
 
     private JPanel loadOnScanningBottomButtonsPanel() {
