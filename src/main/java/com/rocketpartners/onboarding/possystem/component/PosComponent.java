@@ -21,6 +21,7 @@ import com.rocketpartners.onboarding.possystem.service.ItemService;
 import com.rocketpartners.onboarding.possystem.service.TransactionService;
 import lombok.*;
 
+import javax.swing.*;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -110,6 +111,7 @@ public class PosComponent implements IComponent, IPosEventManager {
 
     private void handlePosEvent(@NonNull PosEvent event) {
         switch (event.getType()) {
+            case REQUEST_SHUTDOWN -> shutdown();
             case REQUEST_START_TRANSACTION -> handleRequestStartTransaction(event);
             case REQUEST_OPEN_SCANNER -> handleRequestOpenScanner();
             case REQUEST_ADD_ITEM -> handleRequestAddItem(event);
@@ -118,6 +120,7 @@ public class PosComponent implements IComponent, IPosEventManager {
             case REQUEST_VOID_LINE_ITEMS -> handleRequestVoidLineItems(event);
             case REQUEST_VOID_TRANSACTION -> handleRequestVoidTransaction();
             case REQUEST_START_PAY_WITH_CARD_PROCESS -> handleRequestStartPayWithCardProcess();
+            case REQUEST_ENTER_CARD_NUMBER -> handleRequestEnterCardNumber(event);
             case REQUEST_CANCEL_PAYMENT -> handleRequestCancelPayment();
             case REQUEST_COMPLETE_TRANSACTION -> handleRequestCompleteTransaction();
             case REQUEST_RESET_POS -> resetPos();
@@ -232,19 +235,29 @@ public class PosComponent implements IComponent, IPosEventManager {
     private void handleRequestVoidLineItems(@NonNull PosEvent event) {
         if (transactionState == TransactionState.NOT_STARTED || !isTransactionEditable()) {
             if (transactionState == TransactionState.NOT_STARTED) {
-                System.err.println("[PosComponent] Request to void line items not allowed when transaction " + "state" +
-                        " is NOT_STARTED");
+                System.err.println("[PosComponent] Request to void line items not allowed when transaction state" +
+                        " is NOT_STARTED. Current transaction state: " + transactionState);
+                JOptionPane.showMessageDialog(null, "Cannot void line items when transaction is " +
+                                "not in progress. Current transaction state: " + transactionState, "Error",
+                        JOptionPane.ERROR_MESSAGE);
             }
+
             if (!isTransactionEditable()) {
                 System.err.println("[PosComponent] Request to void line items not allowed when transaction " + "is " +
-                        "not editable");
+                        "not editable. Current transaction state: " + transactionState);
+                JOptionPane.showMessageDialog(null, "Cannot void line items when transaction is not " +
+                                "editable. Current transaction state: " + transactionState, "Error",
+                        JOptionPane.ERROR_MESSAGE);
             }
+
             return;
         }
 
         Collection<String> itemUpcs = (Collection<String>) event.getProperty(ConstKeys.ITEM_UPCS);
         if (itemUpcs == null) {
             System.err.println("[PosComponent] Request to void line items failed because item UPCs is null");
+            JOptionPane.showMessageDialog(null, "Cannot void line items because item UPCs is " +
+                    "null", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
 
@@ -254,6 +267,7 @@ public class PosComponent implements IComponent, IPosEventManager {
             Item item = itemService.getItemByUpc(lineItem.getItemUpc());
             return LineItemDto.from(lineItem, item);
         }).toList();
+
         dispatchPosEvent(new PosEvent(PosEventType.LINE_ITEMS_VOIDED, Map.of(ConstKeys.LINE_ITEM_DTOS, lineItemDtos)));
     }
 
@@ -261,12 +275,19 @@ public class PosComponent implements IComponent, IPosEventManager {
         if (transactionState == TransactionState.NOT_STARTED || !isTransactionEditable()) {
             if (transactionState == TransactionState.NOT_STARTED) {
                 System.err.println("[PosComponent] Request to void transaction not allowed when transaction " +
-                        "state is NOT_STARTED");
+                        "state is NOT_STARTED. Current transaction state: " + transactionState);
+                JOptionPane.showMessageDialog(null, "Cannot void transaction when transaction is " +
+                                "not in progress. Current transaction state: " + transactionState, "Error",
+                        JOptionPane.ERROR_MESSAGE);
             }
+
             if (!isTransactionEditable()) {
                 System.err.println("[PosComponent] Request to void transaction not allowed when transaction " + "is " +
-                        "not editable");
+                        "not editable. Current transaction state: " + transactionState);
+                JOptionPane.showMessageDialog(null, "Cannot void transaction when transaction is not " +
+                        "editable. Current transaction state: " + transactionState, "Error", JOptionPane.ERROR_MESSAGE);
             }
+
             return;
         }
 
@@ -277,31 +298,67 @@ public class PosComponent implements IComponent, IPosEventManager {
         if (Application.DEBUG) {
             System.out.println("[PosComponent] Request to start card payment process");
         }
+
         if (transactionState != TransactionState.SCANNING_IN_PROGRESS) {
             System.err.println("[PosComponent] Request to start card payment process not allowed when " +
                     "transaction state is not SCANNING_IN_PROGRESS");
+            JOptionPane.showMessageDialog(null, "Cannot start card payment process when " +
+                    "transaction is not in progress", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
+
         if (transaction.getLineItems().isEmpty()) {
             System.err.println("[PosComponent] Request to start card payment process not allowed when " +
                     "transaction has no line items");
+            JOptionPane.showMessageDialog(null, "Cannot start card payment process when " +
+                    "transaction has no line items", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
+
         if (transaction.getLineItems().stream().allMatch(LineItem::isVoided)) {
             System.err.println("[PosComponent] Request to start card payment process not allowed when " +
                     "transaction has only voided line items");
+            JOptionPane.showMessageDialog(null, "Cannot start card payment process when " +
+                    "transaction has only voided line items", "Error", JOptionPane.ERROR_MESSAGE);
             return;
         }
+
+
         transactionState = TransactionState.AWAITING_CARD_PAYMENT;
         dispatchPosEvent(new PosEvent(PosEventType.START_PAY_WITH_CARD_PROCESS));
+    }
+
+    private void handleRequestEnterCardNumber(@NonNull PosEvent event) {
+        if (transactionState != TransactionState.AWAITING_CARD_PAYMENT) {
+            System.err.println("[PosComponent] Request to enter card number not allowed when transaction state " +
+                    "is not AWAITING_CARD_PAYMENT. Current transaction state: " + transactionState);
+            JOptionPane.showMessageDialog(null, "Cannot enter card number when transaction is " +
+                            "not awaiting card payment. Current transaction state: " + transactionState, "Error",
+                    JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        String cardNumber = event.getProperty(ConstKeys.CARD_NUMBER, String.class);
+        if (cardNumber == null) {
+            System.err.println("[PosComponent] Request to enter card number failed because card number is null");
+            JOptionPane.showMessageDialog(null, "Cannot enter card number because card number " +
+                    "is null", "Error", JOptionPane.ERROR_MESSAGE);
+            return;
+        }
+
+        dispatchPosEvent(new PosEvent(PosEventType.REQUEST_COMPLETE_TRANSACTION));
     }
 
     private void handleRequestCancelPayment() {
         if (!transactionState.isAwaitingPayment()) {
             System.err.println("[PosComponent] Request to cancel payment not allowed when transaction state " + "is " +
-                    "not AWAITING_CARD_PAYMENT or AWAITING_CASH_PAYMENT");
+                    "not AWAITING_CARD_PAYMENT or AWAITING_CASH_PAYMENT. Current transaction state: " + transactionState);
+            JOptionPane.showMessageDialog(null, "Cannot cancel payment when transaction is not " +
+                            "awaiting payment. Current transaction state: " + transactionState, "Error",
+                    JOptionPane.ERROR_MESSAGE);
             return;
         }
+
         transactionState = TransactionState.SCANNING_IN_PROGRESS;
         dispatchPosEvent(new PosEvent(PosEventType.DO_CANCEL_PAYMENT));
     }
@@ -309,9 +366,13 @@ public class PosComponent implements IComponent, IPosEventManager {
     private void handleRequestCompleteTransaction() {
         if (!transactionState.isAwaitingPayment()) {
             System.err.println("[PosComponent] Request to complete transaction not allowed when transaction " +
-                    "state is not AWAITING_CARD_PAYMENT or AWAITING_CASH_PAYMENT");
+                    "state is not AWAITING_CARD_PAYMENT or AWAITING_CASH_PAYMENT. Current transactions state: " + transactionState);
+            JOptionPane.showMessageDialog(null, "Cannot complete transaction when transaction is not " +
+                            "awaiting payment. Current transaction state: " + transactionState, "Error",
+                    JOptionPane.ERROR_MESSAGE);
             return;
         }
+
         completeTransaction();
     }
 
@@ -395,6 +456,7 @@ public class PosComponent implements IComponent, IPosEventManager {
         if (posSystem == null) {
             throw new IllegalStateException("POS system must be set to non-null value before calling bootUp()");
         }
+
         if (Application.DEBUG) {
             System.out.println("[PosComponent] Booting up POS component: " + this);
         }
@@ -418,6 +480,7 @@ public class PosComponent implements IComponent, IPosEventManager {
         if (!on) {
             return;
         }
+
         childComponents.forEach(IComponent::update);
         posEventListeners.forEach(listener -> {
             Set<PosEventType> eventTypesToListenFor = listener.getEventTypesToListenFor();
@@ -432,11 +495,10 @@ public class PosComponent implements IComponent, IPosEventManager {
 
         // Turn off the POS component if it is shutting down so that it and its children do not process any more events
         if (shuttingDown) {
-            on = false;
-            shuttingDown = false;
             if (Application.DEBUG) {
                 System.out.println("[PosComponent] POS component has been shut down: " + this);
             }
+            System.exit(0);
         }
     }
 
@@ -449,7 +511,6 @@ public class PosComponent implements IComponent, IPosEventManager {
         transactionState = TransactionState.NOT_STARTED;
         childComponents.forEach(IComponent::shutdown);
         dispatchPosEvent(new PosEvent(PosEventType.POS_SHUTDOWN));
-        // The POS component will be fully shutdown after the next update
         shuttingDown = true;
     }
 

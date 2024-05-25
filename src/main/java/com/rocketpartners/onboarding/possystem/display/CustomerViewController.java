@@ -80,9 +80,8 @@ public class CustomerViewController implements IController {
     @Override
     public void onPosEvent(@NonNull PosEvent posEvent) {
         switch (posEvent.getType()) {
-            case POS_BOOTUP, POS_RESET -> setTransactionState(TransactionState.NOT_STARTED, posEvent);
-            case TRANSACTION_STARTED, DO_CANCEL_PAYMENT -> setTransactionState(TransactionState.SCANNING_IN_PROGRESS,
-                    posEvent);
+            case POS_BOOTUP, POS_RESET -> setTransactionState(TransactionState.NOT_STARTED);
+            case TRANSACTION_STARTED, DO_CANCEL_PAYMENT -> setTransactionState(TransactionState.SCANNING_IN_PROGRESS);
             case DO_UPDATE_QUICK_ITEMS -> {
                 List<ItemDto> itemDtos = (List<ItemDto>) posEvent.getProperty(ConstKeys.ITEM_DTOS);
                 customerView.updateQuickItems(itemDtos);
@@ -91,9 +90,9 @@ public class CustomerViewController implements IController {
                 List<LineItemDto> lineitemDtos = (List<LineItemDto>) posEvent.getProperty(ConstKeys.LINE_ITEM_DTOS);
                 customerView.updateTransactionsTable(lineitemDtos);
             }
-            case START_PAY_WITH_CARD_PROCESS -> setTransactionState(TransactionState.AWAITING_CARD_PAYMENT, posEvent);
-            case TRANSACTION_VOIDED -> setTransactionState(TransactionState.VOIDED, posEvent);
-            case TRANSACTION_COMPLETED -> setTransactionState(TransactionState.COMPLETED, posEvent);
+            case START_PAY_WITH_CARD_PROCESS -> setTransactionState(TransactionState.AWAITING_CARD_PAYMENT);
+            case TRANSACTION_VOIDED -> setTransactionState(TransactionState.VOIDED);
+            case TRANSACTION_COMPLETED -> setTransactionState(TransactionState.COMPLETED);
         }
     }
 
@@ -102,30 +101,21 @@ public class CustomerViewController implements IController {
      *
      * @param transactionState The transaction state.
      */
-    void setTransactionState(@NonNull TransactionState transactionState, @NonNull PosEvent posEvent) {
+    void setTransactionState(@NonNull TransactionState transactionState) {
         if (Application.DEBUG) {
             System.out.println("[CustomerViewController] Setting transaction state to: " + transactionState);
         }
-        updateView(transactionState, posEvent);
+        updateView(transactionState);
     }
 
-    private void updateView(@NonNull TransactionState transactionState, @NonNull PosEvent posEvent) {
+    private void updateView(@NonNull TransactionState transactionState) {
         switch (transactionState) {
             case NOT_STARTED -> {
                 customerView.reset();
                 customerView.showTransactionNotStarted();
             }
             case SCANNING_IN_PROGRESS -> customerView.showScanningInProgress();
-            case AWAITING_CARD_PAYMENT -> {
-                String cardNumber = posEvent.getOrDefaultProperty(ConstKeys.CARD_NUMBER, String.class, "");
-                String cardPin = posEvent.getOrDefaultProperty(ConstKeys.CARD_PIN, String.class, "");
-                customerView.showAwaitingCardPayment(cardNumber, cardPin);
-            }
-            case AWAITING_CASH_PAYMENT -> {
-                String amountTendered = (String) posEvent.getProperty(ConstKeys.AMOUNT_TENDERED);
-                String changeDue = (String) posEvent.getProperty(ConstKeys.CHANGE_DUE);
-                customerView.showAwaitingCashPayment(amountTendered, changeDue);
-            }
+            case AWAITING_CARD_PAYMENT, AWAITING_CASH_PAYMENT -> customerView.showAwaitingPayment();
             case VOIDED -> customerView.showTransactionVoided();
             case COMPLETED -> customerView.showTransactionCompleted();
         }

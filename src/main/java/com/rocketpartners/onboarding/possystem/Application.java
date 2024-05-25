@@ -8,6 +8,7 @@ import com.rocketpartners.onboarding.possystem.component.ItemBookLoaderComponent
 import com.rocketpartners.onboarding.possystem.component.LocalTestTsvItemBookLoaderComponent;
 import com.rocketpartners.onboarding.possystem.component.PosComponent;
 import com.rocketpartners.onboarding.possystem.display.CustomerViewController;
+import com.rocketpartners.onboarding.possystem.display.KeypadViewController;
 import com.rocketpartners.onboarding.possystem.display.ScannerViewController;
 import com.rocketpartners.onboarding.possystem.model.PosSystem;
 import com.rocketpartners.onboarding.possystem.repository.ItemRepository;
@@ -137,6 +138,10 @@ public class Application {
                     new ScannerViewController("Scanner View - Lane " + laneNumber, posComponent);
             scannerViewController.addScannerViewKeyboardFocusManager(KeyboardFocusManager.getCurrentKeyboardFocusManager());
             posComponent.registerChildController(scannerViewController);
+
+            KeypadViewController keypadViewController =
+                    new KeypadViewController("Keypad View - Lane " + laneNumber, posComponent);
+            posComponent.registerChildController(keypadViewController);
 
             posComponent.bootUp();
 

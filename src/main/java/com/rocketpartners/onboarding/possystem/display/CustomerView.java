@@ -352,7 +352,6 @@ public class CustomerView extends JFrame {
     private static final String TRANSACTION_COMPLETED_MESSAGE = "We appreciate your business! Your receipt is now " +
             "displayed on the receipt display";
     private static final String CARD_NUMBER_LABEL_TEXT = "Card Number: ";
-    private static final String CARD_PIN_NUMBER_LABEL_TEXT = "Card Pin Number: ";
     private static final String AMOUNT_TENDERED_LABEL_TEXT = "Amount Tendered: ";
     private static final String CHANGE_DUE_LABEL_TEXT = "Change Due: ";
 
@@ -367,9 +366,6 @@ public class CustomerView extends JFrame {
 
     private static final int QUICK_ITEMS_ROWS_COUNT = 2;
     private static final int QUICK_ITEMS_COLUMNS_COUNT = 4;
-
-    private static final int PAYMENT_PANEL_ROWS_COUNT = 2;
-    private static final int PAYMENT_PANEL_COLUMNS_COUNT = 1;
 
     private static final String STATUS_ADDED = "ADDED";
     private static final String STATUS_VOIDED = "VOIDED";
@@ -395,7 +391,6 @@ public class CustomerView extends JFrame {
 
     private JPanel contentPanel;
     private JPanel quickItemsPanel;
-    private JPanel paymentInfoPanel;
 
     private JTextArea metadataArea;
     private JTextArea totalsArea;
@@ -405,7 +400,6 @@ public class CustomerView extends JFrame {
     private JTextArea amountTenderedArea;
     private JTextArea changeDueArea;
     private JTextArea cardNumberArea;
-    private JTextArea cardPinNumberArea;
 
     private JButton startTransactionButton;
     private JButton payWithCardButton;
@@ -441,16 +435,17 @@ public class CustomerView extends JFrame {
         setLayout(new BorderLayout());
         add(bannerLabel, BorderLayout.NORTH);
         add(contentPanel, BorderLayout.CENTER);
-        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
                 if (JOptionPane.showConfirmDialog(CustomerView.this,
-                        "Are you sure you want to close this window?", "Close Window?",
+                        "Closing this window will shutdown the application. Are you sure you want to do this?",
+                        "Shut Down the Application?",
                         JOptionPane.YES_NO_OPTION,
                         JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION) {
-                    dispose();
+                    parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_SHUTDOWN));
                 }
             }
         });
@@ -483,8 +478,6 @@ public class CustomerView extends JFrame {
         columnModel.getColumn(6).setCellRenderer(new StandardCellRenderer(model));
         transactionTable.getTableHeader().setReorderingAllowed(false);
 
-        paymentInfoPanel = new JPanel(new GridLayout(PAYMENT_PANEL_ROWS_COUNT, PAYMENT_PANEL_COLUMNS_COUNT));
-
         metadataArea = new JTextArea();
         metadataArea.setEditable(false);
 
@@ -499,9 +492,6 @@ public class CustomerView extends JFrame {
 
         cardNumberArea = new JTextArea(CARD_NUMBER_LABEL_TEXT);
         cardNumberArea.setEditable(false);
-
-        cardPinNumberArea = new JTextArea(CARD_PIN_NUMBER_LABEL_TEXT);
-        cardPinNumberArea.setEditable(false);
 
         startTransactionButton = createButton(START_TRANSACTION_BUTTON_TEXT, Color.getHSBColor(200f / 360f, 0.9f,
                 0.85f));
@@ -673,32 +663,13 @@ public class CustomerView extends JFrame {
     /**
      * Show the awaiting cash payment view.
      */
-    public void showAwaitingCashPayment(@NonNull String amountTendered, @NonNull String changeDue) {
+    public void showAwaitingPayment() {
         if (Application.DEBUG) {
             System.out.println("[CustomerView] Showing awaiting cash payment");
         }
         bannerLabel.setText(AWAITING_PAYMENT_BANNER_TEXT);
-        showFourRowView(loadTransactionsTablePanel(false), loadAmountTenderedAndChangeDuePanel(amountTendered,
-                changeDue), loadMetadataAndTotalsToContentPanel(), loadAwaitingPaymentBottomPanel());
-        revalidate();
-        repaint();
-    }
-
-    /**
-     * Show the awaiting card payment view.
-     */
-    public void showAwaitingCardPayment(@NonNull String cardNumber, @NonNull String cardPin) {
-        if (Application.DEBUG) {
-            System.out.println("[CustomerView] Showing awaiting card payment");
-        }
-        bannerLabel.setText(AWAITING_PAYMENT_BANNER_TEXT);
-        paymentInfoPanel.removeAll();
-        cardNumberArea.setText(CARD_NUMBER_LABEL_TEXT + cardNumber);
-        paymentInfoPanel.add(cardNumberArea);
-        cardPinNumberArea.setText(CARD_PIN_NUMBER_LABEL_TEXT + cardPin);
-        paymentInfoPanel.add(cardPinNumberArea);
         showThreeRowView(loadTransactionsTablePanel(false), loadMetadataAndTotalsToContentPanel(),
-                loadAwaitingPaymentBottomPanel());
+                loadPaymentButtonsPanel());
         revalidate();
         repaint();
     }
@@ -903,12 +874,10 @@ public class CustomerView extends JFrame {
         return button;
     }
 
-    private JPanel loadCardNumberAndPinPanel(@NonNull String cardNumber, @NonNull String cardPin) {
-        JPanel panel = new JPanel(new GridLayout(2, 1));
+    private JPanel loadCardNumberPanel(@NonNull String cardNumber) {
+        JPanel panel = new JPanel(new BorderLayout());
         cardNumberArea.setText(CARD_NUMBER_LABEL_TEXT + cardNumber);
-        cardPinNumberArea.setText(CARD_PIN_NUMBER_LABEL_TEXT + cardPin);
         panel.add(cardNumberArea);
-        panel.add(cardPinNumberArea);
         return panel;
     }
 
@@ -937,15 +906,10 @@ public class CustomerView extends JFrame {
         return buttonsPanel;
     }
 
-    private JPanel loadAwaitingPaymentBottomPanel() {
-        JPanel paymentPanel = new JPanel(new GridLayout(1, 2));
-        paymentPanel.add(paymentInfoPanel);
-
+    private JPanel loadPaymentButtonsPanel() {
         JPanel paymentButtonsPanel = new JPanel(new GridLayout(1, 2));
         paymentButtonsPanel.add(cancelPaymentButton);
         paymentButtonsPanel.add(finalizeButton);
-
-        paymentPanel.add(paymentButtonsPanel);
-        return paymentPanel;
+        return paymentButtonsPanel;
     }
 }

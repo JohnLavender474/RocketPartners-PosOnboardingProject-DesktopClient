@@ -9,7 +9,6 @@ import com.rocketpartners.onboarding.possystem.event.PosEvent;
 import com.rocketpartners.onboarding.possystem.event.PosEventType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mockito;
 
 import java.util.List;
 import java.util.Map;
@@ -19,13 +18,11 @@ import static org.mockito.Mockito.verify;
 
 public class CustomerViewControllerTest {
 
-    private PosEvent posEvent;
     private CustomerView customerViewMock;
     private CustomerViewController customerViewController;
 
     @BeforeEach
     public void setUp() {
-        posEvent = Mockito.mock(PosEvent.class);
         IPosEventDispatcher posEventDispatcherMock = mock(IPosEventDispatcher.class);
         customerViewMock = mock(CustomerView.class);
         customerViewController = new CustomerViewController(posEventDispatcherMock, customerViewMock);
@@ -96,37 +93,33 @@ public class CustomerViewControllerTest {
 
     @Test
     public void testOnPosEvent_StartPayWithCardProcess() {
-        PosEvent posEvent = new PosEvent(PosEventType.START_PAY_WITH_CARD_PROCESS,
-                Map.of(
-                        ConstKeys.CARD_NUMBER, "1234567890123456",
-                        ConstKeys.CARD_PIN, "1234"
-                ));
+        PosEvent posEvent = new PosEvent(PosEventType.START_PAY_WITH_CARD_PROCESS);
         customerViewController.onPosEvent(posEvent);
-        verify(customerViewMock).showAwaitingCardPayment("1234567890123456", "1234");
+        verify(customerViewMock).showAwaitingPayment();
     }
 
 
     @Test
     public void testSetTransactionState_NotStarted() {
-        customerViewController.setTransactionState(TransactionState.NOT_STARTED, posEvent);
+        customerViewController.setTransactionState(TransactionState.NOT_STARTED);
         verify(customerViewMock).showTransactionNotStarted();
     }
 
     @Test
     public void testSetTransactionState_ScanningInProgress() {
-        customerViewController.setTransactionState(TransactionState.SCANNING_IN_PROGRESS, posEvent);
+        customerViewController.setTransactionState(TransactionState.SCANNING_IN_PROGRESS);
         verify(customerViewMock).showScanningInProgress();
     }
 
     @Test
     public void testSetTransactionState_Voided() {
-        customerViewController.setTransactionState(TransactionState.VOIDED, posEvent);
+        customerViewController.setTransactionState(TransactionState.VOIDED);
         verify(customerViewMock).showTransactionVoided();
     }
 
     @Test
     public void testSetTransactionState_Completed() {
-        customerViewController.setTransactionState(TransactionState.COMPLETED, posEvent);
+        customerViewController.setTransactionState(TransactionState.COMPLETED);
         verify(customerViewMock).showTransactionCompleted();
     }
 

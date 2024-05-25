@@ -9,7 +9,6 @@ public class ConstKeys {
     public static final String LINE_ITEM_DTOS = "line_item_dtos";
     public static final String POS_SYSTEM_ID = "pos_system_id";
     public static final String CARD_NUMBER = "card_number";
-    public static final String CARD_PIN = "card_pin";
     public static final String AMOUNT_TENDERED = "amount_tendered";
     public static final String CHANGE_DUE = "change_due";
 }

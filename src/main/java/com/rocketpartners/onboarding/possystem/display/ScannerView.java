@@ -46,10 +46,12 @@ public class ScannerView extends JFrame implements KeyEventDispatcher {
             @Override
             public void windowClosing(WindowEvent e) {
                 if (JOptionPane.showConfirmDialog(ScannerView.this,
-                        "Are you sure you want to close this window?", "Close Window?",
+                        "Are you sure you want to hide this window? You can re-open it by clicking the 'Open Scanner'" +
+                                " button while scanning is in progress.",
+                        "Hide Scanner View Window?",
                         JOptionPane.YES_NO_OPTION,
                         JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION) {
-                    dispose();
+                    setVisible(false);
                 }
             }
         });
