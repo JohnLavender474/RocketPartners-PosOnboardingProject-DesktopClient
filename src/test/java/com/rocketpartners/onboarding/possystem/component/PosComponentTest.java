@@ -6,6 +6,7 @@ import com.rocketpartners.onboarding.possystem.constant.TransactionState;
 import com.rocketpartners.onboarding.possystem.event.PosEvent;
 import com.rocketpartners.onboarding.possystem.event.PosEventType;
 import com.rocketpartners.onboarding.possystem.model.Item;
+import com.rocketpartners.onboarding.possystem.model.LineItem;
 import com.rocketpartners.onboarding.possystem.model.PosSystem;
 import com.rocketpartners.onboarding.possystem.model.Transaction;
 import com.rocketpartners.onboarding.possystem.service.ItemService;
@@ -16,6 +17,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.math.BigDecimal;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -106,7 +108,7 @@ public class PosComponentTest {
     @Test
     void testStartTransaction() {
         posComponent.bootUp();
-        posComponent.startTransaction();
+        posComponent.startTransaction(null);
 
         assertNotNull(posComponent.getTransaction());
         assertEquals(TransactionState.SCANNING_IN_PROGRESS, posComponent.getTransactionState());
@@ -124,7 +126,7 @@ public class PosComponentTest {
     @Test
     public void testVoidTransaction() {
         posComponent.bootUp();
-        posComponent.startTransaction();
+        posComponent.startTransaction(null);
         posComponent.voidTransaction();
 
         assertEquals(TransactionState.VOIDED, posComponent.getTransactionState());
@@ -142,7 +144,7 @@ public class PosComponentTest {
     @Test
     void testCompleteTransaction() {
         posComponent.bootUp();
-        posComponent.startTransaction();
+        posComponent.startTransaction(null);
         posComponent.completeTransaction();
 
         assertEquals(TransactionState.COMPLETED, posComponent.getTransactionState());
@@ -160,7 +162,7 @@ public class PosComponentTest {
     @Test
     public void testResetPos() {
         posComponent.bootUp();
-        posComponent.startTransaction();
+        posComponent.startTransaction(null);
         posComponent.completeTransaction();
         posComponent.resetPos();
 
@@ -179,18 +181,83 @@ public class PosComponentTest {
     }
 
     @Test
-    public void testHandlePosEvent_RequestAddItem_TransactionNotInProgress() {
-        PosEvent addItemEvent = new PosEvent(PosEventType.REQUEST_ADD_ITEM, Map.of(ConstKeys.ITEM_UPC, "1234567890"));
+    public void testHandlePosEvent_RequestAddItem_TransactionNotStarted_ItemExists() {
+        posComponent.setTransactionState(TransactionState.NOT_STARTED);
+        String itemUpc = "1234567890";
+        PosEvent addItemEvent = new PosEvent(PosEventType.REQUEST_ADD_ITEM, Map.of(ConstKeys.ITEM_UPC, itemUpc));
 
+        when(itemService.itemExists(itemUpc)).thenReturn(true);
+        when(transactionService.addItemToTransaction(any(), any())).thenReturn(true);
+
+        ArgumentCaptor<PosEvent> eventCaptor = ArgumentCaptor.forClass(PosEvent.class);
         posComponent.dispatchPosEvent(addItemEvent);
+        verify(posComponent, times(6)).dispatchPosEvent(eventCaptor.capture());
+        List<PosEvent> capturedEvents = eventCaptor.getAllValues();
+        System.out.println(capturedEvents);
 
+        assertEquals(6, capturedEvents.size());
+        assertEquals(PosEventType.REQUEST_ADD_ITEM, capturedEvents.get(0).getType());
+        assertEquals(PosEventType.REQUEST_START_TRANSACTION, capturedEvents.get(1).getType());
+        assertEquals(PosEventType.TRANSACTION_STARTED, capturedEvents.get(2).getType());
+        assertEquals(PosEventType.DO_UPDATE_QUICK_ITEMS, capturedEvents.get(3).getType());
+        assertEquals(PosEventType.REQUEST_ADD_ITEM, capturedEvents.get(4).getType());
+        assertEquals(PosEventType.ITEM_ADDED, capturedEvents.get(5).getType());
+        verify(itemService).itemExists(anyString());
+        verify(transactionService, times(1)).addItemToTransaction(any(Transaction.class), anyString());
+    }
+
+    @Test
+    public void testHandlePosEvent_RequestAddItem_TransactionNotStarted_ItemDoesNotExist() {
+        posComponent.setTransactionState(TransactionState.NOT_STARTED);
+        String itemUpc = "1234567890";
+        PosEvent addItemEvent = new PosEvent(PosEventType.REQUEST_ADD_ITEM, Map.of(ConstKeys.ITEM_UPC, itemUpc));
+
+        when(itemService.itemExists(itemUpc)).thenReturn(false);
+
+        ArgumentCaptor<PosEvent> eventCaptor = ArgumentCaptor.forClass(PosEvent.class);
+        posComponent.dispatchPosEvent(addItemEvent);
+        verify(posComponent, times(5)).dispatchPosEvent(eventCaptor.capture());
+        List<PosEvent> capturedEvents = eventCaptor.getAllValues();
+        System.out.println(capturedEvents);
+
+        assertEquals(5, capturedEvents.size());
+        assertEquals(PosEventType.REQUEST_ADD_ITEM, capturedEvents.get(0).getType());
+        assertEquals(PosEventType.REQUEST_START_TRANSACTION, capturedEvents.get(1).getType());
+        assertEquals(PosEventType.TRANSACTION_STARTED, capturedEvents.get(2).getType());
+        assertEquals(PosEventType.DO_UPDATE_QUICK_ITEMS, capturedEvents.get(3).getType());
+        assertEquals(PosEventType.REQUEST_ADD_ITEM, capturedEvents.get(4).getType());
+        verify(itemService).itemExists(anyString());
         verify(transactionService, never()).addItemToTransaction(any(Transaction.class), anyString());
-        verify(itemService, never()).itemExists(anyString());
+    }
+
+    @Test
+    public void testHandlePosEvent_RequestAddItem_TransactionNotStarted_AddToTransactionFails() {
+        posComponent.setTransactionState(TransactionState.NOT_STARTED);
+        String itemUpc = "1234567890";
+        PosEvent addItemEvent = new PosEvent(PosEventType.REQUEST_ADD_ITEM, Map.of(ConstKeys.ITEM_UPC, itemUpc));
+
+        when(itemService.itemExists(itemUpc)).thenReturn(true);
+        when(transactionService.addItemToTransaction(any(), any())).thenReturn(false);
+
+        ArgumentCaptor<PosEvent> eventCaptor = ArgumentCaptor.forClass(PosEvent.class);
+        posComponent.dispatchPosEvent(addItemEvent);
+        verify(posComponent, times(5)).dispatchPosEvent(eventCaptor.capture());
+        List<PosEvent> capturedEvents = eventCaptor.getAllValues();
+        System.out.println(capturedEvents);
+
+        assertEquals(5, capturedEvents.size());
+        assertEquals(PosEventType.REQUEST_ADD_ITEM, capturedEvents.get(0).getType());
+        assertEquals(PosEventType.REQUEST_START_TRANSACTION, capturedEvents.get(1).getType());
+        assertEquals(PosEventType.TRANSACTION_STARTED, capturedEvents.get(2).getType());
+        assertEquals(PosEventType.DO_UPDATE_QUICK_ITEMS, capturedEvents.get(3).getType());
+        assertEquals(PosEventType.REQUEST_ADD_ITEM, capturedEvents.get(4).getType());
+        verify(itemService).itemExists(anyString());
+        verify(transactionService, times(1)).addItemToTransaction(any(Transaction.class), anyString());
     }
 
     @Test
     public void testHandlePosEvent_RequestAddItem_ItemDoesNotExist() {
-        posComponent.startTransaction();
+        posComponent.startTransaction(null);
         String itemUpc = "1234567890";
         PosEvent addItemEvent = new PosEvent(PosEventType.REQUEST_ADD_ITEM, Map.of(ConstKeys.ITEM_UPC, itemUpc));
 
@@ -204,7 +271,7 @@ public class PosComponentTest {
 
     @Test
     public void testHandlePosEvent_RequestAddItem_TransactionInProgress() {
-        posComponent.startTransaction();
+        posComponent.startTransaction(null);
         String itemUpc = "1234567890";
         PosEvent addItemEvent = new PosEvent(PosEventType.REQUEST_ADD_ITEM, Map.of(ConstKeys.ITEM_UPC, itemUpc));
 
@@ -228,7 +295,7 @@ public class PosComponentTest {
 
     @Test
     public void testHandlePosEvent_RequestVoidTransaction() {
-        posComponent.startTransaction();
+        posComponent.startTransaction(null);
         PosEvent voidTransactionEvent = new PosEvent(PosEventType.REQUEST_VOID_TRANSACTION);
 
         posComponent.dispatchPosEvent(voidTransactionEvent);
@@ -238,7 +305,7 @@ public class PosComponentTest {
 
     @Test
     public void testHandlePosEvent_RequestCompleteTransaction1() {
-        posComponent.startTransaction();
+        posComponent.startTransaction(null);
         posComponent.setTransactionState(TransactionState.AWAITING_CASH_PAYMENT);
         PosEvent completeTransactionEvent = new PosEvent(PosEventType.REQUEST_COMPLETE_TRANSACTION);
 
@@ -249,7 +316,7 @@ public class PosComponentTest {
 
     @Test
     public void testHandlePosEvent_RequestCompleteTransaction2() {
-        posComponent.startTransaction();
+        posComponent.startTransaction(null);
         posComponent.setTransactionState(TransactionState.AWAITING_CARD_PAYMENT);
         PosEvent completeTransactionEvent = new PosEvent(PosEventType.REQUEST_COMPLETE_TRANSACTION);
 
@@ -260,7 +327,7 @@ public class PosComponentTest {
 
     @Test
     public void testHandlePosEvent_RequestResetPos() {
-        posComponent.startTransaction();
+        posComponent.startTransaction(null);
         posComponent.setTransactionState(TransactionState.COMPLETED);
         PosEvent resetPosEvent = new PosEvent(PosEventType.REQUEST_RESET_POS);
 
@@ -283,7 +350,7 @@ public class PosComponentTest {
 
     @Test
     public void testHandlePosEvent_RequestRemoveItem_ItemDoesNotExist() {
-        posComponent.startTransaction();
+        posComponent.startTransaction(null);
         String itemUpc = "1234567890";
         PosEvent removeItemEvent = new PosEvent(PosEventType.REQUEST_REMOVE_ITEM, Map.of(ConstKeys.ITEM_UPC, itemUpc));
 
@@ -297,7 +364,7 @@ public class PosComponentTest {
 
     @Test
     public void testHandlePosEvent_RequestRemoveItem_TransactionInProgress() {
-        posComponent.startTransaction();
+        posComponent.startTransaction(null);
         String itemUpc = "1234567890";
         PosEvent removeItemEvent = new PosEvent(PosEventType.REQUEST_REMOVE_ITEM, Map.of(ConstKeys.ITEM_UPC, itemUpc));
 
@@ -322,7 +389,7 @@ public class PosComponentTest {
 
     @Test
     public void testHandlePosEvent_RequestVoidLineItems_TransactionInProgress() {
-        posComponent.startTransaction();
+        posComponent.startTransaction(null);
         PosEvent voidLineItemsEvent = new PosEvent(PosEventType.REQUEST_VOID_LINE_ITEMS, Map.of(ConstKeys.ITEM_UPCS,
                 List.of("1234567890")));
 
@@ -344,12 +411,62 @@ public class PosComponentTest {
 
     @Test
     public void testHandlePosEvent_RequestUpdateQuickItems_TransactionInProgress() {
-        posComponent.startTransaction();
+        posComponent.startTransaction(null);
         PosEvent updateQuickItemsEvent = new PosEvent(PosEventType.REQUEST_UPDATE_QUICK_ITEMS);
 
         posComponent.dispatchPosEvent(updateQuickItemsEvent);
 
         verify(itemService, times(1)).getRandomItemsNotIn(anySet(), eq(ConstVals.QUICK_ITEMS_COUNT));
+    }
+
+    @Test
+    void testStartCardPaymentProcess() {
+        Transaction transaction = new Transaction();
+        LineItem lineItem = new LineItem();
+        lineItem.setItemUpc("testUPC");
+        lineItem.setQuantity(1);
+        transaction.setLineItems(Collections.singletonList(lineItem));
+        when(transactionService.createAndPersist(anyString(), anyInt())).thenReturn(transaction);
+
+        posComponent.startTransaction(null);
+        posComponent.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_START_PAY_WITH_CARD_PROCESS));
+
+        assertEquals(TransactionState.AWAITING_CARD_PAYMENT, posComponent.getTransactionState());
+    }
+
+    @Test
+    void testCancelCardPaymentProcess() {
+        Transaction transaction = new Transaction();
+        LineItem lineItem = new LineItem();
+        lineItem.setItemUpc("testUPC");
+        lineItem.setQuantity(1);
+        transaction.setLineItems(Collections.singletonList(lineItem));
+
+        when(transactionService.createAndPersist(anyString(), anyInt())).thenReturn(transaction);
+
+        posComponent.startTransaction(null);
+        posComponent.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_START_PAY_WITH_CARD_PROCESS));
+        posComponent.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_CANCEL_PAYMENT));
+
+        assertEquals(TransactionState.SCANNING_IN_PROGRESS, posComponent.getTransactionState());
+    }
+
+    @Test
+    void testCompleteCardPaymentProcess() {
+        Transaction transaction = new Transaction();
+        LineItem lineItem = new LineItem();
+        lineItem.setItemUpc("testUPC");
+        lineItem.setQuantity(1);
+        transaction.setLineItems(Collections.singletonList(lineItem));
+        when(transactionService.createAndPersist(anyString(), anyInt())).thenReturn(transaction);
+
+        posComponent.startTransaction(null);
+        posComponent.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_START_PAY_WITH_CARD_PROCESS));
+        posComponent.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_COMPLETE_TRANSACTION));
+
+        assertEquals(TransactionState.COMPLETED, posComponent.getTransactionState());
+        assertTrue(posComponent.isTransactionTendered());
+        verify(transactionService, times(1)).saveTransaction(transaction);
     }
 }
 

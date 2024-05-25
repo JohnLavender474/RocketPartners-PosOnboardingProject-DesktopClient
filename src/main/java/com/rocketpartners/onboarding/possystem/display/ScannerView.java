@@ -92,9 +92,6 @@ public class ScannerView extends JFrame implements KeyEventDispatcher {
                 onEnterButtonClick();
                 return true;
             }
-            if (Character.isDigit(c) || Character.isLetter(c)) {
-                scannerInput.setText(scannerInput.getText() + c);
-            }
         }
         return false;
     }

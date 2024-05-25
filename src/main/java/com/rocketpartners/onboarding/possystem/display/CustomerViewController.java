@@ -8,8 +8,6 @@ import com.rocketpartners.onboarding.possystem.display.dto.LineItemDto;
 import com.rocketpartners.onboarding.possystem.event.IPosEventDispatcher;
 import com.rocketpartners.onboarding.possystem.event.PosEvent;
 import com.rocketpartners.onboarding.possystem.event.PosEventType;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
 import lombok.NonNull;
 
 import java.util.EnumSet;
@@ -19,7 +17,6 @@ import java.util.Set;
 /**
  * Controller for the customer view. This class is responsible for updating the customer view based on POS events.
  */
-@AllArgsConstructor
 public class CustomerViewController implements IController {
 
     private static final Set<PosEventType> eventTypesToListenFor = EnumSet.of(
@@ -31,16 +28,14 @@ public class CustomerViewController implements IController {
             PosEventType.DO_UPDATE_QUICK_ITEMS,
             PosEventType.ITEM_ADDED,
             PosEventType.ITEM_REMOVED,
-            PosEventType.LINE_ITEMS_VOIDED
+            PosEventType.LINE_ITEMS_VOIDED,
+            PosEventType.START_PAY_WITH_CARD_PROCESS
     );
 
     @NonNull
     private final IPosEventDispatcher parentPosEventDispatcher;
     @NonNull
     private final CustomerView customerView;
-    @NonNull
-    @Getter
-    private TransactionState transactionState;
 
     /**
      * Constructor that accepts a parent POS event dispatcher. The transaction state is set to NOT_STARTED and will be
@@ -55,7 +50,6 @@ public class CustomerViewController implements IController {
                                   @NonNull String storeName, int posLane) {
         this.parentPosEventDispatcher = parentPosEventDispatcher;
         customerView = new CustomerView(this, storeName, posLane);
-        transactionState = TransactionState.NOT_STARTED;
     }
 
     /**
@@ -70,7 +64,6 @@ public class CustomerViewController implements IController {
                            @NonNull CustomerView customerView) {
         this.parentPosEventDispatcher = parentPosEventDispatcher;
         this.customerView = customerView;
-        transactionState = TransactionState.NOT_STARTED;
     }
 
     @Override
@@ -86,8 +79,9 @@ public class CustomerViewController implements IController {
     @Override
     public void onPosEvent(@NonNull PosEvent posEvent) {
         switch (posEvent.getType()) {
-            case POS_BOOTUP, POS_RESET -> setTransactionState(TransactionState.NOT_STARTED);
-            case TRANSACTION_STARTED -> setTransactionState(TransactionState.SCANNING_IN_PROGRESS);
+            case POS_BOOTUP, POS_RESET -> setTransactionState(TransactionState.NOT_STARTED, posEvent);
+            case TRANSACTION_STARTED, DO_CANCEL_PAYMENT -> setTransactionState(TransactionState.SCANNING_IN_PROGRESS,
+                    posEvent);
             case DO_UPDATE_QUICK_ITEMS -> {
                 List<ItemDto> itemDtos = (List<ItemDto>) posEvent.getProperty(ConstKeys.ITEM_DTOS);
                 customerView.updateQuickItems(itemDtos);
@@ -96,8 +90,9 @@ public class CustomerViewController implements IController {
                 List<LineItemDto> lineitemDtos = (List<LineItemDto>) posEvent.getProperty(ConstKeys.LINE_ITEM_DTOS);
                 customerView.updateTransactionsTable(lineitemDtos);
             }
-            case TRANSACTION_VOIDED -> setTransactionState(TransactionState.VOIDED);
-            case TRANSACTION_COMPLETED -> setTransactionState(TransactionState.COMPLETED);
+            case START_PAY_WITH_CARD_PROCESS -> setTransactionState(TransactionState.AWAITING_CARD_PAYMENT, posEvent);
+            case TRANSACTION_VOIDED -> setTransactionState(TransactionState.VOIDED, posEvent);
+            case TRANSACTION_COMPLETED -> setTransactionState(TransactionState.COMPLETED, posEvent);
         }
     }
 
@@ -106,23 +101,30 @@ public class CustomerViewController implements IController {
      *
      * @param transactionState The transaction state.
      */
-    void setTransactionState(@NonNull TransactionState transactionState) {
+    void setTransactionState(@NonNull TransactionState transactionState, @NonNull PosEvent posEvent) {
         if (Application.DEBUG) {
             System.out.println("[CustomerViewController] Setting transaction state to: " + transactionState);
         }
-        this.transactionState = transactionState;
-        updateView();
+        updateView(transactionState, posEvent);
     }
 
-    private void updateView() {
+    private void updateView(@NonNull TransactionState transactionState, @NonNull PosEvent posEvent) {
         switch (transactionState) {
             case NOT_STARTED -> {
                 customerView.reset();
                 customerView.showTransactionNotStarted();
             }
             case SCANNING_IN_PROGRESS -> customerView.showScanningInProgress();
-            case AWAITING_CARD_PAYMENT -> customerView.showAwaitingCardPayment();
-            case AWAITING_CASH_PAYMENT -> customerView.showAwaitingCashPayment();
+            case AWAITING_CARD_PAYMENT -> {
+                String cardNumber = (String) posEvent.getProperty(ConstKeys.CARD_NUMBER);
+                String cardPin = (String) posEvent.getProperty(ConstKeys.CARD_PIN);
+                customerView.showAwaitingCardPayment(cardNumber, cardPin);
+            }
+            case AWAITING_CASH_PAYMENT -> {
+                String amountTendered = (String) posEvent.getProperty(ConstKeys.AMOUNT_TENDERED);
+                String changeDue = (String) posEvent.getProperty(ConstKeys.CHANGE_DUE);
+                customerView.showAwaitingCashPayment(amountTendered, changeDue);
+            }
             case VOIDED -> customerView.showTransactionVoided();
             case COMPLETED -> customerView.showTransactionCompleted();
         }
