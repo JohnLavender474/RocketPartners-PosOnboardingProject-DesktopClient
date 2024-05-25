@@ -43,7 +43,7 @@ public class PosEvent {
      * @param key The key of the property.
      * @return True if the event contains the property, false otherwise.
      */
-    public boolean containsProperty(String key) {
+    public boolean containsProperty(@NonNull String key) {
         return props.containsKey(key);
     }
 
@@ -53,7 +53,7 @@ public class PosEvent {
      * @param key The key of the property.
      * @return The event.
      */
-    public Object getProperty(String key) {
+    public Object getProperty(@NonNull String key) {
         return props.get(key);
     }
 
@@ -65,8 +65,36 @@ public class PosEvent {
      * @param <T>   The type of the property.
      * @return The property cast to the specified class.
      */
-    public <T> T getProperty(String key, Class<T> clazz) {
+    public <T> T getProperty(@NonNull String key, @NonNull Class<T> clazz) {
         return clazz.cast(getProperty(key));
+    }
+
+    /**
+     * Get a property of the event and cast it to the specified class. If the property does not exist, return the
+     * default
+     * value. If the property exists but cannot be cast to the specified class, an exception will be thrown.
+     *
+     * @param key          The key of the property.
+     * @param defaultValue The default value to return if the property does not exist.
+     * @return The property cast to the specified class or the default value if the property does not exist.
+     */
+    public Object getOrDefaultProperty(@NonNull String key, Object defaultValue) {
+        return props.containsKey(key) ? getProperty(key) : defaultValue;
+    }
+
+    /**
+     * Get a property of the event and cast it to the specified class. If the property does not exist, return the
+     * default
+     * value. If the property exists but cannot be cast to the specified class, an exception will be thrown.
+     *
+     * @param key          The key of the property.
+     * @param clazz        The class to cast the property to.
+     * @param defaultValue The default value to return if the property does not exist.
+     * @param <T>          The type of the property.
+     * @return The property cast to the specified class or the default value if the property does not exist.
+     */
+    public <T> T getOrDefaultProperty(@NonNull String key, @NonNull Class<T> clazz, T defaultValue) {
+        return props.containsKey(key) ? getProperty(key, clazz) : defaultValue;
     }
 
     /**

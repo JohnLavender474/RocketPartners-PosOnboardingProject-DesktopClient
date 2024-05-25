@@ -679,7 +679,7 @@ public class CustomerView extends JFrame {
         }
         bannerLabel.setText(AWAITING_PAYMENT_BANNER_TEXT);
         showFourRowView(loadTransactionsTablePanel(false), loadAmountTenderedAndChangeDuePanel(amountTendered,
-                        changeDue), loadMetadataAndTotalsToContentPanel(), loadAwaitingPaymentBottomPanel());
+                changeDue), loadMetadataAndTotalsToContentPanel(), loadAwaitingPaymentBottomPanel());
         revalidate();
         repaint();
     }
@@ -692,8 +692,13 @@ public class CustomerView extends JFrame {
             System.out.println("[CustomerView] Showing awaiting card payment");
         }
         bannerLabel.setText(AWAITING_PAYMENT_BANNER_TEXT);
-        showFourRowView(loadTransactionsTablePanel(false), loadCardNumberAndPinPanel(cardNumber, cardPin),
-                loadMetadataAndTotalsToContentPanel(), loadAwaitingPaymentBottomPanel());
+        paymentInfoPanel.removeAll();
+        cardNumberArea.setText(CARD_NUMBER_LABEL_TEXT + cardNumber);
+        paymentInfoPanel.add(cardNumberArea);
+        cardPinNumberArea.setText(CARD_PIN_NUMBER_LABEL_TEXT + cardPin);
+        paymentInfoPanel.add(cardPinNumberArea);
+        showThreeRowView(loadTransactionsTablePanel(false), loadMetadataAndTotalsToContentPanel(),
+                loadAwaitingPaymentBottomPanel());
         revalidate();
         repaint();
     }
@@ -741,6 +746,25 @@ public class CustomerView extends JFrame {
         repaint();
     }
 
+    private void showThreeRowView(@NonNull JPanel p1, @NonNull JPanel p2, @NonNull JPanel p3) {
+        contentPanel.removeAll();
+        contentPanel.setLayout(new GridBagLayout());
+
+        GridBagConstraints constraints = new GridBagConstraints();
+        constraints.fill = GridBagConstraints.BOTH;
+
+        constraints.gridy = 0;
+        List<Double> weights = List.of(0.5, 0.2, 0.3);
+        for (int i = 0; i < 3; i++) {
+            JPanel p = i == 0 ? p1 : i == 1 ? p2 : p3;
+            constraints.weighty = weights.get(i);
+            contentPanel.add(p, constraints);
+            constraints.gridy++;
+        }
+        revalidate();
+        repaint();
+    }
+
     private void showFourRowView(@NonNull JPanel p1, @NonNull JPanel p2, @NonNull JPanel p3, @NonNull JPanel p4) {
         contentPanel.removeAll();
         contentPanel.setLayout(new GridBagLayout());
@@ -749,21 +773,13 @@ public class CustomerView extends JFrame {
         constraints.fill = GridBagConstraints.BOTH;
 
         constraints.gridy = 0;
-        constraints.weighty = 0.5;
-        contentPanel.add(p1, constraints);
-
-        constraints.gridy = 1;
-        constraints.weighty = 0.2;
-        contentPanel.add(p2, constraints);
-
-        constraints.gridy = 2;
-        constraints.weighty = 0.2;
-        contentPanel.add(p3, constraints);
-
-        constraints.gridy = 3;
-        constraints.weighty = 0.1;
-        contentPanel.add(p4, constraints);
-
+        List<Double> weights = List.of(0.5, 0.2, 0.2, 0.1);
+        for (int i = 0; i < 4; i++) {
+            JPanel p = i == 0 ? p1 : i == 1 ? p2 : i == 2 ? p3 : p4;
+            constraints.weighty = weights.get(i);
+            contentPanel.add(p, constraints);
+            constraints.gridy++;
+        }
         revalidate();
         repaint();
     }

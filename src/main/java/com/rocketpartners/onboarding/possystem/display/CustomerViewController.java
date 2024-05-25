@@ -29,7 +29,8 @@ public class CustomerViewController implements IController {
             PosEventType.ITEM_ADDED,
             PosEventType.ITEM_REMOVED,
             PosEventType.LINE_ITEMS_VOIDED,
-            PosEventType.START_PAY_WITH_CARD_PROCESS
+            PosEventType.START_PAY_WITH_CARD_PROCESS,
+            PosEventType.DO_CANCEL_PAYMENT
     );
 
     @NonNull
@@ -116,8 +117,8 @@ public class CustomerViewController implements IController {
             }
             case SCANNING_IN_PROGRESS -> customerView.showScanningInProgress();
             case AWAITING_CARD_PAYMENT -> {
-                String cardNumber = (String) posEvent.getProperty(ConstKeys.CARD_NUMBER);
-                String cardPin = (String) posEvent.getProperty(ConstKeys.CARD_PIN);
+                String cardNumber = posEvent.getOrDefaultProperty(ConstKeys.CARD_NUMBER, String.class, "");
+                String cardPin = posEvent.getOrDefaultProperty(ConstKeys.CARD_PIN, String.class, "");
                 customerView.showAwaitingCardPayment(cardNumber, cardPin);
             }
             case AWAITING_CASH_PAYMENT -> {
