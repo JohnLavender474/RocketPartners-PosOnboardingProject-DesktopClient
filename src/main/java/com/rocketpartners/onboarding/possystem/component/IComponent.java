@@ -16,10 +16,4 @@ public interface IComponent {
      */
     default void update() {
     }
-
-    /**
-     * Shutdown the system.
-     */
-    default void shutdown() {
-    }
 }

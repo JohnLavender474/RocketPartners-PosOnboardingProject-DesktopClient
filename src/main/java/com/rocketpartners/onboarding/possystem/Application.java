@@ -36,7 +36,7 @@ import java.util.Arrays;
  */
 public class Application {
 
-    public static boolean DEBUG;
+    public static boolean DEBUG = true;
 
     /**
      * Command line arguments for the Point of Sale application.
@@ -66,6 +66,25 @@ public class Application {
 
         @Parameter(names = "-laneNumber", description = "The POS lane number. Default: 1.")
         private int laneNumber = DEFAULT_LANE_NUMBER;
+    }
+
+    /**
+     * Interface for shutting down the application.
+     */
+    public interface IShutdownManager {
+
+        void shutdownApp(int code);
+    }
+
+    /**
+     * Default implementation of the {@link IShutdownManager} interface.
+     */
+    public static class ShutdownManager implements IShutdownManager {
+
+        @Override
+        public void shutdownApp(int code) {
+            System.exit(code);
+        }
     }
 
     /**

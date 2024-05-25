@@ -100,9 +100,4 @@ public class ScannerViewController implements IController {
             case TRANSACTION_VOIDED, TRANSACTION_COMPLETED -> scannerView.setInactive();
         }
     }
-
-    @Override
-    public void shutdown() {
-        scannerView.setVisible(false);
-    }
 }

@@ -444,7 +444,7 @@ public class CustomerView extends JFrame {
                         "Shut Down the Application?",
                         JOptionPane.YES_NO_OPTION,
                         JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION) {
-                    parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_SHUTDOWN));
+                    System.exit(0);
                 }
             }
         });

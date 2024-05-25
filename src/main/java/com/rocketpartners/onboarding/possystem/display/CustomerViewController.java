@@ -134,13 +134,5 @@ public class CustomerViewController implements IController {
         }
         customerView.setVisible(true);
     }
-
-    @Override
-    public void shutdown() {
-        if (Application.DEBUG) {
-            System.out.println("[CustomerViewController] Shutting down customer view controller");
-        }
-        customerView.setVisible(false);
-    }
 }
 

@@ -11,6 +11,8 @@ import com.rocketpartners.onboarding.possystem.model.PosSystem;
 import com.rocketpartners.onboarding.possystem.model.Transaction;
 import com.rocketpartners.onboarding.possystem.service.ItemService;
 import com.rocketpartners.onboarding.possystem.service.TransactionService;
+import org.junit.Rule;
+import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -27,6 +29,9 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 public class PosComponentTest {
+
+    @Rule
+    public final ExpectedSystemExit exit = ExpectedSystemExit.none();
 
     private ItemBookLoaderComponent itemBookLoaderComponent;
     private TransactionService transactionService;
@@ -85,24 +90,6 @@ public class PosComponentTest {
         PosEvent event = eventCaptor.getValue();
         assertEquals(event.getType(), PosEventType.POS_BOOTUP);
         assertTrue(event.containsProperty(ConstKeys.POS_SYSTEM_ID));
-    }
-
-    @Test
-    public void testShutdown() {
-        posComponent.bootUp();
-        posComponent.shutdown();
-        assertNull(posComponent.getTransaction());
-        assertEquals(posComponent.getTransactionState(), TransactionState.NOT_STARTED);
-
-        ArgumentCaptor<PosEvent> eventCaptor = ArgumentCaptor.forClass(PosEvent.class);
-        verify(posComponent, times(2)).dispatchPosEvent(eventCaptor.capture());
-        List<PosEvent> capturedEvents = eventCaptor.getAllValues();
-        assertEquals(2, capturedEvents.size());
-        assertEquals(PosEventType.POS_BOOTUP, capturedEvents.get(0).getType());
-        assertEquals(PosEventType.POS_SHUTDOWN, capturedEvents.get(1).getType());
-
-        posComponent.update();
-        assertFalse(posComponent.isOn());
     }
 
     @Test
@@ -242,16 +229,17 @@ public class PosComponentTest {
 
         ArgumentCaptor<PosEvent> eventCaptor = ArgumentCaptor.forClass(PosEvent.class);
         posComponent.dispatchPosEvent(addItemEvent);
-        verify(posComponent, times(5)).dispatchPosEvent(eventCaptor.capture());
+        verify(posComponent, times(6)).dispatchPosEvent(eventCaptor.capture());
         List<PosEvent> capturedEvents = eventCaptor.getAllValues();
         System.out.println(capturedEvents);
 
-        assertEquals(5, capturedEvents.size());
+        assertEquals(6, capturedEvents.size());
         assertEquals(PosEventType.REQUEST_ADD_ITEM, capturedEvents.get(0).getType());
         assertEquals(PosEventType.REQUEST_START_TRANSACTION, capturedEvents.get(1).getType());
         assertEquals(PosEventType.TRANSACTION_STARTED, capturedEvents.get(2).getType());
         assertEquals(PosEventType.DO_UPDATE_QUICK_ITEMS, capturedEvents.get(3).getType());
         assertEquals(PosEventType.REQUEST_ADD_ITEM, capturedEvents.get(4).getType());
+        assertEquals(PosEventType.ERROR, capturedEvents.get(5).getType());
         verify(itemService).itemExists(anyString());
         verify(transactionService, times(1)).addItemToTransaction(any(Transaction.class), anyString());
     }

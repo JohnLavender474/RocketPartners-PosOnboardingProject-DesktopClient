@@ -111,7 +111,6 @@ public class PosComponent implements IComponent, IPosEventManager {
 
     private void handlePosEvent(@NonNull PosEvent event) {
         switch (event.getType()) {
-            case REQUEST_SHUTDOWN -> shutdown();
             case REQUEST_START_TRANSACTION -> handleRequestStartTransaction(event);
             case REQUEST_OPEN_SCANNER -> handleRequestOpenScanner();
             case REQUEST_ADD_ITEM -> handleRequestAddItem(event);
@@ -496,6 +495,7 @@ public class PosComponent implements IComponent, IPosEventManager {
 
         on = true;
         transaction = null;
+        shuttingDown = false;
         transactionState = TransactionState.NOT_STARTED;
         childComponents.forEach(IComponent::bootUp);
         dispatchPosEvent(new PosEvent(PosEventType.POS_BOOTUP, Map.of(ConstKeys.POS_SYSTEM_ID, posSystem.getId())));
@@ -531,18 +531,6 @@ public class PosComponent implements IComponent, IPosEventManager {
             }
             System.exit(0);
         }
-    }
-
-    @Override
-    public void shutdown() {
-        if (Application.DEBUG) {
-            System.out.println("[PosComponent] Shutting down POS component: " + this);
-        }
-        transaction = null;
-        transactionState = TransactionState.NOT_STARTED;
-        childComponents.forEach(IComponent::shutdown);
-        dispatchPosEvent(new PosEvent(PosEventType.POS_SHUTDOWN));
-        shuttingDown = true;
     }
 
     /**
