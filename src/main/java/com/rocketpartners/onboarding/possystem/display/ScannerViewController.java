@@ -23,12 +23,10 @@ public class ScannerViewController implements IController {
     private static final Set<PosEventType> eventsToListenFor = EnumSet.of(
             PosEventType.POS_BOOTUP,
             PosEventType.POS_RESET,
+            PosEventType.DO_OPEN_SCANNER,
             PosEventType.TRANSACTION_STARTED,
             PosEventType.TRANSACTION_VOIDED,
-            PosEventType.TRANSACTION_COMPLETED,
-            PosEventType.REQUEST_ADD_ITEM,
-            PosEventType.ITEM_ADDED,
-            PosEventType.DO_OPEN_SCANNER
+            PosEventType.TRANSACTION_COMPLETED
     );
 
     @NonNull
@@ -95,7 +93,7 @@ public class ScannerViewController implements IController {
                 }
                 scannerView.requestUserFocus();
             }
-            case POS_BOOTUP, TRANSACTION_STARTED -> {
+            case POS_BOOTUP, POS_RESET, TRANSACTION_STARTED -> {
                 scannerView.setVisible(true);
                 scannerView.setActive();
             }

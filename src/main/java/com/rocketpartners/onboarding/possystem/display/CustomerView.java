@@ -351,9 +351,6 @@ public class CustomerView extends JFrame {
     private static final String AWAITING_PAYMENT_BANNER_TEXT = "AWAITING PAYMENT";
     private static final String TRANSACTION_COMPLETED_MESSAGE = "We appreciate your business! Your receipt is now " +
             "displayed on the receipt display";
-    private static final String CARD_NUMBER_LABEL_TEXT = "Card Number: ";
-    private static final String AMOUNT_TENDERED_LABEL_TEXT = "Amount Tendered: ";
-    private static final String CHANGE_DUE_LABEL_TEXT = "Change Due: ";
 
     private static final String TRANSACTION_TABLE_TITLE = "Transaction";
     private static final String TRANSACTION_TABLE_COLUMN_CHECKBOX = "Select";
@@ -377,7 +374,6 @@ public class CustomerView extends JFrame {
     private static final String VOID_TRANSACTION_BUTTON_TEXT = "Void Transaction";
     private static final String VOID_LINE_ITEMS_BUTTON_TEXT = "Void Line Items";
     private static final String CANCEL_PAYMENT_BUTTON_TEXT = "Cancel Payment";
-    private static final String FINALIZE_BUTTON_TEXT = "Finalize";
     private static final String CONTINUE_BUTTON_TEXT = "Continue";
 
     @NonNull
@@ -397,17 +393,12 @@ public class CustomerView extends JFrame {
 
     private JTable transactionTable;
 
-    private JTextArea amountTenderedArea;
-    private JTextArea changeDueArea;
-    private JTextArea cardNumberArea;
-
     private JButton startTransactionButton;
     private JButton payWithCardButton;
     private JButton payWithCashButton;
     private JButton openScannerButton;
     private JButton voidButton;
     private JButton cancelPaymentButton;
-    private JButton finalizeButton;
     private JButton continueButton;
 
     /**
@@ -484,15 +475,6 @@ public class CustomerView extends JFrame {
         totalsArea = new JTextArea();
         totalsArea.setEditable(false);
 
-        amountTenderedArea = new JTextArea();
-        amountTenderedArea.setEditable(false);
-
-        changeDueArea = new JTextArea();
-        changeDueArea.setEditable(false);
-
-        cardNumberArea = new JTextArea(CARD_NUMBER_LABEL_TEXT);
-        cardNumberArea.setEditable(false);
-
         startTransactionButton = createButton(START_TRANSACTION_BUTTON_TEXT, Color.getHSBColor(200f / 360f, 0.9f,
                 0.85f));
         startTransactionButton.addActionListener(e ->
@@ -529,13 +511,6 @@ public class CustomerView extends JFrame {
         cancelPaymentButton.addActionListener(e ->
                 SwingUtilities.invokeLater(() ->
                         parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_CANCEL_PAYMENT))
-                )
-        );
-
-        finalizeButton = createButton(FINALIZE_BUTTON_TEXT, Color.getHSBColor(200f / 360f, 0.9f, 0.85f));
-        finalizeButton.addActionListener(e ->
-                SwingUtilities.invokeLater(() ->
-                        parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_COMPLETE_TRANSACTION))
                 )
         );
 
@@ -874,22 +849,6 @@ public class CustomerView extends JFrame {
         return button;
     }
 
-    private JPanel loadCardNumberPanel(@NonNull String cardNumber) {
-        JPanel panel = new JPanel(new BorderLayout());
-        cardNumberArea.setText(CARD_NUMBER_LABEL_TEXT + cardNumber);
-        panel.add(cardNumberArea);
-        return panel;
-    }
-
-    private JPanel loadAmountTenderedAndChangeDuePanel(@NonNull String amountTendered, @NonNull String changeDue) {
-        JPanel panel = new JPanel(new GridLayout(2, 1));
-        amountTenderedArea.setText(AMOUNT_TENDERED_LABEL_TEXT + amountTendered);
-        changeDueArea.setText(CHANGE_DUE_LABEL_TEXT + changeDue);
-        panel.add(amountTenderedArea);
-        panel.add(changeDueArea);
-        return panel;
-    }
-
     private JPanel loadMetadataAndTotalsToContentPanel() {
         JPanel metadataAndTotalsPanel = new JPanel(new GridLayout(2, 1));
         metadataAndTotalsPanel.add(new JScrollPane(metadataArea));
@@ -907,9 +866,8 @@ public class CustomerView extends JFrame {
     }
 
     private JPanel loadPaymentButtonsPanel() {
-        JPanel paymentButtonsPanel = new JPanel(new GridLayout(1, 2));
+        JPanel paymentButtonsPanel = new JPanel(new BorderLayout());
         paymentButtonsPanel.add(cancelPaymentButton);
-        paymentButtonsPanel.add(finalizeButton);
         return paymentButtonsPanel;
     }
 }

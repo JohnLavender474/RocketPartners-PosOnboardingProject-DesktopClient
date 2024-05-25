@@ -106,7 +106,7 @@ public class KeypadView extends JFrame {
                     if (currentText.length() == MAX_DIGITS &&
                             JOptionPane.showConfirmDialog(KeypadView.this,
                                     "Card number entered: " + currentText + ". Do you confirm to make" +
-                                            "the full transaction payment with this card number?",
+                                            " the full transaction payment with this card number?",
                                     "Confirm Payment with Card Number",
                                     JOptionPane.YES_NO_OPTION,
                                     JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION) {
