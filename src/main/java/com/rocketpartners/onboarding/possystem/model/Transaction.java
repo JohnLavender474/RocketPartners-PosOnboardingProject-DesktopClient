@@ -24,7 +24,6 @@ public class Transaction {
     private String posSystemId;
     @NonNull
     private List<LineItem> lineItems;
-    @NonNull
     private int transactionNumber;
     @NonNull
     private BigDecimal subtotal;
@@ -38,7 +37,6 @@ public class Transaction {
     private BigDecimal amountTendered;
     @NonNull
     private BigDecimal changeDue;
-
     private String customerId;
     private boolean voided;
     private boolean tendered;
