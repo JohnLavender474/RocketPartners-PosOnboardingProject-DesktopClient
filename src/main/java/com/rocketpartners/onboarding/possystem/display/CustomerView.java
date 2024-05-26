@@ -330,7 +330,7 @@ public class CustomerView extends JFrame {
         }
     }
 
-    private static final int CUSTOMER_VIEW_FRAME_WIDTH = 1100;
+    private static final int CUSTOMER_VIEW_FRAME_WIDTH = 1200;
     private static final int CUSTOMER_VIEW_FRAME_HEIGHT = 750;
 
     private static final int STANDARD_BUTTON_WIDTH = 35;
@@ -374,6 +374,7 @@ public class CustomerView extends JFrame {
     private static final String OPEN_SCANNER_BUTTON_TEXT = "Open Scanner";
     private static final String OPEN_POLE_DISPLAY_BUTTON_TEXT = "Open Pole Display";
     private static final String PAY_WITH_CARD_BUTTON_TEXT = "Pay with Card";
+    private static final String PAY_WITH_CASH_BUTTON_TEXT = "Pay with Cash";
     private static final String OPEN_DISCOUNTS_BUTTON_TEXT = "Open Discounts";
     private static final String VOID_TRANSACTION_BUTTON_TEXT = "Void Transaction";
     private static final String VOID_LINE_ITEMS_BUTTON_TEXT = "Void Line Items";
@@ -398,11 +399,14 @@ public class CustomerView extends JFrame {
     private JTextArea discountsTextArea;
     private JTextArea taxesTextArea;
     private JTextArea totalTextArea;
+    private JTextArea amountTenderedTextArea;
+    private JTextArea changeDueTextArea;
 
     private JTable transactionTable;
 
     private JButton startTransactionButton;
     private JButton payWithCardButton;
+    private JButton payWithCashButton;
     private JButton openDiscountsButton;
     private JButton openScannerButton;
     private JButton openPoleDisplayButton;
@@ -432,7 +436,7 @@ public class CustomerView extends JFrame {
 
         setMinimumSize(new Dimension(CUSTOMER_VIEW_FRAME_WIDTH, CUSTOMER_VIEW_FRAME_HEIGHT));
         setPreferredSize(new Dimension(CUSTOMER_VIEW_FRAME_WIDTH, CUSTOMER_VIEW_FRAME_HEIGHT));
-        setResizable(false);
+        setResizable(true);
 
         initializeComponents(storeName, posLane);
 
@@ -518,6 +522,12 @@ public class CustomerView extends JFrame {
         totalTextArea = new JTextArea();
         totalTextArea.setEditable(false);
 
+        amountTenderedTextArea = new JTextArea();
+        amountTenderedTextArea.setEditable(false);
+
+        changeDueTextArea = new JTextArea();
+        changeDueTextArea.setEditable(false);
+
         startTransactionButton = createButton(START_TRANSACTION_BUTTON_TEXT, Color.getHSBColor(200f / 360f, 0.9f,
                 0.85f));
         startTransactionButton.addActionListener(e ->
@@ -530,6 +540,13 @@ public class CustomerView extends JFrame {
         payWithCardButton.addActionListener(e ->
                 SwingUtilities.invokeLater(() ->
                         parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_START_PAY_WITH_CARD_PROCESS))
+                )
+        );
+
+        payWithCashButton = createButton(PAY_WITH_CASH_BUTTON_TEXT, Color.getHSBColor(140f / 360f, 0.8f, 0.4f));
+        payWithCashButton.addActionListener(e ->
+                SwingUtilities.invokeLater(() ->
+                        parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_START_PAY_WITH_CASH_PROCESS))
                 )
         );
 
@@ -686,7 +703,8 @@ public class CustomerView extends JFrame {
      * @param total     The total.
      */
     public void updateTransactionMetadata(@NonNull BigDecimal subtotal, @NonNull BigDecimal discounts,
-                                          @NonNull BigDecimal taxes, @NonNull BigDecimal total) {
+                                          @NonNull BigDecimal taxes, @NonNull BigDecimal total,
+                                          @NonNull BigDecimal amountTendered, @NonNull BigDecimal changeDue) {
         if (Application.DEBUG) {
             System.out.println("[CustomerView] Updating metadata and totals");
         }
@@ -695,6 +713,8 @@ public class CustomerView extends JFrame {
         discountsTextArea.setText("Discounts: " + currencyFormat.format(discounts));
         taxesTextArea.setText("Taxes: " + currencyFormat.format(taxes));
         totalTextArea.setText("Total: " + currencyFormat.format(total));
+        amountTenderedTextArea.setText("Amount Tendered: " + currencyFormat.format(amountTendered));
+        changeDueTextArea.setText("Change Due: " + currencyFormat.format(changeDue));
     }
 
     /**
@@ -702,6 +722,8 @@ public class CustomerView extends JFrame {
      */
     public void resetTransactionMetadata() {
         updateTransactionMetadata(
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
                 BigDecimal.ZERO,
                 BigDecimal.ZERO,
                 BigDecimal.ZERO,
@@ -968,11 +990,13 @@ public class CustomerView extends JFrame {
         gridPane1.add(posInfoTextArea);
         gridPane1.add(transactionNumberTextArea);
 
-        JPanel gridPane2 = new JPanel(new GridLayout(4, 1));
+        JPanel gridPane2 = new JPanel(new GridLayout(6, 1));
         gridPane2.add(subtotalTextArea);
         gridPane2.add(discountsTextArea);
         gridPane2.add(taxesTextArea);
         gridPane2.add(totalTextArea);
+        gridPane2.add(amountTenderedTextArea);
+        gridPane2.add(changeDueTextArea);
 
         metadataPanel.add(gridPane1);
         metadataPanel.add(gridPane2);
@@ -983,10 +1007,11 @@ public class CustomerView extends JFrame {
     private JPanel loadOnScanningBottomButtonsPanel() {
         JPanel buttonsPanel = new JPanel(new GridLayout(3, 4));
         buttonsPanel.add(voidButton);
+        buttonsPanel.add(openDiscountsButton);
         buttonsPanel.add(openScannerButton);
         buttonsPanel.add(openPoleDisplayButton);
         buttonsPanel.add(payWithCardButton);
-        buttonsPanel.add(openDiscountsButton);
+        buttonsPanel.add(payWithCashButton);
         return buttonsPanel;
     }
 

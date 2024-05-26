@@ -12,38 +12,38 @@ import java.util.Set;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-public class KeypadViewControllerTest {
+public class PayWithCardViewControllerTest {
 
     private IPosEventDispatcher mockEventDispatcher;
-    private KeypadView mockKeypadView;
-    private KeypadViewController controller;
+    private PayWithCardView mockPayWithCardView;
+    private PayWithCardViewController controller;
 
     @BeforeEach
     public void setUp() {
         mockEventDispatcher = Mockito.mock(IPosEventDispatcher.class);
-        mockKeypadView = Mockito.mock(KeypadView.class);
-        controller = new KeypadViewController(mockEventDispatcher, mockKeypadView);
+        mockPayWithCardView = Mockito.mock(PayWithCardView.class);
+        controller = new PayWithCardViewController(mockEventDispatcher, mockPayWithCardView);
     }
 
     @Test
     public void testOnPosEventStartPayWithCardProcess() {
         PosEvent event = new PosEvent(PosEventType.START_PAY_WITH_CARD_PROCESS);
         controller.onPosEvent(event);
-        verify(mockKeypadView, times(1)).setVisible(true);
+        verify(mockPayWithCardView, times(1)).setVisible(true);
     }
 
     @Test
     public void testOnPosEventDoCancelPayment() {
         PosEvent event = new PosEvent(PosEventType.DO_CANCEL_PAYMENT);
         controller.onPosEvent(event);
-        verify(mockKeypadView, times(1)).setVisible(false);
+        verify(mockPayWithCardView, times(1)).setVisible(false);
     }
 
     @Test
     public void testOnPosEventTransactionCompleted() {
         PosEvent event = new PosEvent(PosEventType.TRANSACTION_COMPLETED);
         controller.onPosEvent(event);
-        verify(mockKeypadView, times(1)).setVisible(false);
+        verify(mockPayWithCardView, times(1)).setVisible(false);
     }
 
     @Test

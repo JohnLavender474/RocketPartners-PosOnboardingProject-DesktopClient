@@ -20,6 +20,7 @@ import com.rocketpartners.onboarding.possystem.model.PosSystem;
 import com.rocketpartners.onboarding.possystem.model.Transaction;
 import com.rocketpartners.onboarding.possystem.service.ItemService;
 import com.rocketpartners.onboarding.possystem.service.TransactionService;
+import com.rocketpartners.onboarding.possystem.utils.UtilMethods;
 import lombok.*;
 
 import java.math.BigDecimal;
@@ -123,7 +124,9 @@ public class PosComponent implements IComponent, IPosEventManager {
             case REQUEST_VOID_LINE_ITEMS -> handleRequestVoidLineItems(event);
             case REQUEST_VOID_TRANSACTION -> handleRequestVoidTransaction();
             case REQUEST_START_PAY_WITH_CARD_PROCESS -> handleRequestStartPayWithCardProcess();
+            case REQUEST_START_PAY_WITH_CASH_PROCESS -> handleRequestStartPayWithCashProcesss();
             case REQUEST_ENTER_CARD_NUMBER -> handleRequestEnterCardNumber(event);
+            case REQUEST_INSERT_CASH -> handleRequestInsertCash(event);
             case REQUEST_CANCEL_PAYMENT -> handleRequestCancelPayment();
             case REQUEST_COMPLETE_TRANSACTION -> handleRequestCompleteTransaction();
             case REQUEST_RESET_POS -> resetPos();
@@ -375,6 +378,36 @@ public class PosComponent implements IComponent, IPosEventManager {
         dispatchPosEvent(new PosEvent(PosEventType.START_PAY_WITH_CARD_PROCESS));
     }
 
+    private void handleRequestStartPayWithCashProcesss() {
+        if (Application.DEBUG) {
+            System.out.println("[PosComponent] Request to start cash payment process");
+        }
+
+        if (transactionState != TransactionState.SCANNING_IN_PROGRESS) {
+            String error = "Cannot start cash payment process when transaction state is not SCANNING_IN_PROGRESS";
+            System.err.println(error);
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
+            return;
+        }
+
+        if (transaction.getLineItems().isEmpty()) {
+            String error = "Cannot start cash payment process when transaction has no line items";
+            System.err.println(error);
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
+            return;
+        }
+
+        if (transaction.getLineItems().stream().allMatch(LineItem::isVoided)) {
+            String error = "Cannot start cash payment process when transaction has only voided line items";
+            System.err.println(error);
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
+            return;
+        }
+
+        transactionState = TransactionState.AWAITING_CASH_PAYMENT;
+        dispatchPosEvent(new PosEvent(PosEventType.START_PAY_WITH_CASH_PROCESS));
+    }
+
     private void handleRequestEnterCardNumber(@NonNull PosEvent event) {
         if (transactionState != TransactionState.AWAITING_CARD_PAYMENT) {
             String error = "Cannot enter card number when transaction state is not AWAITING_CARD_PAYMENT. " +
@@ -395,6 +428,45 @@ public class PosComponent implements IComponent, IPosEventManager {
         transaction.setAmountTendered(transaction.getTotal());
         transaction.setChangeDue(BigDecimal.ZERO);
         dispatchPosEvent(new PosEvent(PosEventType.REQUEST_COMPLETE_TRANSACTION));
+    }
+
+    private void handleRequestInsertCash(@NonNull PosEvent event) {
+        if (transactionState != TransactionState.AWAITING_CASH_PAYMENT) {
+            String error = "Cannot insert cash when transaction state is not AWAITING_CASH_PAYMENT. " +
+                    "Current transaction state: " + transactionState;
+            System.err.println(error);
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
+            return;
+        }
+
+        String cashAmountToAddString = event.getProperty(ConstKeys.CASH_AMOUNT, String.class);
+
+        if (cashAmountToAddString == null) {
+            String error = "Cannot insert cash because cash amount is null";
+            System.err.println(error);
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
+            return;
+        }
+
+        if (!UtilMethods.isDouble(cashAmountToAddString)) {
+            String error = "Cannot insert cash because cash amount is not a number: " + cashAmountToAddString;
+            System.err.println(error);
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
+            return;
+        }
+
+        BigDecimal cashAmountToAdd = new BigDecimal(cashAmountToAddString);
+        transaction.setAmountTendered(transaction.getAmountTendered().add(cashAmountToAdd));
+
+        if (transaction.getAmountTendered().compareTo(transaction.getTotal()) >= 0) {
+            transaction.setChangeDue(transaction.getAmountTendered().subtract(transaction.getTotal()));
+            dispatchPosEvent(new PosEvent(PosEventType.REQUEST_COMPLETE_TRANSACTION));
+        } else {
+            BigDecimal amountNeeded = transaction.getTotal().subtract(transaction.getAmountTendered());
+            TransactionDto transactionDto = getTransactionDto();
+            dispatchPosEvent(new PosEvent(PosEventType.INSUFFICIENT_FUNDS,
+                    Map.of(ConstKeys.AMOUNT_NEEDED, amountNeeded, ConstKeys.TRANSACTION_DTO, transactionDto)));
+        }
     }
 
     private void handleRequestCancelPayment() {

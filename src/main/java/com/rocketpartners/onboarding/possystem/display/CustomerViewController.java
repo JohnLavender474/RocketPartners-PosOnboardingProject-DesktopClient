@@ -29,6 +29,7 @@ public class CustomerViewController implements IController {
             PosEventType.ITEM_ADDED,
             PosEventType.ITEM_REMOVED,
             PosEventType.LINE_ITEMS_VOIDED,
+            PosEventType.INSUFFICIENT_FUNDS,
             PosEventType.START_PAY_WITH_CARD_PROCESS,
             PosEventType.DO_CANCEL_PAYMENT
     );
@@ -91,6 +92,17 @@ public class CustomerViewController implements IController {
                 List<ItemDto> itemDtos = (List<ItemDto>) posEvent.getProperty(ConstKeys.ITEM_DTOS);
                 customerView.updateQuickItems(itemDtos);
             }
+            case INSUFFICIENT_FUNDS -> {
+                TransactionDto transactionDto = posEvent.getProperty(ConstKeys.TRANSACTION_DTO, TransactionDto.class);
+                customerView.updateTransactionMetadata(
+                        transactionDto.getSubtotal(),
+                        transactionDto.getDiscounts(),
+                        transactionDto.getTaxes(),
+                        transactionDto.getTotal(),
+                        transactionDto.getAmountTendered(),
+                        transactionDto.getChangeDue()
+                );
+            }
             case ITEM_ADDED, ITEM_REMOVED, LINE_ITEMS_VOIDED -> {
                 TransactionDto transactionDto = posEvent.getProperty(ConstKeys.TRANSACTION_DTO, TransactionDto.class);
                 customerView.updateTransactionsTable(transactionDto.getLineItemDtos());
@@ -98,10 +110,13 @@ public class CustomerViewController implements IController {
                         transactionDto.getSubtotal(),
                         transactionDto.getDiscounts(),
                         transactionDto.getTaxes(),
-                        transactionDto.getTotal()
+                        transactionDto.getTotal(),
+                        transactionDto.getAmountTendered(),
+                        transactionDto.getChangeDue()
                 );
             }
             case START_PAY_WITH_CARD_PROCESS -> setTransactionState(TransactionState.AWAITING_CARD_PAYMENT);
+            case START_PAY_WITH_CASH_PROCESS -> setTransactionState(TransactionState.AWAITING_CASH_PAYMENT);
             case TRANSACTION_VOIDED -> setTransactionState(TransactionState.VOIDED);
             case TRANSACTION_COMPLETED -> setTransactionState(TransactionState.COMPLETED);
         }

@@ -169,6 +169,11 @@ public class PosComponentTest {
         PosEvent addItemEvent = new PosEvent(PosEventType.REQUEST_ADD_ITEM, Map.of(ConstKeys.ITEM_UPC, itemUpc));
 
         when(itemService.itemExists(itemUpc)).thenReturn(true);
+        Item item = new Item();
+        item.setUpc(itemUpc);
+        item.setName("Test Item");
+        item.setUnitPrice(BigDecimal.TEN);
+        when(itemService.getItemByUpc(itemUpc)).thenReturn(item);
         when(transactionService.addItemToTransaction(any(), any())).thenReturn(true);
 
         ArgumentCaptor<PosEvent> eventCaptor = ArgumentCaptor.forClass(PosEvent.class);
@@ -353,6 +358,11 @@ public class PosComponentTest {
         PosEvent removeItemEvent = new PosEvent(PosEventType.REQUEST_REMOVE_ITEM, Map.of(ConstKeys.ITEM_UPC, itemUpc));
 
         when(itemService.itemExists(itemUpc)).thenReturn(true);
+        Item item = new Item();
+        item.setUpc(itemUpc);
+        item.setName("Test Item");
+        item.setUnitPrice(BigDecimal.TEN);
+        when(itemService.getItemByUpc(itemUpc)).thenReturn(item);
         when(transactionService.removeItemFromTransaction(any(Transaction.class), eq(itemUpc))).thenReturn(true);
 
         posComponent.dispatchPosEvent(removeItemEvent);

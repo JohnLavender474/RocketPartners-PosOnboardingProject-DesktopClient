@@ -10,7 +10,7 @@ import java.util.Set;
 /**
  * Controller for the keypad view. This class is responsible for updating the keypad view based on POS events.
  */
-public class KeypadViewController implements IController {
+public class PayWithCardViewController implements IController {
 
     private static final Set<PosEventType> eventTypesToListenFor = Set.of(
             PosEventType.START_PAY_WITH_CARD_PROCESS,
@@ -19,7 +19,7 @@ public class KeypadViewController implements IController {
     );
 
     private final IPosEventDispatcher parentPosEventDispatcher;
-    private final KeypadView keypadView;
+    private final PayWithCardView payWithCardView;
 
     /**
      * Constructor that accepts a frame title and a parent POS event dispatcher.
@@ -27,30 +27,30 @@ public class KeypadViewController implements IController {
      * @param frameTitle               The title of the frame.
      * @param parentPosEventDispatcher The parent POS event dispatcher.
      */
-    public KeypadViewController(@NonNull String frameTitle, @NonNull IPosEventDispatcher parentPosEventDispatcher) {
+    public PayWithCardViewController(@NonNull String frameTitle, @NonNull IPosEventDispatcher parentPosEventDispatcher) {
         this.parentPosEventDispatcher = parentPosEventDispatcher;
-        keypadView = new KeypadView(frameTitle, this);
+        payWithCardView = new PayWithCardView(frameTitle, this);
     }
 
     /**
      * Package-private constructor for testing.
      *
      * @param parentPosEventDispatcher The parent POS event dispatcher.
-     * @param keypadView               The keypad view.
+     * @param payWithCardView               The keypad view.
      */
-    KeypadViewController(@NonNull IPosEventDispatcher parentPosEventDispatcher,
-                         @NonNull KeypadView keypadView) {
+    PayWithCardViewController(@NonNull IPosEventDispatcher parentPosEventDispatcher,
+                              @NonNull PayWithCardView payWithCardView) {
         this.parentPosEventDispatcher = parentPosEventDispatcher;
-        this.keypadView = keypadView;
+        this.payWithCardView = payWithCardView;
     }
 
     @Override
     public void onPosEvent(@NonNull PosEvent event) {
         switch (event.getType()) {
-            case START_PAY_WITH_CARD_PROCESS -> keypadView.setVisible(true);
+            case START_PAY_WITH_CARD_PROCESS -> payWithCardView.setVisible(true);
             case DO_CANCEL_PAYMENT, TRANSACTION_COMPLETED -> {
-                keypadView.clearDisplayArea();
-                keypadView.setVisible(false);
+                payWithCardView.clearDisplayAreaText();
+                payWithCardView.setVisible(false);
             }
         }
     }

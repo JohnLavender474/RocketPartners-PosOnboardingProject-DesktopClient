@@ -1,132 +1,138 @@
 package com.rocketpartners.onboarding.possystem.display;
 
-import com.rocketpartners.onboarding.possystem.constant.ConstKeys;
-import com.rocketpartners.onboarding.possystem.event.IPosEventDispatcher;
-import com.rocketpartners.onboarding.possystem.event.PosEvent;
-import com.rocketpartners.onboarding.possystem.event.PosEventType;
+import lombok.AccessLevel;
+import lombok.Getter;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
-import java.util.Map;
+import java.util.List;
+import java.util.*;
 
-/**
- * View for the keypad. This class is responsible for displaying the keypad and handling user input. The keypad is
- * used to enter the card number for payment.
- */
 public class KeypadView extends JFrame {
 
-    private static final int VIEW_WIDTH = 400;
-    private static final int VIEW_HEIGHT = 500;
-    private static final String BACK = "BACK";
-    private static final String ENTER = "ENTER";
-    private static final String ZERO = "0";
+    /**
+     * Enumeration of keypad buttons.
+     */
+    @Getter
+    @RequiredArgsConstructor(access = AccessLevel.PRIVATE)
+    public enum KeypadButton {
+        BACK("BACK"),
+        ENTER("ENTER"),
+        PERIOD("."),
+        ZERO("0"),
+        ONE("1"),
+        TWO("2"),
+        THREE("3"),
+        FOUR("4"),
+        FIVE("5"),
+        SIX("6"),
+        SEVEN("7"),
+        EIGHT("8"),
+        NINE("9");
+
+        private final String text;
+
+        /**
+         * Returns a collection of all numeric keypad buttons.
+         *
+         * @return A collection of all numeric keypad buttons.
+         */
+        public static Collection<KeypadButton> getNumericButtons() {
+            return List.of(ONE, TWO, THREE, FOUR, FIVE, SIX, SEVEN, EIGHT, NINE, ZERO);
+        }
+    }
+
     private static final Font DISPLAY_AREA_FONT = new Font("Arial", Font.PLAIN, 24);
     private static final Font BUTTON_FONT = new Font("Arial", Font.BOLD, 18);
-    private static final int GRID_ROWS = 4;
-    private static final int GRID_COLUMNS = 3;
-    private static final int MAX_DIGITS = 16;
+    private static final int MAIN_GRID_ROWS = 2;
+    private static final int MAIN_GRID_COLUMNS = 1;
+    private static final int TOP_ROW_GRID_COLUMNS = 3;
+    private static final int NUMERIC_GRID_ROWS = 3;
+    private static final int NUMERIC_GRID_COLUMNS = 4;
 
-    private final IPosEventDispatcher parentPosDispatcher;
     private final JTextArea displayArea;
+    private final Map<KeypadButton, JButton> keypadButtons;
 
     /**
      * Constructor that accepts a frame title and a parent POS event dispatcher. The keypad view is created with a
      * display area and buttons for the numbers 0-9, backspace, and enter.
      */
-    public KeypadView(@NonNull String frameTitle, @NonNull IPosEventDispatcher parentPosDispatcher) {
-        this.parentPosDispatcher = parentPosDispatcher;
-        setTitle(frameTitle);
-        setMinimumSize(new Dimension(VIEW_WIDTH, VIEW_HEIGHT));
-        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-        addWindowListener(new WindowAdapter() {
-            @Override
-            public void windowClosing(WindowEvent e) {
-                if (JOptionPane.showConfirmDialog(KeypadView.this,
-                        "Closing this window will cause the card payment process to be canceled. Are you sure " +
-                                "you want to continue?",
-                        "Cancel Card Payment Process?",
-                        JOptionPane.YES_NO_OPTION,
-                        JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION) {
-                    setVisible(false);
-                    parentPosDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_CANCEL_PAYMENT));
-                }
-            }
-        });
+    public KeypadView() {
+        keypadButtons = new EnumMap<>(KeypadButton.class);
+
         setLocationRelativeTo(null);
         setLayout(new BorderLayout());
 
         displayArea = new JTextArea(1, 20);
         displayArea.setFont(DISPLAY_AREA_FONT);
         displayArea.setEditable(false);
+
         add(displayArea, BorderLayout.NORTH);
 
-        JPanel buttonPanel = new JPanel(new GridLayout(GRID_ROWS, GRID_COLUMNS, 5, 5));
+        JPanel buttonPanel = new JPanel(new GridLayout(MAIN_GRID_ROWS, MAIN_GRID_COLUMNS, 5, 5));
 
-        for (int i = 1; i <= 9; i++) {
-            addButton(buttonPanel, String.valueOf(i));
-        }
+        JPanel topRowPanel = new JPanel(new GridLayout(1, TOP_ROW_GRID_COLUMNS));
+        List<KeypadButton> topRowButtons = List.of(KeypadButton.BACK, KeypadButton.ENTER, KeypadButton.PERIOD);
+        topRowButtons.forEach(it -> {
+            JButton button = createButton(it);
+            topRowPanel.add(button);
+            keypadButtons.put(it, button);
+        });
+        buttonPanel.add(topRowPanel);
 
-        addButton(buttonPanel, BACK);
-        addButton(buttonPanel, ZERO);
-        addButton(buttonPanel, ENTER);
+        JPanel numbersPanel = new JPanel(new GridLayout(NUMERIC_GRID_ROWS, NUMERIC_GRID_COLUMNS, 5, 5));
+        KeypadButton.getNumericButtons().forEach(it -> {
+            JButton button = createButton(it);
+            numbersPanel.add(button);
+            keypadButtons.put(it, button);
+        });
+        buttonPanel.add(numbersPanel);
 
-        add(buttonPanel, BorderLayout.CENTER);
+        add(buttonPanel);
+    }
+
+    private JButton createButton(@NonNull KeypadButton keypadButton) {
+        JButton button = new JButton(keypadButton.getText());
+        button.setFont(BUTTON_FONT);
+        return button;
     }
 
     /**
      * Clears the display area.
      */
-    public void clearDisplayArea() {
+    public void clearDisplayAreaText() {
         displayArea.setText("");
     }
 
-    private void addButton(@NonNull JPanel panel, @NonNull String label) {
-        JButton button = new JButton(label);
-        button.setFont(BUTTON_FONT);
-        button.addActionListener(new KeypadButtonClickListener());
-        panel.add(button);
+    /**
+     * Sets the text of the display area.
+     *
+     * @param text The text to set.
+     */
+    public void setDisplayAreaText(@NonNull String text) {
+        displayArea.setText(text);
     }
 
-    private class KeypadButtonClickListener implements ActionListener {
-        @Override
-        public void actionPerformed(ActionEvent e) {
-            String command = e.getActionCommand();
-            String currentText = displayArea.getText();
+    /**
+     * Returns the text of the display area.
+     *
+     * @return The text of the display area.
+     */
+    public String getDisplayAreaText() {
+        return displayArea.getText();
+    }
 
-            switch (command) {
-                case BACK -> {
-                    if (!currentText.isEmpty()) {
-                        displayArea.setText(currentText.substring(0, currentText.length() - 1));
-                    }
-                }
-                case ENTER -> {
-                    if (currentText.length() < MAX_DIGITS) {
-                        JOptionPane.showMessageDialog(KeypadView.this,
-                                "Card number must be " + MAX_DIGITS + " digits" + ".");
-                    }
-
-                    if (currentText.length() == MAX_DIGITS &&
-                            JOptionPane.showConfirmDialog(KeypadView.this,
-                                    "Card number entered: " + currentText + ". Do you confirm to make" +
-                                            " the full transaction payment with this card number?",
-                                    "Confirm Payment with Card Number",
-                                    JOptionPane.YES_NO_OPTION,
-                                    JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION) {
-                        SwingUtilities.invokeLater(() -> parentPosDispatcher.dispatchPosEvent(new PosEvent(
-                                PosEventType.REQUEST_ENTER_CARD_NUMBER, Map.of(ConstKeys.CARD_NUMBER, currentText))));
-                    }
-                }
-                default -> {
-                    if (currentText.length() < MAX_DIGITS) {
-                        displayArea.setText(currentText + command);
-                    }
-                }
-            }
-        }
+    /**
+     * Adds an action listener to a keypad button.
+     *
+     * @param keypadButton   The keypad button.
+     * @param actionListener The action listener.
+     */
+    public void addButtonActionListener(@NonNull KeypadButton keypadButton, @NonNull ActionListener actionListener) {
+        JButton button = keypadButtons.get(keypadButton);
+        button.addActionListener(actionListener);
     }
 }

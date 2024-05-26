@@ -51,8 +51,8 @@ public class Application {
         @Parameter(names = "-debug", description = "Enable debug mode. Values: true, false. Default: false.")
         private boolean debug = DEBUG;
 
-        @Parameter(names = "-dbsource", description = "The source of the database. Values: inmemory, mysql. Default: " +
-                "inmemory.")
+        @Parameter(names = "-dbsource", description = "NOT IMPLEMENTED! The database source. Values: inmemory, mysql." +
+                " Default: inmemory.")
         private String dbSource = DEFAULT_DB_SOURCE;
 
         @Parameter(names = "-appMode", description = "The mode of the application. Values: dev, prod. Default: dev.")
@@ -102,10 +102,6 @@ public class Application {
     }
 
     private static void startDevApplication(@NonNull Arguments arguments) {
-        // TODO: currently, the application will stop if all Swing frames are closed. To fix this, we can look at
-        //  the possibility of using a daemon thread to keep the application running and allow the user to open
-        //  frames using the command line even after all frames are closed.
-
         SwingUtilities.invokeLater(() -> {
             FlatLightLaf.setup();
 
@@ -145,9 +141,13 @@ public class Application {
             scannerViewController.addScannerViewKeyboardFocusManager(KeyboardFocusManager.getCurrentKeyboardFocusManager());
             posComponent.registerChildController(scannerViewController);
 
-            KeypadViewController keypadViewController =
-                    new KeypadViewController("Keypad View - Lane " + laneNumber, posComponent);
-            posComponent.registerChildController(keypadViewController);
+            PayWithCardViewController payWithCardViewController =
+                    new PayWithCardViewController("Pay with Card View - Lane " + laneNumber, posComponent);
+            posComponent.registerChildController(payWithCardViewController);
+
+            PayWithCashViewController payWithCashViewController =
+                    new PayWithCashViewController("Pay with Cash View - Lane " + laneNumber, posComponent);
+            posComponent.registerChildController(payWithCashViewController);
 
             ReceiptViewController receiptViewController =
                     new ReceiptViewController("Receipt View - Lane " + laneNumber);
@@ -166,9 +166,9 @@ public class Application {
 
             posComponent.bootUp();
 
-            // According to ChatGPT, the javax.swing.Timer ensures that the action performed in the ActionListener is
-            // executed on the Event Dispatch Thread (EDT). Also, by default, the javax.swing.Timer ensures that the
-            // next update is scheduled only after the previous one completes because it runs on the same thread.
+            // The javax.swing.Timer ensures that the action performed in the ActionListener is executed on the Event
+            // Dispatch Thread (EDT). Also, by default, the Timer ensures that the next update is scheduled only after
+            // the previous one completes because it runs on the same thread.
             Timer timer = new Timer(500, e -> posComponent.update());
             timer.setRepeats(true);
             timer.start();

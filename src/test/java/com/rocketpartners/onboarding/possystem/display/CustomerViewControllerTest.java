@@ -11,6 +11,7 @@ import com.rocketpartners.onboarding.possystem.event.PosEventType;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
@@ -61,7 +62,7 @@ public class CustomerViewControllerTest {
 
     @Test
     public void testOnPosEvent_DoUpdateQuickItems() {
-        List<ItemDto> itemDtos = List.of(new ItemDto("item1", "description1"));
+        List<ItemDto> itemDtos = List.of(new ItemDto("item1", "description1", BigDecimal.ONE));
         PosEvent posEvent = new PosEvent(PosEventType.DO_UPDATE_QUICK_ITEMS,
                 Map.of(ConstKeys.ITEM_DTOS, itemDtos));
         customerViewController.onPosEvent(posEvent);

@@ -81,7 +81,7 @@ public class PoleDisplayView extends JFrame {
         if (messages.size() >= MAX_ITEMS) {
             messages.poll();
         }
-        String message = formatMessage(itemDto.getName(), itemDto.getUnitPrice());
+        String message = formatMessage(itemDto.getName(), itemDto.getUnitPrice(), false);
         messages.offer(Pair.of(ADDED, message));
         displayPanel.repaint();
     }
@@ -95,7 +95,7 @@ public class PoleDisplayView extends JFrame {
         if (messages.size() >= MAX_ITEMS) {
             messages.poll();
         }
-        String message = formatMessage(itemDto.getName(), itemDto.getUnitPrice());
+        String message = formatMessage(itemDto.getName(), itemDto.getUnitPrice(), true);
         messages.offer(Pair.of(REMOVED, message));
         displayPanel.repaint();
     }
@@ -120,12 +120,16 @@ public class PoleDisplayView extends JFrame {
         }
     }
 
-    private String formatMessage(@NonNull String itemName, @NonNull BigDecimal price) {
+    private String formatMessage(@NonNull String itemName, @NonNull BigDecimal price,
+                                 boolean isRemoved) {
         if (itemName.length() > MAX_ITEM_NAME_LENGTH) {
             itemName = itemName.substring(0, MAX_ITEM_NAME_LENGTH - 3) + "...";
         }
         NumberFormat currencyFormat = NumberFormat.getCurrencyInstance();
         String priceStr = currencyFormat.format(price);
+        if (isRemoved) {
+            priceStr = "-" + priceStr;
+        }
         int padding = ROW_LENGTH - itemName.length() - priceStr.length();
         return itemName + " ".repeat(Math.max(0, padding)) + priceStr;
     }
