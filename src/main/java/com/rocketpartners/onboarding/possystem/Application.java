@@ -33,7 +33,7 @@ import java.util.Arrays;
  */
 public class Application {
 
-    public static boolean DEBUG = true;
+    public static boolean DEBUG;
 
     /**
      * Command line arguments for the Point of Sale application.

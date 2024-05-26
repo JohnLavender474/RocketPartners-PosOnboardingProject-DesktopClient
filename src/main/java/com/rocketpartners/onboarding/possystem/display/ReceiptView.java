@@ -1,5 +1,6 @@
 package com.rocketpartners.onboarding.possystem.display;
 
+import com.rocketpartners.onboarding.possystem.Application;
 import com.rocketpartners.onboarding.possystem.display.dto.LineItemDto;
 import com.rocketpartners.onboarding.possystem.display.dto.TransactionDto;
 import lombok.NonNull;
@@ -14,12 +15,13 @@ import java.util.List;
  */
 public class ReceiptView extends JFrame {
 
-    private static final int MIN_WIDTH = 675;
-    private static final int MIN_HEIGHT = 200;
+    private static final int MIN_WIDTH = 750;
+    private static final int MIN_HEIGHT = 500;
     private static final int ROWS = 3;
     private static final int COLUMNS = 1;
-    private static final int TRANSACTION_TABLE_ROWS = 0;
-    private static final int TRANSACTION_TABLE_COLUMNS = 3;
+    private static final String UPC_COLUMN = "UPC";
+    private static final String NAME_COLUMN = "Name";
+    private static final String QUANTITY_COLUMN = "Quantity";
     private static final int POS_INFO_ROWS = 3;
     private static final int POS_INFO_COLUMNS = 1;
 
@@ -45,11 +47,12 @@ public class ReceiptView extends JFrame {
         setMinimumSize(new Dimension(MIN_WIDTH, MIN_HEIGHT));
         setLayout(new GridLayout(ROWS, COLUMNS));
 
-        lineItemsTable = new JTable();
-        lineItemsTable.setModel(new DefaultTableModel(TRANSACTION_TABLE_ROWS, TRANSACTION_TABLE_COLUMNS));
+        lineItemsTable = new JTable(new DefaultTableModel(new String[]{
+                UPC_COLUMN, NAME_COLUMN, QUANTITY_COLUMN}, 0));
+        lineItemsTable.setShowGrid(true);
         lineItemsTable.setEnabled(false);
-        JScrollPane scrollPane = new JScrollPane();
-        scrollPane.add(lineItemsTable);
+        lineItemsTable.getTableHeader().setReorderingAllowed(false);
+        JScrollPane scrollPane = new JScrollPane(lineItemsTable);
         add(scrollPane);
 
         JPanel posInfoPanel = new JPanel(new GridLayout(POS_INFO_ROWS, POS_INFO_COLUMNS));
@@ -86,6 +89,10 @@ public class ReceiptView extends JFrame {
      * @param transactionDto The transaction DTO.
      */
     public void update(@NonNull TransactionDto transactionDto) {
+        if (Application.DEBUG) {
+            System.out.println("[ReceiptView] Updating with transaction DTO: " + transactionDto);
+        }
+
         storeNameArea.setText(transactionDto.getStoreName());
         posInfoArea.setText("POS Lane: " + transactionDto.getPosLane());
         transactionNumberTextArea.setText("Transaction Number: " + transactionDto.getTransactionNumber());
@@ -107,9 +114,14 @@ public class ReceiptView extends JFrame {
      * @param lineItemDtos The line item DTOs.
      */
     public void buildLineItemsTable(@NonNull List<LineItemDto> lineItemDtos) {
-        clearTransactionTableRows();
+        if (Application.DEBUG) {
+            System.out.println("[ReceiptView] Building table with line items: " + lineItemDtos);
+        }
+
+        clearLineItemsTableRows();
+
         lineItemDtos.forEach(it -> {
-            addTransactionTableRow();
+            addLineItemsTableRow();
             int row = lineItemsTable.getRowCount() - 1;
             String upc = it.getItemUpc();
             lineItemsTable.setValueAt(upc, row, 0);
@@ -118,11 +130,12 @@ public class ReceiptView extends JFrame {
         });
     }
 
-    private void clearTransactionTableRows() {
+    private void clearLineItemsTableRows() {
         ((DefaultTableModel) lineItemsTable.getModel()).setRowCount(0);
     }
 
-    private void addTransactionTableRow() {
-        ((DefaultTableModel) lineItemsTable.getModel()).addRow(new Object[TRANSACTION_TABLE_COLUMNS]);
+    private void addLineItemsTableRow() {
+        int rows = lineItemsTable.getRowCount();
+        ((DefaultTableModel) lineItemsTable.getModel()).setRowCount(rows + 1);
     }
 }
