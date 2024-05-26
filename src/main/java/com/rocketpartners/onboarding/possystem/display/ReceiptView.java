@@ -1,31 +1,128 @@
 package com.rocketpartners.onboarding.possystem.display;
 
-import com.rocketpartners.onboarding.possystem.event.IPosEventDispatcher;
+import com.rocketpartners.onboarding.possystem.display.dto.LineItemDto;
+import com.rocketpartners.onboarding.possystem.display.dto.TransactionDto;
 import lombok.NonNull;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.util.List;
 
+/**
+ * View for the receipt. This class is responsible for displaying the receipt based on the transaction DTO.
+ */
 public class ReceiptView extends JFrame {
 
     private static final int MIN_WIDTH = 675;
     private static final int MIN_HEIGHT = 200;
+    private static final int ROWS = 3;
+    private static final int COLUMNS = 1;
+    private static final int TRANSACTION_TABLE_ROWS = 0;
+    private static final int TRANSACTION_TABLE_COLUMNS = 3;
+    private static final int POS_INFO_ROWS = 3;
+    private static final int POS_INFO_COLUMNS = 1;
 
-    private final IPosEventDispatcher parentEventDispatcher;
+    private final JTable lineItemsTable;
 
-    private JTextArea titleArea;
-    private JTable transactionTable;
-    private JTextArea storeNameArea;
-    private JTextArea posInfoArea;
-    private JTextArea transactionTextArea;
+    private final JTextArea storeNameArea;
+    private final JTextArea posInfoArea;
+    private final JTextArea transactionNumberTextArea;
 
-    public ReceiptView(@NonNull String frameTitle, @NonNull IPosEventDispatcher parentEventDispatcher) {
-        super(frameTitle);
-        this.parentEventDispatcher = parentEventDispatcher;
+    private final JTextArea subtotalTextArea;
+    private final JTextArea discountsTextArea;
+    private final JTextArea taxesTextArea;
+    private final JTextArea totalTextArea;
+
+    /**
+     * Constructor that accepts a title.
+     *
+     * @param title The title of the frame.
+     */
+    public ReceiptView(@NonNull String title) {
+        super(title);
 
         setMinimumSize(new Dimension(MIN_WIDTH, MIN_HEIGHT));
+        setLayout(new GridLayout(ROWS, COLUMNS));
 
+        lineItemsTable = new JTable();
+        lineItemsTable.setModel(new DefaultTableModel(TRANSACTION_TABLE_ROWS, TRANSACTION_TABLE_COLUMNS));
+        lineItemsTable.setEnabled(false);
         JScrollPane scrollPane = new JScrollPane();
+        scrollPane.add(lineItemsTable);
+        add(scrollPane);
+
+        JPanel posInfoPanel = new JPanel(new GridLayout(POS_INFO_ROWS, POS_INFO_COLUMNS));
+        storeNameArea = new JTextArea();
+        storeNameArea.setEditable(false);
+        posInfoPanel.add(storeNameArea);
+        posInfoArea = new JTextArea();
+        posInfoArea.setEditable(false);
+        posInfoPanel.add(posInfoArea);
+        transactionNumberTextArea = new JTextArea();
+        transactionNumberTextArea.setEditable(false);
+        posInfoPanel.add(transactionNumberTextArea);
+        add(posInfoPanel);
+
+        JPanel totalsPanel = new JPanel(new GridLayout(4, 1));
+        subtotalTextArea = new JTextArea();
+        subtotalTextArea.setEditable(false);
+        totalsPanel.add(subtotalTextArea);
+        discountsTextArea = new JTextArea();
+        discountsTextArea.setEditable(false);
+        totalsPanel.add(discountsTextArea);
+        taxesTextArea = new JTextArea();
+        taxesTextArea.setEditable(false);
+        totalsPanel.add(taxesTextArea);
+        totalTextArea = new JTextArea();
+        totalTextArea.setEditable(false);
+        totalsPanel.add(totalTextArea);
+        add(totalsPanel);
     }
 
+    /**
+     * Updates the receipt view based on the transaction DTO.
+     *
+     * @param transactionDto The transaction DTO.
+     */
+    public void update(@NonNull TransactionDto transactionDto) {
+        storeNameArea.setText(transactionDto.getStoreName());
+        posInfoArea.setText("POS Lane: " + transactionDto.getPosLane());
+        transactionNumberTextArea.setText("Transaction Number: " + transactionDto.getTransactionNumber());
+
+        subtotalTextArea.setText("Subtotal: " + transactionDto.getSubtotal());
+        discountsTextArea.setText("Discounts: " + transactionDto.getDiscounts());
+        taxesTextArea.setText("Taxes: " + transactionDto.getTaxes());
+        totalTextArea.setText("Total: " + transactionDto.getTotal());
+
+        buildLineItemsTable(transactionDto.getLineItemDtos());
+
+        revalidate();
+        repaint();
+    }
+
+    /**
+     * Builds the line items table based on the line item DTOs.
+     *
+     * @param lineItemDtos The line item DTOs.
+     */
+    public void buildLineItemsTable(@NonNull List<LineItemDto> lineItemDtos) {
+        clearTransactionTableRows();
+        lineItemDtos.forEach(it -> {
+            addTransactionTableRow();
+            int row = lineItemsTable.getRowCount() - 1;
+            String upc = it.getItemUpc();
+            lineItemsTable.setValueAt(upc, row, 0);
+            lineItemsTable.setValueAt(it.getItemName(), row, 1);
+            lineItemsTable.setValueAt(it.getQuantity(), row, 2);
+        });
+    }
+
+    private void clearTransactionTableRows() {
+        ((DefaultTableModel) lineItemsTable.getModel()).setRowCount(0);
+    }
+
+    private void addTransactionTableRow() {
+        ((DefaultTableModel) lineItemsTable.getModel()).addRow(new Object[TRANSACTION_TABLE_COLUMNS]);
+    }
 }

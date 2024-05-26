@@ -443,11 +443,18 @@ public class PosComponentTest {
     @Test
     void testCompleteCardPaymentProcess() {
         Transaction transaction = new Transaction();
+        transaction.setId("testTransaction");
         LineItem lineItem = new LineItem();
+        lineItem.setTransactionId("testTransaction");
         lineItem.setItemUpc("testUPC");
         lineItem.setQuantity(1);
         transaction.setLineItems(Collections.singletonList(lineItem));
         when(transactionService.createAndPersist(anyString(), anyInt())).thenReturn(transaction);
+        Item item = new Item();
+        item.setUpc("testUPC");
+        item.setName("testItem");
+        item.setUnitPrice(BigDecimal.TEN);
+        when(itemService.getItemByUpc("testUPC")).thenReturn(item);
 
         posComponent.startTransaction(null);
         posComponent.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_START_PAY_WITH_CARD_PROCESS));

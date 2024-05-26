@@ -32,6 +32,7 @@ import java.util.stream.Collectors;
 public class PosComponent implements IComponent, IPosEventManager {
 
     private final ItemBookLoaderComponent itemBookLoaderComponent;
+
     private final TransactionService transactionService;
     private final ItemService itemService;
     private final PosJournalComponent journalComponent;
@@ -192,6 +193,9 @@ public class PosComponent implements IComponent, IPosEventManager {
             List<LineItemDto> lineItemDtos = getLineItemDtos();
             TransactionDto transactionDto = TransactionDto.from(
                     lineItemDtos,
+                    posSystem.getStoreName(),
+                    posSystem.getPosLane(),
+                    transaction.getTransactionNumber(),
                     transaction.getSubtotal(),
                     transaction.getDiscounts(),
                     transaction.getTaxes(),
@@ -242,6 +246,9 @@ public class PosComponent implements IComponent, IPosEventManager {
             List<LineItemDto> lineItemDtos = getLineItemDtos();
             TransactionDto transactionDto = TransactionDto.from(
                     lineItemDtos,
+                    posSystem.getStoreName(),
+                    posSystem.getPosLane(),
+                    transaction.getTransactionNumber(),
                     transaction.getSubtotal(),
                     transaction.getDiscounts(),
                     transaction.getTaxes(),
@@ -289,6 +296,9 @@ public class PosComponent implements IComponent, IPosEventManager {
         List<LineItemDto> lineItemDtos = getLineItemDtos();
         TransactionDto transactionDto = TransactionDto.from(
                 lineItemDtos,
+                posSystem.getStoreName(),
+                posSystem.getPosLane(),
+                transaction.getTransactionNumber(),
                 transaction.getSubtotal(),
                 transaction.getDiscounts(),
                 transaction.getTaxes(),
@@ -405,8 +415,7 @@ public class PosComponent implements IComponent, IPosEventManager {
     private void handleRequestCompleteTransaction() {
         if (!transactionState.isAwaitingPayment()) {
             String error = "Cannot complete transaction when transaction is not awaiting payment. Current transaction" +
-                    " " +
-                    "state: " + transactionState;
+                    " state: " + transactionState;
             System.err.println(error);
             dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
             return;
@@ -593,7 +602,22 @@ public class PosComponent implements IComponent, IPosEventManager {
         transactionState = TransactionState.COMPLETED;
         transaction.setTendered(true);
         transactionService.saveTransaction(transaction);
-        dispatchPosEvent(new PosEvent(PosEventType.TRANSACTION_COMPLETED));
+
+        List<LineItemDto> lineItemDtos = getLineItemDtos();
+        TransactionDto transactionDto = TransactionDto.from(
+                lineItemDtos,
+                posSystem.getStoreName(),
+                posSystem.getPosLane(),
+                transaction.getTransactionNumber(),
+                transaction.getSubtotal(),
+                transaction.getDiscounts(),
+                transaction.getTaxes(),
+                transaction.getTotal()
+        );
+
+        dispatchPosEvent(new PosEvent(PosEventType.TRANSACTION_COMPLETED,
+                Map.of(ConstKeys.TRANSACTION_DTO, transactionDto)));
+
         if (Application.DEBUG) {
             System.out.println("[PosComponent] Transaction completed: " + this);
         }
@@ -605,7 +629,9 @@ public class PosComponent implements IComponent, IPosEventManager {
     void resetPos() {
         transaction = null;
         transactionState = TransactionState.NOT_STARTED;
+
         dispatchPosEvent(new PosEvent(PosEventType.POS_RESET));
+
         if (Application.DEBUG) {
             System.out.println("[PosComponent] POS component reset: " + this);
         }

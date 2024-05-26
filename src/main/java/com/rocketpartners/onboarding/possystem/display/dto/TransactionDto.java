@@ -16,6 +16,9 @@ import java.util.List;
 public class TransactionDto {
 
     private List<LineItemDto> lineItemDtos;
+    private String storeName;
+    private int posLane;
+    private int transactionNumber;
     private BigDecimal subtotal;
     private BigDecimal discounts;
     private BigDecimal taxes;
@@ -32,9 +35,11 @@ public class TransactionDto {
         total = BigDecimal.ZERO;
     }
 
-    public static TransactionDto from(@NonNull List<LineItemDto> lineItemDtos, @NonNull BigDecimal subtotal,
+    public static TransactionDto from(@NonNull List<LineItemDto> lineItemDtos, @NonNull String storeName,
+                                      int posLane, int transactionNumber, @NonNull BigDecimal subtotal,
                                       @NonNull BigDecimal discounts, @NonNull BigDecimal taxes,
                                       @NonNull BigDecimal total) {
-        return new TransactionDto(lineItemDtos, subtotal, discounts, taxes, total);
+        return new TransactionDto(
+                lineItemDtos, storeName, posLane, transactionNumber, subtotal, discounts, taxes, total);
     }
 }
