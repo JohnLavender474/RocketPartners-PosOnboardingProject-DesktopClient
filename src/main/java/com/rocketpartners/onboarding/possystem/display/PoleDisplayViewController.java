@@ -32,6 +32,15 @@ public class PoleDisplayViewController implements IController {
         poleDisplayView = new PoleDisplayView(frameTitle);
     }
 
+    /**
+     * Constructor that accepts a pole display view. Package-private for testing purposes.
+     *
+     * @param poleDisplayView The pole display view.
+     */
+    PoleDisplayViewController(@NonNull PoleDisplayView poleDisplayView) {
+        this.poleDisplayView = poleDisplayView;
+    }
+
     @Override
     public void onPosEvent(@NonNull PosEvent event) {
         switch (event.getType()) {

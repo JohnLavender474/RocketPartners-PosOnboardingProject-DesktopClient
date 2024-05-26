@@ -121,6 +121,12 @@ public class CustomerViewControllerTest {
         verify(customerViewMock).showAwaitingPayment();
     }
 
+    @Test
+    public void testOnPosEvent_StartPayWithCashProcess() {
+        PosEvent posEvent = new PosEvent(PosEventType.START_PAY_WITH_CASH_PROCESS);
+        customerViewController.onPosEvent(posEvent);
+        verify(customerViewMock).showAwaitingPayment();
+    }
 
     @Test
     public void testSetTransactionState_NotStarted() {

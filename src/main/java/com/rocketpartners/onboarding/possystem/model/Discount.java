@@ -97,5 +97,4 @@ public class Discount {
     private BigDecimal discountedValue;
     private String applicableCategory;
     private Set<String> applicableUpcs;
-
 }

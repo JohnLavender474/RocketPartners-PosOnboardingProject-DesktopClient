@@ -429,6 +429,21 @@ public class PosComponentTest {
     }
 
     @Test
+    void testStartCashPaymentProcess() {
+        Transaction transaction = new Transaction();
+        LineItem lineItem = new LineItem();
+        lineItem.setItemUpc("testUpc");
+        lineItem.setQuantity(1);
+        transaction.setLineItems(Collections.singletonList(lineItem));
+        when(transactionService.createAndPersist(anyString(), anyInt())).thenReturn(transaction);
+
+        posComponent.startTransaction(null);
+        posComponent.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_START_PAY_WITH_CASH_PROCESS));
+
+        assertEquals(TransactionState.AWAITING_CASH_PAYMENT, posComponent.getTransactionState());
+    }
+
+    @Test
     void testCancelCardPaymentProcess() {
         Transaction transaction = new Transaction();
         LineItem lineItem = new LineItem();
@@ -440,6 +455,23 @@ public class PosComponentTest {
 
         posComponent.startTransaction(null);
         posComponent.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_START_PAY_WITH_CARD_PROCESS));
+        posComponent.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_CANCEL_PAYMENT));
+
+        assertEquals(TransactionState.SCANNING_IN_PROGRESS, posComponent.getTransactionState());
+    }
+
+    @Test
+    void testCancelCashPaymentProcess() {
+        Transaction transaction = new Transaction();
+        LineItem lineItem = new LineItem();
+        lineItem.setItemUpc("testUPC");
+        lineItem.setQuantity(1);
+        transaction.setLineItems(Collections.singletonList(lineItem));
+
+        when(transactionService.createAndPersist(anyString(), anyInt())).thenReturn(transaction);
+
+        posComponent.startTransaction(null);
+        posComponent.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_START_PAY_WITH_CASH_PROCESS));
         posComponent.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_CANCEL_PAYMENT));
 
         assertEquals(TransactionState.SCANNING_IN_PROGRESS, posComponent.getTransactionState());
@@ -468,6 +500,77 @@ public class PosComponentTest {
         assertEquals(TransactionState.COMPLETED, posComponent.getTransactionState());
         assertTrue(posComponent.isTransactionTendered());
         verify(transactionService, times(1)).saveTransaction(transaction);
+    }
+
+    @Test
+    void testCompleteCashPaymentProcess() {
+        Transaction transaction = new Transaction();
+        transaction.setId("testTransaction");
+
+        LineItem lineItem = new LineItem();
+        lineItem.setTransactionId("testTransaction");
+        lineItem.setItemUpc("testUPC");
+        lineItem.setQuantity(1);
+        transaction.setLineItems(Collections.singletonList(lineItem));
+        transaction.setTotal(BigDecimal.TEN);
+
+        when(transactionService.createAndPersist(anyString(), anyInt())).thenReturn(transaction);
+
+        Item item = new Item();
+        item.setUpc("testUPC");
+        item.setName("testItem");
+        item.setUnitPrice(BigDecimal.TEN);
+        when(itemService.getItemByUpc("testUPC")).thenReturn(item);
+
+        posComponent.startTransaction(null);
+        posComponent.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_START_PAY_WITH_CASH_PROCESS));
+        posComponent.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_INSERT_CASH,
+                Map.of(ConstKeys.CASH_AMOUNT, "11.00")));
+
+        assertEquals(TransactionState.COMPLETED, posComponent.getTransactionState());
+        assertTrue(posComponent.isTransactionTendered());
+        assertEquals(new BigDecimal("1.00"), posComponent.getTransaction().getChangeDue());
+        verify(transactionService, times(1)).saveTransaction(transaction);
+    }
+
+    @Test
+    void testInsufficientCashFunds() {
+        Transaction transaction = new Transaction();
+        transaction.setId("testTransaction");
+
+        LineItem lineItem = new LineItem();
+        lineItem.setTransactionId("testTransaction");
+        lineItem.setItemUpc("testUPC");
+        lineItem.setQuantity(1);
+        transaction.setLineItems(Collections.singletonList(lineItem));
+        transaction.setTotal(BigDecimal.TEN);
+
+        when(transactionService.createAndPersist(anyString(), anyInt())).thenReturn(transaction);
+
+        Item item = new Item();
+        item.setUpc("testUPC");
+        item.setName("testItem");
+        item.setUnitPrice(BigDecimal.TEN);
+
+        when(itemService.getItemByUpc("testUPC")).thenReturn(item);
+
+        posComponent.startTransaction(null);
+        posComponent.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_START_PAY_WITH_CASH_PROCESS));
+        posComponent.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_INSERT_CASH,
+                Map.of(ConstKeys.CASH_AMOUNT, "4.00")));
+
+        assertEquals(TransactionState.AWAITING_CASH_PAYMENT, posComponent.getTransactionState());
+        assertFalse(posComponent.isTransactionTendered());
+
+        assertEquals(new BigDecimal("4.00"), posComponent.getTransaction().getAmountTendered());
+
+        ArgumentCaptor<PosEvent> eventCaptor = ArgumentCaptor.forClass(PosEvent.class);
+        verify(posComponent, times(6)).dispatchPosEvent(eventCaptor.capture());
+
+        List<PosEvent> capturedEvents = eventCaptor.getAllValues();
+        System.out.println(capturedEvents);
+        assertEquals(PosEventType.INSUFFICIENT_FUNDS,
+                eventCaptor.getAllValues().get(capturedEvents.size() - 1).getType());
     }
 }
 
