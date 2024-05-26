@@ -50,7 +50,7 @@ public class ScannerViewControllerTest {
     public void testEnterButtonDispatchesAddItemEvent() {
         when(scannerView.getScannerInput()).thenReturn("1234567890");
         ArgumentCaptor<PosEvent> eventCaptor = ArgumentCaptor.forClass(PosEvent.class);
-        scannerView.onEnterButtonClick();
+        scannerView.onEnter();
         verify(parentPosEventDispatcher).dispatchPosEvent(eventCaptor.capture());
         PosEvent capturedEvent = eventCaptor.getValue();
         assertEquals(PosEventType.REQUEST_ADD_ITEM, capturedEvent.getType());

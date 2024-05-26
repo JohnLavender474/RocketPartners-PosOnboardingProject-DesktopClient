@@ -107,13 +107,17 @@ public class ScannerView extends JFrame implements KeyEventDispatcher {
             }
 
             if (c == KeyEvent.VK_ENTER) {
-                parentPosDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_ADD_ITEM,
-                        Map.of(ConstKeys.ITEM_UPC, getScannerInput())));
-                clearScannerInput();
+                onEnter();
                 return true;
             }
         }
         return false;
+    }
+
+    void onEnter() {
+        parentPosDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_ADD_ITEM,
+                Map.of(ConstKeys.ITEM_UPC, getScannerInput())));
+        clearScannerInput();
     }
 
     /**
@@ -130,6 +134,13 @@ public class ScannerView extends JFrame implements KeyEventDispatcher {
         setActive(false);
     }
 
+    private void setActive(boolean scanningActive) {
+        this.scanningActive = scanningActive;
+        promptArea.setText(scanningActive ? PROMPT_TEXT : NOT_IN_PROGRESS_TEXT);
+        scannerPanel.setEnabled(scanningActive);
+        pack();
+    }
+
     /**
      * Request user focus on the scanner input field.
      */
@@ -139,13 +150,6 @@ public class ScannerView extends JFrame implements KeyEventDispatcher {
         }
         toFront();
         scannerInput.requestFocusInWindow();
-    }
-
-    private void setActive(boolean scanningActive) {
-        this.scanningActive = scanningActive;
-        promptArea.setText(scanningActive ? PROMPT_TEXT : NOT_IN_PROGRESS_TEXT);
-        scannerPanel.setEnabled(scanningActive);
-        pack();
     }
 
     /**

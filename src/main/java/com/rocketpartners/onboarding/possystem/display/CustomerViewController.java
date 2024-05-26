@@ -81,7 +81,12 @@ public class CustomerViewController implements IController {
     public void onPosEvent(@NonNull PosEvent posEvent) {
         switch (posEvent.getType()) {
             case POS_BOOTUP, POS_RESET -> setTransactionState(TransactionState.NOT_STARTED);
-            case TRANSACTION_STARTED, DO_CANCEL_PAYMENT -> setTransactionState(TransactionState.SCANNING_IN_PROGRESS);
+            case TRANSACTION_STARTED -> {
+                int transactionNumber = posEvent.getProperty(ConstKeys.TRANSACTION_NUMBER, Integer.class);
+                customerView.updateTransactionNumber(transactionNumber);
+                setTransactionState(TransactionState.SCANNING_IN_PROGRESS);
+            }
+            case DO_CANCEL_PAYMENT -> setTransactionState(TransactionState.SCANNING_IN_PROGRESS);
             case DO_UPDATE_QUICK_ITEMS -> {
                 List<ItemDto> itemDtos = (List<ItemDto>) posEvent.getProperty(ConstKeys.ITEM_DTOS);
                 customerView.updateQuickItems(itemDtos);
@@ -111,10 +116,6 @@ public class CustomerViewController implements IController {
         if (Application.DEBUG) {
             System.out.println("[CustomerViewController] Setting transaction state to: " + transactionState);
         }
-        updateView(transactionState);
-    }
-
-    private void updateView(@NonNull TransactionState transactionState) {
         switch (transactionState) {
             case NOT_STARTED -> {
                 customerView.reset();

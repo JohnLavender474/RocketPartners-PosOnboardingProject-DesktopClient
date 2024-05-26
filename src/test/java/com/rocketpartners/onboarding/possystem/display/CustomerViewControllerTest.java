@@ -8,12 +8,10 @@ import com.rocketpartners.onboarding.possystem.display.dto.TransactionDto;
 import com.rocketpartners.onboarding.possystem.event.IPosEventDispatcher;
 import com.rocketpartners.onboarding.possystem.event.PosEvent;
 import com.rocketpartners.onboarding.possystem.event.PosEventType;
-import com.rocketpartners.onboarding.possystem.model.LineItem;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.ListIterator;
 import java.util.Map;
 
 import static org.mockito.Mockito.mock;
@@ -40,8 +38,10 @@ public class CustomerViewControllerTest {
 
     @Test
     public void testOnPosEvent_TransactionStarted() {
-        PosEvent posEvent = new PosEvent(PosEventType.TRANSACTION_STARTED);
+        PosEvent posEvent = new PosEvent(PosEventType.TRANSACTION_STARTED,
+                Map.of(ConstKeys.TRANSACTION_NUMBER, 1));
         customerViewController.onPosEvent(posEvent);
+        verify(customerViewMock).updateTransactionNumber(1);
         verify(customerViewMock).showScanningInProgress();
     }
 

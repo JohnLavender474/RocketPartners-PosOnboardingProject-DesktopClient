@@ -381,9 +381,6 @@ public class CustomerView extends JFrame {
 
     @NonNull
     private final IPosEventDispatcher parentEventDispatcher;
-    @NonNull
-    private final String storeName;
-    private final int posLane;
     private final Set<String> selectedLineItemUpcs;
     private final CircularFifoQueue<ItemDto> quickItemDtos;
 
@@ -394,7 +391,7 @@ public class CustomerView extends JFrame {
 
     private JTextArea storeNameTextArea;
     private JTextArea posInfoTextArea;
-    private JTextArea transactionTextArea;
+    private JTextArea transactionNumberTextArea;
 
     private JTextArea subtotalTextArea;
     private JTextArea discountsTextArea;
@@ -411,6 +408,8 @@ public class CustomerView extends JFrame {
     private JButton cancelPaymentButton;
     private JButton continueButton;
 
+    private final String storeName;
+
     /**
      * Constructor that accepts a parent event dispatcher, store name, and POS lane number.
      *
@@ -421,18 +420,19 @@ public class CustomerView extends JFrame {
     public CustomerView(@NonNull IPosEventDispatcher parentEventDispatcher,
                         @NonNull String storeName, int posLane) {
         super("Customer View - Lane " + posLane);
+
         if (Application.DEBUG) {
             System.out.println("[CustomerView] Creating Customer View for Store Name: " + storeName + " and Lane: " + posLane);
         }
-        this.parentEventDispatcher = parentEventDispatcher;
+
         this.storeName = storeName;
-        this.posLane = posLane;
+        this.parentEventDispatcher = parentEventDispatcher;
 
         setMinimumSize(new Dimension(CUSTOMER_VIEW_FRAME_WIDTH, CUSTOMER_VIEW_FRAME_HEIGHT));
         setPreferredSize(new Dimension(CUSTOMER_VIEW_FRAME_WIDTH, CUSTOMER_VIEW_FRAME_HEIGHT));
         setResizable(false);
 
-        initializeComponents();
+        initializeComponents(storeName, posLane);
 
         setLayout(new BorderLayout());
         add(bannerLabel, BorderLayout.NORTH);
@@ -456,7 +456,7 @@ public class CustomerView extends JFrame {
         quickItemDtos = new CircularFifoQueue<>(ConstVals.QUICK_ITEMS_COUNT);
     }
 
-    private void initializeComponents() {
+    private void initializeComponents(@NonNull String storeName, int posLane) {
         bannerLabel = new JLabel("", SwingConstants.CENTER);
 
         contentPanel = new JPanel();
@@ -500,8 +500,9 @@ public class CustomerView extends JFrame {
         posInfoTextArea.setEditable(false);
         posInfoTextArea.setText("POS Lane: " + posLane);
 
-        transactionTextArea = new JTextArea();
-        transactionTextArea.setEditable(false);
+        transactionNumberTextArea = new JTextArea();
+        transactionNumberTextArea.setEditable(false);
+        transactionNumberTextArea.setText("Transaction Number: N/A");
 
         subtotalTextArea = new JTextArea();
         subtotalTextArea.setEditable(false);
@@ -696,6 +697,15 @@ public class CustomerView extends JFrame {
                 BigDecimal.ZERO,
                 BigDecimal.ZERO
         );
+    }
+
+    /**
+     * Update the transaction number.
+     *
+     * @param transactionNumber The transaction number.
+     */
+    public void updateTransactionNumber(int transactionNumber) {
+        transactionNumberTextArea.setText("Transaction Number: " + transactionNumber);
     }
 
     /**
@@ -946,7 +956,7 @@ public class CustomerView extends JFrame {
         JPanel gridPane1 = new JPanel(new GridLayout(3, 1));
         gridPane1.add(storeNameTextArea);
         gridPane1.add(posInfoTextArea);
-        gridPane1.add(transactionTextArea);
+        gridPane1.add(transactionNumberTextArea);
 
         JPanel gridPane2 = new JPanel(new GridLayout(4, 1));
         gridPane2.add(subtotalTextArea);

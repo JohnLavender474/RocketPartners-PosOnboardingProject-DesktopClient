@@ -134,6 +134,7 @@ public class PosComponent implements IComponent, IPosEventManager {
             dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
             return;
         }
+
         startTransaction(event);
     }
 
@@ -172,8 +173,16 @@ public class PosComponent implements IComponent, IPosEventManager {
         }
 
         String itemUpc = event.getProperty(ConstKeys.ITEM_UPC, String.class);
+
         if (itemUpc == null) {
             String error = "Cannot add item to transaction because item UPC is null";
+            System.err.println(error);
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
+            return;
+        }
+
+        if (itemUpc.isBlank()) {
+            String error = "Cannot add item to transaction because item UPC is blank";
             System.err.println(error);
             dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
             return;
@@ -195,7 +204,7 @@ public class PosComponent implements IComponent, IPosEventManager {
                 System.out.println("[PosComponent] Item added to transaction: " + itemUpc);
             }
         } else {
-            String error = "Cannot add item to transaction because item with UPC " + itemUpc + " does not exist";
+            String error = "Cannot add item to transaction because item with UPC [ " + itemUpc + " ] does not exist";
             System.err.println(error);
             dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
         }
@@ -547,7 +556,8 @@ public class PosComponent implements IComponent, IPosEventManager {
         transactionNumber++;
         transactionState = TransactionState.SCANNING_IN_PROGRESS;
 
-        dispatchPosEvent(new PosEvent(PosEventType.TRANSACTION_STARTED));
+        dispatchPosEvent(new PosEvent(PosEventType.TRANSACTION_STARTED, Map.of(
+                ConstKeys.TRANSACTION_NUMBER, transaction.getTransactionNumber())));
 
         if (Application.DEBUG) {
             System.out.println("[PosComponent] New transaction started: " + this);
@@ -623,24 +633,10 @@ public class PosComponent implements IComponent, IPosEventManager {
     }
 
     /**
-     * Unregister a child controller from this controller and also remove it as an event listener. Child controllers
-     * will no longer receive boot up, update, or shutdown calls, or POS events.
-     *
-     * @param controller The child controller to unregister.
-     */
-    public void unregisterChildController(@NonNull IController controller) {
-        childComponents.remove(controller);
-        posEventListeners.remove(controller);
-        if (Application.DEBUG) {
-            System.out.println("[PosComponent] Unregistered child controller: " + controller);
-        }
-    }
-
-    /**
      * {@inheritDoc}
      * <p>
-     * If the listener is an {@link IController} instance, then you should use the {@link #registerChildController} and
-     * {@link #unregisterChildController} methods instead.
+     * If the listener is an {@link IController} instance, then you should use the {@link #registerChildController}
+     * method instead.
      *
      * @param listener The listener to register.
      */
@@ -655,8 +651,8 @@ public class PosComponent implements IComponent, IPosEventManager {
     /**
      * {@inheritDoc}
      * <p>
-     * If the listener is an {@link IController} instance, then you should use the {@link #registerChildController} and
-     * {@link #unregisterChildController} methods instead.
+     * If the listener is an {@link IController} instance, then you should use the {@link #registerChildController}
+     * method instead.
      *
      * @param listener The listener to unregister.
      */
