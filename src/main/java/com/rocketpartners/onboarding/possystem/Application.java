@@ -156,6 +156,10 @@ public class Application {
             ErrorPopupViewController errorPopupViewController = new ErrorPopupViewController();
             posComponent.registerChildController(errorPopupViewController);
 
+            DiscountsViewController discountsViewController =
+                    new DiscountsViewController("Discounts View - Lane " + laneNumber, posComponent);
+            posComponent.registerChildController(discountsViewController);
+
             posComponent.bootUp();
 
             // According to ChatGPT, the javax.swing.Timer ensures that the action performed in the ActionListener is

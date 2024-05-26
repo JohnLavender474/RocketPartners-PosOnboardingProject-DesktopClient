@@ -48,7 +48,10 @@ public class KeypadViewController implements IController {
     public void onPosEvent(@NonNull PosEvent event) {
         switch (event.getType()) {
             case START_PAY_WITH_CARD_PROCESS -> keypadView.setVisible(true);
-            case DO_CANCEL_PAYMENT, TRANSACTION_COMPLETED -> keypadView.setVisible(false);
+            case DO_CANCEL_PAYMENT, TRANSACTION_COMPLETED -> {
+                keypadView.clearDisplayArea();
+                keypadView.setVisible(false);
+            }
         }
     }
 

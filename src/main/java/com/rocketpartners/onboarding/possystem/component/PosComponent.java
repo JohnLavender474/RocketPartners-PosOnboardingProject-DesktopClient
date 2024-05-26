@@ -115,6 +115,7 @@ public class PosComponent implements IComponent, IPosEventManager {
         switch (event.getType()) {
             case REQUEST_START_TRANSACTION -> handleRequestStartTransaction(event);
             case REQUEST_OPEN_SCANNER -> handleRequestOpenScanner();
+            case REQUEST_OPEN_DISCOUNTS -> handleRequestOpenDiscounts();
             case REQUEST_ADD_ITEM -> handleRequestAddItem(event);
             case REQUEST_REMOVE_ITEM -> handleRequestRemoveItem(event);
             case REQUEST_UPDATE_QUICK_ITEMS -> handleRequestUpdateQuickItems();
@@ -145,6 +146,13 @@ public class PosComponent implements IComponent, IPosEventManager {
             System.out.println("[PosComponent] Request to open scanner");
         }
         dispatchPosEvent(new PosEvent(PosEventType.DO_OPEN_SCANNER));
+    }
+
+    private void handleRequestOpenDiscounts() {
+        if (Application.DEBUG) {
+            System.out.println("[PosComponent] Request to open discounts");
+        }
+        dispatchPosEvent(new PosEvent(PosEventType.DO_OPEN_DISCOUNTS));
     }
 
     private void handleRequestAddItem(@NonNull PosEvent event) {

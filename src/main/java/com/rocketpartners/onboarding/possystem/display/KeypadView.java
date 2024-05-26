@@ -78,6 +78,13 @@ public class KeypadView extends JFrame {
         add(buttonPanel, BorderLayout.CENTER);
     }
 
+    /**
+     * Clears the display area.
+     */
+    public void clearDisplayArea() {
+        displayArea.setText("");
+    }
+
     private void addButton(@NonNull JPanel panel, @NonNull String label) {
         JButton button = new JButton(label);
         button.setFont(BUTTON_FONT);

@@ -373,7 +373,7 @@ public class CustomerView extends JFrame {
     private static final String START_TRANSACTION_BUTTON_TEXT = "Start Transaction";
     private static final String OPEN_SCANNER_BUTTON_TEXT = "Open Scanner";
     private static final String PAY_WITH_CARD_BUTTON_TEXT = "Pay with Card";
-    private static final String PAY_WITH_CASH_BUTTON_TEXT = "Pay with Cash";
+    private static final String OPEN_DISCOUNTS_BUTTON_TEXT = "Open Discounts";
     private static final String VOID_TRANSACTION_BUTTON_TEXT = "Void Transaction";
     private static final String VOID_LINE_ITEMS_BUTTON_TEXT = "Void Line Items";
     private static final String CANCEL_PAYMENT_BUTTON_TEXT = "Cancel Payment";
@@ -402,7 +402,7 @@ public class CustomerView extends JFrame {
 
     private JButton startTransactionButton;
     private JButton payWithCardButton;
-    private JButton payWithCashButton;
+    private JButton openDiscountsButton;
     private JButton openScannerButton;
     private JButton voidButton;
     private JButton cancelPaymentButton;
@@ -531,10 +531,10 @@ public class CustomerView extends JFrame {
                 )
         );
 
-        payWithCashButton = createButton(PAY_WITH_CASH_BUTTON_TEXT, Color.getHSBColor(140f / 360f, 0.8f, 0.4f));
-        payWithCashButton.addActionListener(e ->
+        openDiscountsButton = createButton(OPEN_DISCOUNTS_BUTTON_TEXT, Color.getHSBColor(300f / 360f, 1f, 0.5f));
+        openDiscountsButton.addActionListener(e ->
                 SwingUtilities.invokeLater(() ->
-                        parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_START_PAY_WITH_CASH_PROCESS))
+                        parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_OPEN_DISCOUNTS))
                 )
         );
 
@@ -975,7 +975,7 @@ public class CustomerView extends JFrame {
         buttonsPanel.add(voidButton);
         buttonsPanel.add(openScannerButton);
         buttonsPanel.add(payWithCardButton);
-        buttonsPanel.add(payWithCashButton);
+        buttonsPanel.add(openDiscountsButton);
         return buttonsPanel;
     }
 
