@@ -1,4 +1,8 @@
 package com.rocketpartners.onboarding.possystem.display;
 
-public class InsertCashView {
+import javax.swing.*;
+
+public class InsertCashView extends JFrame {
+
+
 }

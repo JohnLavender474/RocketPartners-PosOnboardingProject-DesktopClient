@@ -22,6 +22,7 @@ import com.rocketpartners.onboarding.possystem.service.ItemService;
 import com.rocketpartners.onboarding.possystem.service.TransactionService;
 import lombok.*;
 
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -190,17 +191,7 @@ public class PosComponent implements IComponent, IPosEventManager {
         }
 
         if (itemService.itemExists(itemUpc) && transactionService.addItemToTransaction(transaction, itemUpc)) {
-            List<LineItemDto> lineItemDtos = getLineItemDtos();
-            TransactionDto transactionDto = TransactionDto.from(
-                    lineItemDtos,
-                    posSystem.getStoreName(),
-                    posSystem.getPosLane(),
-                    transaction.getTransactionNumber(),
-                    transaction.getSubtotal(),
-                    transaction.getDiscounts(),
-                    transaction.getTaxes(),
-                    transaction.getTotal()
-            );
+            TransactionDto transactionDto = getTransactionDto();
 
             dispatchPosEvent(new PosEvent(PosEventType.ITEM_ADDED, Map.of(ConstKeys.TRANSACTION_DTO, transactionDto)));
 
@@ -243,17 +234,7 @@ public class PosComponent implements IComponent, IPosEventManager {
         }
 
         if (itemService.itemExists(itemUpc) && transactionService.removeItemFromTransaction(transaction, itemUpc)) {
-            List<LineItemDto> lineItemDtos = getLineItemDtos();
-            TransactionDto transactionDto = TransactionDto.from(
-                    lineItemDtos,
-                    posSystem.getStoreName(),
-                    posSystem.getPosLane(),
-                    transaction.getTransactionNumber(),
-                    transaction.getSubtotal(),
-                    transaction.getDiscounts(),
-                    transaction.getTaxes(),
-                    transaction.getTotal()
-            );
+            TransactionDto transactionDto = getTransactionDto();
 
             dispatchPosEvent(new PosEvent(PosEventType.ITEM_REMOVED,
                     Map.of(ConstKeys.TRANSACTION_DTO, transactionDto)));
@@ -293,17 +274,7 @@ public class PosComponent implements IComponent, IPosEventManager {
 
         itemUpcs.forEach(it -> transactionService.voidLineItemInTransaction(transaction, it));
 
-        List<LineItemDto> lineItemDtos = getLineItemDtos();
-        TransactionDto transactionDto = TransactionDto.from(
-                lineItemDtos,
-                posSystem.getStoreName(),
-                posSystem.getPosLane(),
-                transaction.getTransactionNumber(),
-                transaction.getSubtotal(),
-                transaction.getDiscounts(),
-                transaction.getTaxes(),
-                transaction.getTotal()
-        );
+        TransactionDto transactionDto = getTransactionDto();
 
         dispatchPosEvent(new PosEvent(PosEventType.LINE_ITEMS_VOIDED,
                 Map.of(ConstKeys.TRANSACTION_DTO, transactionDto)));
@@ -396,6 +367,8 @@ public class PosComponent implements IComponent, IPosEventManager {
             return;
         }
 
+        transaction.setAmountTendered(transaction.getTotal());
+        transaction.setChangeDue(BigDecimal.ZERO);
         dispatchPosEvent(new PosEvent(PosEventType.REQUEST_COMPLETE_TRANSACTION));
     }
 
@@ -603,17 +576,7 @@ public class PosComponent implements IComponent, IPosEventManager {
         transaction.setTendered(true);
         transactionService.saveTransaction(transaction);
 
-        List<LineItemDto> lineItemDtos = getLineItemDtos();
-        TransactionDto transactionDto = TransactionDto.from(
-                lineItemDtos,
-                posSystem.getStoreName(),
-                posSystem.getPosLane(),
-                transaction.getTransactionNumber(),
-                transaction.getSubtotal(),
-                transaction.getDiscounts(),
-                transaction.getTaxes(),
-                transaction.getTotal()
-        );
+        TransactionDto transactionDto = getTransactionDto();
 
         dispatchPosEvent(new PosEvent(PosEventType.TRANSACTION_COMPLETED,
                 Map.of(ConstKeys.TRANSACTION_DTO, transactionDto)));
@@ -642,6 +605,22 @@ public class PosComponent implements IComponent, IPosEventManager {
             Item item = itemService.getItemByUpc(lineItem.getItemUpc());
             return LineItemDto.from(lineItem, item);
         }).toList();
+    }
+
+    private TransactionDto getTransactionDto() {
+        List<LineItemDto> lineItemDtos = getLineItemDtos();
+        return TransactionDto.from(
+                lineItemDtos,
+                posSystem.getStoreName(),
+                posSystem.getPosLane(),
+                transaction.getTransactionNumber(),
+                transaction.getSubtotal(),
+                transaction.getDiscounts(),
+                transaction.getTaxes(),
+                transaction.getTotal(),
+                transaction.getAmountTendered(),
+                transaction.getChangeDue()
+        );
     }
 
     /**

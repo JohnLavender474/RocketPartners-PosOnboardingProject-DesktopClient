@@ -8,6 +8,7 @@ import lombok.NonNull;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.text.NumberFormat;
 import java.util.List;
 
 /**
@@ -17,7 +18,7 @@ public class ReceiptView extends JFrame {
 
     private static final int MIN_WIDTH = 750;
     private static final int MIN_HEIGHT = 500;
-    private static final int ROWS = 3;
+    private static final int ROWS = 4;
     private static final int COLUMNS = 1;
     private static final String UPC_COLUMN = "UPC";
     private static final String NAME_COLUMN = "Name";
@@ -35,6 +36,9 @@ public class ReceiptView extends JFrame {
     private final JTextArea discountsTextArea;
     private final JTextArea taxesTextArea;
     private final JTextArea totalTextArea;
+
+    private final JTextArea amountTenderedTextArea;
+    private final JTextArea changeDueTextArea;
 
     /**
      * Constructor that accepts a title.
@@ -81,6 +85,15 @@ public class ReceiptView extends JFrame {
         totalTextArea.setEditable(false);
         totalsPanel.add(totalTextArea);
         add(totalsPanel);
+
+        JPanel tenderedPanel = new JPanel(new GridLayout(2, 1));
+        amountTenderedTextArea = new JTextArea();
+        amountTenderedTextArea.setEditable(false);
+        tenderedPanel.add(amountTenderedTextArea);
+        changeDueTextArea = new JTextArea();
+        changeDueTextArea.setEditable(false);
+        tenderedPanel.add(changeDueTextArea);
+        add(tenderedPanel);
     }
 
     /**
@@ -97,10 +110,15 @@ public class ReceiptView extends JFrame {
         posInfoArea.setText("POS Lane: " + transactionDto.getPosLane());
         transactionNumberTextArea.setText("Transaction Number: " + transactionDto.getTransactionNumber());
 
-        subtotalTextArea.setText("Subtotal: " + transactionDto.getSubtotal());
-        discountsTextArea.setText("Discounts: " + transactionDto.getDiscounts());
-        taxesTextArea.setText("Taxes: " + transactionDto.getTaxes());
-        totalTextArea.setText("Total: " + transactionDto.getTotal());
+        NumberFormat currencyFormat = NumberFormat.getCurrencyInstance();
+
+        subtotalTextArea.setText("Subtotal: " + currencyFormat.format(transactionDto.getSubtotal()));
+        discountsTextArea.setText("Discounts: " + currencyFormat.format(transactionDto.getDiscounts()));
+        taxesTextArea.setText("Taxes: " + currencyFormat.format(transactionDto.getTaxes()));
+        totalTextArea.setText("Total: " + currencyFormat.format(transactionDto.getTotal()));
+
+        amountTenderedTextArea.setText("Amount Tendered: " + currencyFormat.format(transactionDto.getAmountTendered()));
+        changeDueTextArea.setText("Change Due: " + currencyFormat.format(transactionDto.getChangeDue()));
 
         buildLineItemsTable(transactionDto.getLineItemDtos());
 

@@ -23,6 +23,8 @@ public class TransactionDto {
     private BigDecimal discounts;
     private BigDecimal taxes;
     private BigDecimal total;
+    private BigDecimal amountTendered;
+    private BigDecimal changeDue;
 
     /**
      * Create a new TransactionDto with empty line items and zeroed out numbers.
@@ -33,13 +35,17 @@ public class TransactionDto {
         discounts = BigDecimal.ZERO;
         taxes = BigDecimal.ZERO;
         total = BigDecimal.ZERO;
+        amountTendered = BigDecimal.ZERO;
+        changeDue = BigDecimal.ZERO;
     }
 
     public static TransactionDto from(@NonNull List<LineItemDto> lineItemDtos, @NonNull String storeName,
                                       int posLane, int transactionNumber, @NonNull BigDecimal subtotal,
                                       @NonNull BigDecimal discounts, @NonNull BigDecimal taxes,
-                                      @NonNull BigDecimal total) {
+                                      @NonNull BigDecimal total, @NonNull BigDecimal amountTendered,
+                                      @NonNull BigDecimal changeDue) {
         return new TransactionDto(
-                lineItemDtos, storeName, posLane, transactionNumber, subtotal, discounts, taxes, total);
+                lineItemDtos, storeName, posLane, transactionNumber, subtotal, discounts, taxes, total,
+                amountTendered, changeDue);
     }
 }
