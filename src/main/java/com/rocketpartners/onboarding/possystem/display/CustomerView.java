@@ -14,6 +14,8 @@ import org.apache.commons.collections4.queue.CircularFifoQueue;
 import javax.swing.*;
 import javax.swing.table.*;
 import java.awt.*;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.math.BigDecimal;
@@ -360,6 +362,7 @@ public class CustomerView extends JFrame {
     private static final String TRANSACTION_TABLE_COLUMN_PRICE = "Unit Price";
     private static final String TRANSACTION_TABLE_COLUMN_QUANTITY = "Quantity";
     private static final String TRANSACTION_TABLE_COLUMN_TOTAL = "Total";
+    private static final float[] TRANSACTION_TABLE_COLUMN_WIDTHS = {10f, 10f, 20f, 30f, 10f, 10f, 10f};
 
     private static final int QUICK_ITEMS_ROWS_COUNT = 2;
     private static final int QUICK_ITEMS_COLUMNS_COUNT = 4;
@@ -476,6 +479,18 @@ public class CustomerView extends JFrame {
         columnModel.getColumn(5).setCellEditor(new QuantityCellEditor());
         columnModel.getColumn(6).setCellRenderer(new StandardCellRenderer(model));
         transactionTable.getTableHeader().setReorderingAllowed(false);
+        transactionTable.addComponentListener(new ComponentAdapter() {
+
+            @Override
+            public void componentShown(ComponentEvent e) {
+                resetTransactionsTableColumnWidths();
+            }
+
+            @Override
+            public void componentResized(ComponentEvent e) {
+                resetTransactionsTableColumnWidths();
+            }
+        });
 
         storeNameTextArea = new JTextArea();
         storeNameTextArea.setEditable(false);
@@ -557,6 +572,9 @@ public class CustomerView extends JFrame {
         return button;
     }
 
+    /**
+     * Reset the view.
+     */
     public void reset() {
         if (Application.DEBUG) {
             System.out.println("[CustomerView] Resetting customer view");
@@ -564,6 +582,8 @@ public class CustomerView extends JFrame {
         selectedLineItemUpcs.clear();
         quickItemDtos.clear();
         clearTransactionTableRows();
+        resetTransactionsTableColumnWidths();
+        resetTransactionMetadata();
         revalidate();
         repaint();
     }
@@ -571,6 +591,9 @@ public class CustomerView extends JFrame {
     @Override
     public void setVisible(boolean visible) {
         super.setVisible(visible);
+        resetTransactionsTableColumnWidths();
+        revalidate();
+        repaint();
         if (Application.DEBUG) {
             System.out.println("[CustomerView] Setting visibility to: " + visible);
         }
@@ -620,6 +643,17 @@ public class CustomerView extends JFrame {
     }
 
     /**
+     * Reset the widths of the columns in the transactions table.
+     */
+    public void resetTransactionsTableColumnWidths() {
+        for (int i = 0; i < TRANSACTION_TABLE_COLUMN_WIDTHS.length; i++) {
+            TableColumn column = transactionTable.getColumnModel().getColumn(i);
+            int width = (int) (transactionTable.getWidth() * TRANSACTION_TABLE_COLUMN_WIDTHS[i] / 100);
+            column.setPreferredWidth(width);
+        }
+    }
+
+    /**
      * Update the quick items table with the provided item DTOs.
      *
      * @param itemDtos The item DTOs.
@@ -650,6 +684,18 @@ public class CustomerView extends JFrame {
         discountsTextArea.setText("Discounts: " + currencyFormat.format(discounts));
         taxesTextArea.setText("Taxes: " + currencyFormat.format(taxes));
         totalTextArea.setText("Total: " + currencyFormat.format(total));
+    }
+
+    /**
+     * Reset the transaction metadata.
+     */
+    public void resetTransactionMetadata() {
+        updateTransactionMetadata(
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO,
+                BigDecimal.ZERO
+        );
     }
 
     /**
@@ -897,23 +943,19 @@ public class CustomerView extends JFrame {
     private JPanel loadMetadataPanel() {
         JPanel metadataPanel = new JPanel(new GridLayout(1, 2));
 
-        JScrollPane scrollPane1 = new JScrollPane();
         JPanel gridPane1 = new JPanel(new GridLayout(3, 1));
         gridPane1.add(storeNameTextArea);
         gridPane1.add(posInfoTextArea);
         gridPane1.add(transactionTextArea);
-        scrollPane1.add(gridPane1);
 
-        JScrollPane scrollPane2 = new JScrollPane();
         JPanel gridPane2 = new JPanel(new GridLayout(4, 1));
         gridPane2.add(subtotalTextArea);
         gridPane2.add(discountsTextArea);
         gridPane2.add(taxesTextArea);
         gridPane2.add(totalTextArea);
-        scrollPane2.add(gridPane2);
 
-        metadataPanel.add(scrollPane1);
-        metadataPanel.add(scrollPane2);
+        metadataPanel.add(gridPane1);
+        metadataPanel.add(gridPane2);
 
         return metadataPanel;
     }

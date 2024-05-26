@@ -21,7 +21,8 @@ public class TaxService {
      */
     public BigDecimal computeTaxesFor(@NonNull Transaction transaction) {
         // TODO: Implement this method to fetch standard tax rate from an API source
-        return BigDecimal.valueOf(0.04);
+        //  for now we will use a fixed tax rate of 4%.
+        return transaction.getSubtotal().multiply(BigDecimal.valueOf(0.04));
     }
 
 }

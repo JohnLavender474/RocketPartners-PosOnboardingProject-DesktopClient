@@ -69,25 +69,6 @@ public class Application {
     }
 
     /**
-     * Interface for shutting down the application.
-     */
-    public interface IShutdownManager {
-
-        void shutdownApp(int code);
-    }
-
-    /**
-     * Default implementation of the {@link IShutdownManager} interface.
-     */
-    public static class ShutdownManager implements IShutdownManager {
-
-        @Override
-        public void shutdownApp(int code) {
-            System.exit(code);
-        }
-    }
-
-    /**
      * The main entry point for the Point of Sale application. Parses the command line arguments and starts the
      * application. If there are any issues with the command line arguments, the usage information is printed to the
      * standard error stream and the application exits with a status code of 1.

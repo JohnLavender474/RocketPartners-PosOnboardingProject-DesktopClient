@@ -91,6 +91,7 @@ public class ScannerViewController implements IController {
                 if (Application.DEBUG) {
                     System.out.println("[ScannerViewController] Received DO_OPEN_SCANNER event");
                 }
+                scannerView.setVisible(true);
                 scannerView.requestUserFocus();
             }
             case POS_BOOTUP, POS_RESET, TRANSACTION_STARTED -> {

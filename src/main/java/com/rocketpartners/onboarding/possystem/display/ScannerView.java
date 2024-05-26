@@ -21,15 +21,13 @@ public class ScannerView extends JFrame implements KeyEventDispatcher {
 
     private static final int MIN_WIDTH = 675;
     private static final int MIN_HEIGHT = 200;
-    private static final int TEXT_FIELD_COLUMNS = 30;
-    private static final String ENTER_BUTTON_TEXT = "Enter";
+    private static final int SCANNER_INPUT_COLUMNS = 30;
     private static final String NOT_IN_PROGRESS_TEXT = "Scanning not currently in progress";
     private static final String PROMPT_TEXT = "Scan a barcode or input the barcode manually. Press Enter to submit.";
 
     private final IPosEventDispatcher parentPosDispatcher;
-    private final JTextField scannerInput;
+    private final JTextArea scannerInput;
     private final JTextArea promptArea;
-    private final JButton enterButton;
     private final JPanel scannerPanel;
 
     /**
@@ -46,8 +44,8 @@ public class ScannerView extends JFrame implements KeyEventDispatcher {
             @Override
             public void windowClosing(WindowEvent e) {
                 if (JOptionPane.showConfirmDialog(ScannerView.this,
-                        "Are you sure you want to hide this window? You can re-open it by clicking the 'Open Scanner'" +
-                                " button while scanning is in progress.",
+                        "Are you sure you want to hide this window? You can re-open it by clicking the " +
+                                "'Open Scanner' button while scanning is in progress.",
                         "Hide Scanner View Window?",
                         JOptionPane.YES_NO_OPTION,
                         JOptionPane.QUESTION_MESSAGE) == JOptionPane.YES_OPTION) {
@@ -61,23 +59,18 @@ public class ScannerView extends JFrame implements KeyEventDispatcher {
         promptArea = new JTextArea(PROMPT_TEXT);
         promptArea.setEditable(false);
 
-        scannerInput = new JTextField(TEXT_FIELD_COLUMNS);
-
-        enterButton = new JButton(ENTER_BUTTON_TEXT);
-        enterButton.addActionListener(e -> onEnterButtonClick());
-        getRootPane().setDefaultButton(enterButton);
+        scannerInput = new JTextArea();
+        scannerInput.setColumns(SCANNER_INPUT_COLUMNS);
+        scannerInput.setEditable(false);
 
         scannerPanel = new JPanel();
         scannerPanel.add(scannerInput);
-        scannerPanel.add(enterButton);
 
         setLayout(new GridLayout(2, 1));
         add(promptArea);
         add(scannerPanel);
 
         setInactive();
-
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         pack();
         setLocationRelativeTo(null);
     }
@@ -85,13 +78,32 @@ public class ScannerView extends JFrame implements KeyEventDispatcher {
     @Override
     public boolean dispatchKeyEvent(@NonNull KeyEvent e) {
         if (e.getID() == KeyEvent.KEY_TYPED) {
+            requestUserFocus();
+
             char c = e.getKeyChar();
+
             if (c == KeyEvent.CHAR_UNDEFINED) {
                 return false;
             }
-            requestUserFocus();
+
+            if (Character.isDigit(c) || Character.isAlphabetic(c)) {
+                String input = scannerInput.getText();
+                scannerInput.setText(input + c);
+                return true;
+            }
+
+            if (c == KeyEvent.VK_BACK_SPACE) {
+                String input = scannerInput.getText();
+                if (!input.isEmpty()) {
+                    scannerInput.setText(input.substring(0, input.length() - 1));
+                }
+                return true;
+            }
+
             if (c == KeyEvent.VK_ENTER) {
-                onEnterButtonClick();
+                parentPosDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_ADD_ITEM,
+                        Map.of(ConstKeys.ITEM_UPC, getScannerInput())));
+                clearScannerInput();
                 return true;
             }
         }
@@ -126,18 +138,7 @@ public class ScannerView extends JFrame implements KeyEventDispatcher {
     private void setActive(boolean scanningActive) {
         promptArea.setText(scanningActive ? PROMPT_TEXT : NOT_IN_PROGRESS_TEXT);
         scannerPanel.setEnabled(scanningActive);
-        enterButton.setEnabled(scanningActive);
         pack();
-    }
-
-    /**
-     * Handle the enter button click event. Dispatches a REQUEST_ADD_ITEM event to the parent dispatcher. The event
-     * contains the item upc as a property. Package-private for testing.
-     */
-    void onEnterButtonClick() {
-        parentPosDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_ADD_ITEM,
-                Map.of(ConstKeys.ITEM_UPC, getScannerInput())));
-        clearScannerInput();
     }
 
     /**
