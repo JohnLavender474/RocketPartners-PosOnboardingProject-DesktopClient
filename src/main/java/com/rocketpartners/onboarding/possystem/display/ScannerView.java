@@ -30,6 +30,8 @@ public class ScannerView extends JFrame implements KeyEventDispatcher {
     private final JTextArea promptArea;
     private final JPanel scannerPanel;
 
+    private boolean scanningActive;
+
     /**
      * Constructor that accepts a parent POS event dispatcher. The scanner view is created with a scanner input field
      * and
@@ -78,6 +80,10 @@ public class ScannerView extends JFrame implements KeyEventDispatcher {
     @Override
     public boolean dispatchKeyEvent(@NonNull KeyEvent e) {
         if (e.getID() == KeyEvent.KEY_TYPED) {
+            if (!scanningActive) {
+                return false;
+            }
+
             requestUserFocus();
 
             char c = e.getKeyChar();
@@ -136,6 +142,7 @@ public class ScannerView extends JFrame implements KeyEventDispatcher {
     }
 
     private void setActive(boolean scanningActive) {
+        this.scanningActive = scanningActive;
         promptArea.setText(scanningActive ? PROMPT_TEXT : NOT_IN_PROGRESS_TEXT);
         scannerPanel.setEnabled(scanningActive);
         pack();
