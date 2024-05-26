@@ -330,7 +330,7 @@ public class CustomerView extends JFrame {
         }
     }
 
-    private static final int CUSTOMER_VIEW_FRAME_WIDTH = 1250;
+    private static final int CUSTOMER_VIEW_FRAME_WIDTH = 1100;
     private static final int CUSTOMER_VIEW_FRAME_HEIGHT = 750;
 
     private static final int STANDARD_BUTTON_WIDTH = 35;
@@ -372,6 +372,7 @@ public class CustomerView extends JFrame {
 
     private static final String START_TRANSACTION_BUTTON_TEXT = "Start Transaction";
     private static final String OPEN_SCANNER_BUTTON_TEXT = "Open Scanner";
+    private static final String OPEN_POLE_DISPLAY_BUTTON_TEXT = "Open Pole Display";
     private static final String PAY_WITH_CARD_BUTTON_TEXT = "Pay with Card";
     private static final String OPEN_DISCOUNTS_BUTTON_TEXT = "Open Discounts";
     private static final String VOID_TRANSACTION_BUTTON_TEXT = "Void Transaction";
@@ -404,6 +405,7 @@ public class CustomerView extends JFrame {
     private JButton payWithCardButton;
     private JButton openDiscountsButton;
     private JButton openScannerButton;
+    private JButton openPoleDisplayButton;
     private JButton voidButton;
     private JButton cancelPaymentButton;
     private JButton continueButton;
@@ -542,6 +544,14 @@ public class CustomerView extends JFrame {
         openScannerButton.addActionListener(e ->
                 SwingUtilities.invokeLater(() ->
                         parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_OPEN_SCANNER))
+                )
+        );
+
+        openPoleDisplayButton = createButton(OPEN_POLE_DISPLAY_BUTTON_TEXT,
+                Color.getHSBColor(200f / 360f, 0.9f, 0.85f));
+        openPoleDisplayButton.addActionListener(e ->
+                SwingUtilities.invokeLater(() ->
+                        parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_OPEN_POLE_DISPLAY))
                 )
         );
 
@@ -971,9 +981,10 @@ public class CustomerView extends JFrame {
     }
 
     private JPanel loadOnScanningBottomButtonsPanel() {
-        JPanel buttonsPanel = new JPanel(new GridLayout(2, 4));
+        JPanel buttonsPanel = new JPanel(new GridLayout(3, 4));
         buttonsPanel.add(voidButton);
         buttonsPanel.add(openScannerButton);
+        buttonsPanel.add(openPoleDisplayButton);
         buttonsPanel.add(payWithCardButton);
         buttonsPanel.add(openDiscountsButton);
         return buttonsPanel;

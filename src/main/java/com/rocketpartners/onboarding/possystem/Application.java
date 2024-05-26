@@ -160,6 +160,10 @@ public class Application {
                     new DiscountsViewController("Discounts View - Lane " + laneNumber, posComponent);
             posComponent.registerChildController(discountsViewController);
 
+            PoleDisplayViewController poleDisplayViewController =
+                    new PoleDisplayViewController("Pole Display View - Lane " + laneNumber);
+            posComponent.registerChildController(poleDisplayViewController);
+
             posComponent.bootUp();
 
             // According to ChatGPT, the javax.swing.Timer ensures that the action performed in the ActionListener is

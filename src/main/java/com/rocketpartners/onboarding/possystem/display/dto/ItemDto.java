@@ -3,6 +3,8 @@ package com.rocketpartners.onboarding.possystem.display.dto;
 import com.rocketpartners.onboarding.possystem.model.Item;
 import lombok.*;
 
+import java.math.BigDecimal;
+
 /**
  * ItemDto is a data transfer object that represents an item in the system.
  */
@@ -16,6 +18,8 @@ public class ItemDto {
     private String upc;
     @NonNull
     private String name;
+    @NonNull
+    private BigDecimal unitPrice;
 
     /**
      * Create a new ItemDto from an Item.
@@ -24,7 +28,7 @@ public class ItemDto {
      * @return the created ItemDto
      */
     public static ItemDto from(@NonNull Item item) {
-        return new ItemDto(item.getUpc(), item.getName());
+        return new ItemDto(item.getUpc(), item.getName(), item.getUnitPrice());
     }
 
     /**
@@ -34,7 +38,7 @@ public class ItemDto {
      * @param name the name
      * @return the created ItemDto
      */
-    public static ItemDto from(@NonNull String upc, @NonNull String name) {
-        return new ItemDto(upc, name);
+    public static ItemDto from(@NonNull String upc, @NonNull String name, @NonNull BigDecimal unitPrice) {
+        return new ItemDto(upc, name, unitPrice);
     }
 }

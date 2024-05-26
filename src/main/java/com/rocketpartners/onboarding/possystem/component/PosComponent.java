@@ -115,6 +115,7 @@ public class PosComponent implements IComponent, IPosEventManager {
         switch (event.getType()) {
             case REQUEST_START_TRANSACTION -> handleRequestStartTransaction(event);
             case REQUEST_OPEN_SCANNER -> handleRequestOpenScanner();
+            case REQUEST_OPEN_POLE_DISPLAY -> handleRequestOpenPoleDisplay();
             case REQUEST_OPEN_DISCOUNTS -> handleRequestOpenDiscounts();
             case REQUEST_ADD_ITEM -> handleRequestAddItem(event);
             case REQUEST_REMOVE_ITEM -> handleRequestRemoveItem(event);
@@ -146,6 +147,13 @@ public class PosComponent implements IComponent, IPosEventManager {
             System.out.println("[PosComponent] Request to open scanner");
         }
         dispatchPosEvent(new PosEvent(PosEventType.DO_OPEN_SCANNER));
+    }
+
+    private void handleRequestOpenPoleDisplay() {
+        if (Application.DEBUG) {
+            System.out.println("[PosComponent] Request to open pole display");
+        }
+        dispatchPosEvent(new PosEvent(PosEventType.DO_OPEN_POLE_DISPLAY));
     }
 
     private void handleRequestOpenDiscounts() {
@@ -201,7 +209,12 @@ public class PosComponent implements IComponent, IPosEventManager {
         if (itemService.itemExists(itemUpc) && transactionService.addItemToTransaction(transaction, itemUpc)) {
             TransactionDto transactionDto = getTransactionDto();
 
-            dispatchPosEvent(new PosEvent(PosEventType.ITEM_ADDED, Map.of(ConstKeys.TRANSACTION_DTO, transactionDto)));
+            Item item = itemService.getItemByUpc(itemUpc);
+            ItemDto itemDto = ItemDto.from(item);
+
+            dispatchPosEvent(new PosEvent(PosEventType.ITEM_ADDED, Map.of(
+                    ConstKeys.ITEM_DTO, itemDto,
+                    ConstKeys.TRANSACTION_DTO, transactionDto)));
 
             if (Application.DEBUG) {
                 System.out.println("[PosComponent] Item added to transaction: " + itemUpc);
@@ -244,8 +257,12 @@ public class PosComponent implements IComponent, IPosEventManager {
         if (itemService.itemExists(itemUpc) && transactionService.removeItemFromTransaction(transaction, itemUpc)) {
             TransactionDto transactionDto = getTransactionDto();
 
-            dispatchPosEvent(new PosEvent(PosEventType.ITEM_REMOVED,
-                    Map.of(ConstKeys.TRANSACTION_DTO, transactionDto)));
+            Item item = itemService.getItemByUpc(itemUpc);
+            ItemDto itemDto = ItemDto.from(item);
+
+            dispatchPosEvent(new PosEvent(PosEventType.ITEM_REMOVED, Map.of(
+                    ConstKeys.ITEM_DTO, itemDto,
+                    ConstKeys.TRANSACTION_DTO, transactionDto)));
         } else {
             String error = "Cannot remove item from transaction because item with UPC " + itemUpc + " does not exist";
             System.err.println(error);

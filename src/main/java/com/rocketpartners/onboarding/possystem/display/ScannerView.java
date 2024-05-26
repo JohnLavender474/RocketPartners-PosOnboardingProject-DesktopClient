@@ -19,11 +19,11 @@ import java.util.Map;
  */
 public class ScannerView extends JFrame implements KeyEventDispatcher {
 
-    private static final int MIN_WIDTH = 675;
+    private static final int MIN_WIDTH = 600;
     private static final int MIN_HEIGHT = 200;
     private static final int SCANNER_INPUT_COLUMNS = 30;
     private static final String NOT_IN_PROGRESS_TEXT = "Scanning not currently in progress";
-    private static final String PROMPT_TEXT = "Scan a barcode or input the barcode manually. Press Enter to submit.";
+    private static final String PROMPT_TEXT = "Scan a barcode or input it manually. Press ENTER to submit.";
 
     private final IPosEventDispatcher parentPosDispatcher;
     private final JTextArea scannerInput;
