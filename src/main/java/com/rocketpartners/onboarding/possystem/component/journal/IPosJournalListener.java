@@ -1,5 +1,7 @@
 package com.rocketpartners.onboarding.possystem.component.journal;
 
+import lombok.NonNull;
+
 /**
  * Listener interface for journal entries.
  */
@@ -10,19 +12,19 @@ public interface IPosJournalListener {
      *
      * @param entry The journal entry.
      */
-    void onLog(String entry);
+    void onLog(@NonNull String entry);
 
     /**
      * Called when a debug entry is logged.
      *
      * @param entry The debug entry.
      */
-    void onDebug(String entry);
+    void onDebug(@NonNull String entry);
 
     /**
      * Called when an error occurs.
      *
      * @param entry The error message.
      */
-    void onError(String entry);
+    void onError(@NonNull String entry);
 }
