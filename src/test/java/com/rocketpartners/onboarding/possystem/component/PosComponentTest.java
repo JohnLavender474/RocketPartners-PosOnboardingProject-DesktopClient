@@ -11,8 +11,6 @@ import com.rocketpartners.onboarding.possystem.model.PosSystem;
 import com.rocketpartners.onboarding.possystem.model.Transaction;
 import com.rocketpartners.onboarding.possystem.service.ItemService;
 import com.rocketpartners.onboarding.possystem.service.TransactionService;
-import org.junit.Rule;
-import org.junit.contrib.java.lang.system.ExpectedSystemExit;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -29,9 +27,6 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 public class PosComponentTest {
-
-    @Rule
-    public final ExpectedSystemExit exit = ExpectedSystemExit.none();
 
     private ItemBookLoaderComponent itemBookLoaderComponent;
     private TransactionService transactionService;
