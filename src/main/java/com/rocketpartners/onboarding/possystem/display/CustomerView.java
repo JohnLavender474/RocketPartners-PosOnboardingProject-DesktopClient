@@ -366,6 +366,7 @@ public class CustomerView extends JFrame {
 
     private static final int QUICK_ITEMS_ROWS_COUNT = 2;
     private static final int QUICK_ITEMS_COLUMNS_COUNT = 4;
+    private static final int QUICK_ITEM_TEXT_MAX_LENGTH = 25;
 
     private static final String STATUS_ADDED = "ADDED";
     private static final String STATUS_VOIDED = "VOIDED";
@@ -969,7 +970,11 @@ public class CustomerView extends JFrame {
     }
 
     private JButton createQuickItemButton(@NonNull ItemDto item) {
-        JButton button = new JButton(item.getName());
+        String itemName = item.getName();
+        if (itemName.length() > QUICK_ITEM_TEXT_MAX_LENGTH) {
+            itemName = itemName.substring(0, QUICK_ITEM_TEXT_MAX_LENGTH - 3) + "...";
+        }
+        JButton button = new JButton(itemName);
         button.setPreferredSize(new Dimension(STANDARD_BUTTON_WIDTH, STANDARD_BUTTON_HEIGHT));
         button.addActionListener(e -> {
             if (Application.DEBUG) {
