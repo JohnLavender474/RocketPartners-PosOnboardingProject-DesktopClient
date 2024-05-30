@@ -22,6 +22,7 @@ public class ReceiptView extends JFrame {
     private static final int COLUMNS = 1;
     private static final String UPC_COLUMN = "UPC";
     private static final String NAME_COLUMN = "Name";
+    private static final String UNIT_PRICE_COLUMN = "Unit Price";
     private static final String QUANTITY_COLUMN = "Quantity";
     private static final int POS_INFO_ROWS = 3;
     private static final int POS_INFO_COLUMNS = 1;
@@ -52,7 +53,7 @@ public class ReceiptView extends JFrame {
         setLayout(new GridLayout(ROWS, COLUMNS));
 
         lineItemsTable = new JTable(new DefaultTableModel(new String[]{
-                UPC_COLUMN, NAME_COLUMN, QUANTITY_COLUMN}, 0));
+                UPC_COLUMN, NAME_COLUMN, UNIT_PRICE_COLUMN, QUANTITY_COLUMN}, 0));
         lineItemsTable.setShowGrid(true);
         lineItemsTable.setEnabled(false);
         lineItemsTable.getTableHeader().setReorderingAllowed(false);
@@ -139,12 +140,16 @@ public class ReceiptView extends JFrame {
         clearLineItemsTableRows();
 
         lineItemDtos.forEach(it -> {
+            if (it.isVoided()) {
+                return;
+            }
             addLineItemsTableRow();
             int row = lineItemsTable.getRowCount() - 1;
             String upc = it.getItemUpc();
             lineItemsTable.setValueAt(upc, row, 0);
             lineItemsTable.setValueAt(it.getItemName(), row, 1);
-            lineItemsTable.setValueAt(it.getQuantity(), row, 2);
+            lineItemsTable.setValueAt(it.getUnitPrice(), row, 2);
+            lineItemsTable.setValueAt(it.getQuantity(), row, 3);
         });
     }
 
