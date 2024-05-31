@@ -17,7 +17,7 @@ public class InMemoryPosSystemRepository implements PosSystemRepository {
 
     @Override
     public void savePosSystem(@NonNull PosSystem posSystem) {
-        if (posSystem.getId() == null) {
+        if (posSystem.getId() == null || posSystem.getId().isBlank()) {
             String id = UUID.randomUUID().toString();
             posSystem.setId(id);
         }

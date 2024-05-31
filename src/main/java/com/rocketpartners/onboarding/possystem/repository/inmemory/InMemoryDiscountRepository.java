@@ -5,10 +5,7 @@ import com.rocketpartners.onboarding.possystem.repository.DiscountRepository;
 import lombok.NonNull;
 import lombok.ToString;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * An in-memory implementation of the {@link DiscountRepository} interface.
@@ -20,9 +17,9 @@ public class InMemoryDiscountRepository implements DiscountRepository {
 
     @Override
     public void saveDiscount(@NonNull Discount discount) {
-        if (discount.getId() == null) {
-            String id = String.valueOf(discounts.size() + 1);
-            discount.setId(id);
+        if (discount.getId() == null || discount.getId().isBlank()) {
+            String uuid = UUID.randomUUID().toString();
+            discount.setId(uuid);
         }
         discounts.put(discount.getId(), discount);
     }

@@ -2,6 +2,7 @@ package com.rocketpartners.onboarding.possystem.repository.inmemory;
 
 import com.rocketpartners.onboarding.possystem.model.Transaction;
 import com.rocketpartners.onboarding.possystem.repository.TransactionRepository;
+import lombok.NonNull;
 import lombok.ToString;
 
 import java.util.HashMap;
@@ -17,34 +18,34 @@ public class InMemoryTransactionRepository implements TransactionRepository {
     private final Map<String, Transaction> transactions = new HashMap<>();
 
     @Override
-    public void saveTransaction(Transaction transaction) {
+    public void saveTransaction(@NonNull Transaction transaction) {
         transactions.put(transaction.getId(), transaction);
     }
 
     @Override
-    public Transaction getTransactionById(String id) {
+    public Transaction getTransactionById(@NonNull String id) {
         return transactions.get(id);
     }
 
     @Override
-    public void deleteTransactionById(String id) {
+    public void deleteTransactionById(@NonNull String id) {
         transactions.remove(id);
     }
 
     @Override
-    public boolean transactionExists(String id) {
+    public boolean transactionExists(@NonNull String id) {
         return transactions.containsKey(id);
     }
 
     @Override
-    public List<Transaction> getTransactionsByCustomerId(String customerId) {
+    public List<Transaction> getTransactionsByCustomerId(@NonNull String customerId) {
         return transactions.values().stream()
                 .filter(transaction -> transaction.getCustomerId().equals(customerId))
                 .toList();
     }
 
     @Override
-    public List<Transaction> getTransactionsByPosSystemId(String posSystemId) {
+    public List<Transaction> getTransactionsByPosSystemId(@NonNull String posSystemId) {
         return transactions.values().stream()
                 .filter(transaction -> transaction.getPosSystemId().equals(posSystemId))
                 .toList();

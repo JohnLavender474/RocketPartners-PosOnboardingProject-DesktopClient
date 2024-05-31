@@ -23,6 +23,7 @@ import com.rocketpartners.onboarding.possystem.service.TransactionService;
 import com.rocketpartners.onboarding.possystem.utils.UtilMethods;
 import lombok.*;
 
+import javax.swing.*;
 import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -579,14 +580,17 @@ public class PosComponent implements IComponent, IPosEventManager {
             System.out.println("[PosComponent] Booting up POS component: " + this);
         }
 
-        itemBookLoaderComponent.loadItemBook(itemService);
-
         on = true;
         transaction = null;
         shuttingDown = false;
-        transactionState = TransactionState.NOT_STARTED;
         childComponents.forEach(IComponent::bootUp);
-        dispatchPosEvent(new PosEvent(PosEventType.POS_BOOTUP, Map.of(ConstKeys.POS_SYSTEM_ID, posSystem.getId())));
+        transactionState = TransactionState.NOT_STARTED;
+
+        SwingUtilities.invokeLater(() -> {
+            itemBookLoaderComponent.loadItemBook(itemService);
+            dispatchPosEvent(new PosEvent(PosEventType.POS_BOOTUP, Map.of(ConstKeys.POS_SYSTEM_ID, posSystem.getId())));
+        });
+
         if (Application.DEBUG) {
             System.out.println("[PosComponent] POS component booted up: " + this);
         }

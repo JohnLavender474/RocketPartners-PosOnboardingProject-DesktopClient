@@ -464,7 +464,7 @@ public class CustomerView extends JFrame {
     }
 
     private void initializeComponents(@NonNull String storeName, int posLane) {
-        bannerLabel = new JLabel("", SwingConstants.CENTER);
+        bannerLabel = new JLabel("LOADING! PLEASE WAIT.", SwingConstants.CENTER);
 
         contentPanel = new JPanel();
         quickItemsPanel = new JPanel(new GridLayout(QUICK_ITEMS_ROWS_COUNT, QUICK_ITEMS_COLUMNS_COUNT));
