@@ -25,6 +25,7 @@ import lombok.*;
 
 import javax.swing.*;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -674,11 +675,12 @@ public class PosComponent implements IComponent, IPosEventManager {
      */
     void completeTransaction() {
         transactionState = TransactionState.COMPLETED;
+
         transaction.setTendered(true);
+        transaction.setTimeCompleted(LocalDateTime.now());
         transactionService.saveTransaction(transaction);
 
         TransactionDto transactionDto = getTransactionDto();
-
         dispatchPosEvent(new PosEvent(PosEventType.TRANSACTION_COMPLETED,
                 Map.of(ConstKeys.TRANSACTION_DTO, transactionDto)));
 

@@ -3,6 +3,7 @@ package com.rocketpartners.onboarding.possystem.service;
 import com.rocketpartners.onboarding.possystem.Application;
 import com.rocketpartners.onboarding.possystem.model.PosSystem;
 import com.rocketpartners.onboarding.possystem.repository.PosSystemRepository;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
@@ -25,7 +26,7 @@ public class PosSystemService {
      * @return the created and persisted POS system object
      * @throws IllegalArgumentException if a POS system already exists for the store name and POS lane
      */
-    public PosSystem createAndPersist(String storeName, int posLane) {
+    public PosSystem createAndPersist(@NonNull String storeName, int posLane) {
         if (Application.DEBUG) {
             System.out.println("[PosSystemService] Creating POS system for store name: " + storeName + ", POS lane: " + posLane);
         }

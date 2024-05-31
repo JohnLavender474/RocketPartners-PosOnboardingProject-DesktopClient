@@ -148,7 +148,12 @@ public class Application {
 
             PosComponent posComponent = new PosComponent(itemBookLoaderComponent, services.transactionService(),
                     services.itemService());
-            PosSystem posSystem = services.posSystemService().createAndPersist(storeName, laneNumber);
+            PosSystem posSystem;
+            if (services.posSystemService().posSystemExistsByStoreNameAndPosLane(storeName, laneNumber)) {
+                posSystem = services.posSystemService().getPosSystemByStoreNameAndPosLane(storeName, laneNumber);
+            } else {
+                posSystem = services.posSystemService().createAndPersist(storeName, laneNumber);
+            }
             posComponent.setPosSystem(posSystem);
 
             CustomerViewController customerViewController = new CustomerViewController(

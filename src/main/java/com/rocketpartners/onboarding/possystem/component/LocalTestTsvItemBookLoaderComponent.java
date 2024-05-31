@@ -50,6 +50,9 @@ public class LocalTestTsvItemBookLoaderComponent implements ItemBookLoaderCompon
                 System.out.println("[LocalTestTsvItemBookLoaderComponent] Loading item: " + Arrays.toString(it));
             }
             String itemUpc = it[0];
+            if (itemService.itemExists(itemUpc)) {
+                return;
+            }
             String itemName = it[1];
             BigDecimal unitPrice = BigDecimal.valueOf(Double.parseDouble(it[2]));
             itemService.createAndPersist(itemUpc, itemName, unitPrice, null, null);
