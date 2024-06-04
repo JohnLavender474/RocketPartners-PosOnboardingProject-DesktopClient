@@ -13,7 +13,7 @@ import java.util.Collection;
 import java.util.List;
 
 /**
- * Service class for Discount objects. This class provides methods for computing discounts to apply to a transaction and
+ * Service class for Discounts. This class provides methods for computing discounts to apply to a transaction and
  * for computing the total discount amount for a list of discounts.
  */
 @ToString
