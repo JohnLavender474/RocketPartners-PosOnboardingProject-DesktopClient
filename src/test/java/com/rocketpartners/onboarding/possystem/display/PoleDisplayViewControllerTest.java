@@ -14,19 +14,19 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.verify;
 
-public class PoleDisplayViewControllerTest {
+class PoleDisplayViewControllerTest {
 
     private PoleDisplayView mockPoleDisplayView;
     private PoleDisplayViewController controller;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         mockPoleDisplayView = Mockito.mock(PoleDisplayView.class);
         controller = new PoleDisplayViewController(mockPoleDisplayView);
     }
 
     @Test
-    public void testOnPosEvent_TransactionStarted() {
+    void testOnPosEvent_TransactionStarted() {
         PosEvent event = new PosEvent(PosEventType.TRANSACTION_STARTED);
 
         controller.onPosEvent(event);
@@ -36,7 +36,7 @@ public class PoleDisplayViewControllerTest {
     }
 
     @Test
-    public void testOnPosEvent_DoOpenPoleDisplay() {
+    void testOnPosEvent_DoOpenPoleDisplay() {
         PosEvent event = new PosEvent(PosEventType.DO_OPEN_POLE_DISPLAY);
 
         controller.onPosEvent(event);
@@ -45,7 +45,7 @@ public class PoleDisplayViewControllerTest {
     }
 
     @Test
-    public void testOnPosEvent_ItemAdded() {
+    void testOnPosEvent_ItemAdded() {
         ItemDto mockItemDto = Mockito.mock(ItemDto.class);
         PosEvent event = new PosEvent(PosEventType.ITEM_ADDED,
                 Map.of(ConstKeys.ITEM_DTO, mockItemDto));
@@ -56,7 +56,7 @@ public class PoleDisplayViewControllerTest {
     }
 
     @Test
-    public void testOnPosEvent_ItemRemoved() {
+    void testOnPosEvent_ItemRemoved() {
         ItemDto mockItemDto = Mockito.mock(ItemDto.class);
         PosEvent event = new PosEvent(PosEventType.ITEM_REMOVED,
                 Map.of(ConstKeys.ITEM_DTO, mockItemDto));
@@ -67,7 +67,7 @@ public class PoleDisplayViewControllerTest {
     }
 
     @Test
-    public void testGetEventTypesToListenFor() {
+    void testGetEventTypesToListenFor() {
         Set<PosEventType> eventTypes = controller.getEventTypesToListenFor();
 
         assertEquals(Set.of(

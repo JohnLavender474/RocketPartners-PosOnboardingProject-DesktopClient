@@ -12,19 +12,19 @@ import java.util.Set;
 
 import static org.mockito.Mockito.*;
 
-public class ReceiptViewControllerTest {
+class ReceiptViewControllerTest {
 
     private ReceiptView mockReceiptView;
     private ReceiptViewController controller;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         mockReceiptView = Mockito.mock(ReceiptView.class);
         controller = new ReceiptViewController(mockReceiptView);
     }
 
     @Test
-    public void testOnPosEventTransactionCompleted() {
+    void testOnPosEventTransactionCompleted() {
         PosEvent event = Mockito.mock(PosEvent.class);
         TransactionDto mockTransactionDto = Mockito.mock(TransactionDto.class);
 
@@ -38,7 +38,7 @@ public class ReceiptViewControllerTest {
     }
 
     @Test
-    public void testOnPosEventTransactionStarted() {
+    void testOnPosEventTransactionStarted() {
         PosEvent event = Mockito.mock(PosEvent.class);
 
         when(event.getType()).thenReturn(PosEventType.TRANSACTION_STARTED);
@@ -49,7 +49,7 @@ public class ReceiptViewControllerTest {
     }
 
     @Test
-    public void testOnPosEventTransactionVoided() {
+    void testOnPosEventTransactionVoided() {
         PosEvent event = Mockito.mock(PosEvent.class);
 
         when(event.getType()).thenReturn(PosEventType.TRANSACTION_VOIDED);
@@ -60,7 +60,7 @@ public class ReceiptViewControllerTest {
     }
 
     @Test
-    public void testOnPosEventPosReset() {
+    void testOnPosEventPosReset() {
         PosEvent event = Mockito.mock(PosEvent.class);
 
         when(event.getType()).thenReturn(PosEventType.POS_RESET);
@@ -71,7 +71,7 @@ public class ReceiptViewControllerTest {
     }
 
     @Test
-    public void testOnPosEventPosBootup() {
+    void testOnPosEventPosBootup() {
         PosEvent event = Mockito.mock(PosEvent.class);
 
         when(event.getType()).thenReturn(PosEventType.POS_BOOTUP);
@@ -82,7 +82,7 @@ public class ReceiptViewControllerTest {
     }
 
     @Test
-    public void testGetEventTypesToListenFor() {
+    void testGetEventTypesToListenFor() {
         Set<PosEventType> eventTypes = controller.getEventTypesToListenFor();
         assert eventTypes.contains(PosEventType.TRANSACTION_COMPLETED);
         assert eventTypes.contains(PosEventType.TRANSACTION_STARTED);

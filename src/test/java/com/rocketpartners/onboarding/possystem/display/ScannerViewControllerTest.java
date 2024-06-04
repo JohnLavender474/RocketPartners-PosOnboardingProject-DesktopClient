@@ -10,34 +10,34 @@ import org.mockito.Mockito;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-public class ScannerViewControllerTest {
+class ScannerViewControllerTest {
 
     private ScannerView scannerView;
     private ScannerViewController scannerViewController;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         IPosEventDispatcher parentPosEventDispatcher = Mockito.mock(IPosEventDispatcher.class);
         scannerView = Mockito.mock(ScannerView.class);
         scannerViewController = new ScannerViewController(parentPosEventDispatcher, scannerView);
     }
 
     @Test
-    public void testTransactionStartedEventActivatesScannerView() {
+    void testTransactionStartedEventActivatesScannerView() {
         PosEvent event = new PosEvent(PosEventType.TRANSACTION_STARTED);
         scannerViewController.onPosEvent(event);
         verify(scannerView, times(1)).setActive();
     }
 
     @Test
-    public void testTransactionCompletedEventDeactivatesScannerView() {
+    void testTransactionCompletedEventDeactivatesScannerView() {
         PosEvent event = new PosEvent(PosEventType.TRANSACTION_COMPLETED);
         scannerViewController.onPosEvent(event);
         verify(scannerView, times(1)).setInactive();
     }
 
     @Test
-    public void testTransactionVoidedEventDeactivatesScannerView() {
+    void testTransactionVoidedEventDeactivatesScannerView() {
         PosEvent event = new PosEvent(PosEventType.TRANSACTION_VOIDED);
         scannerViewController.onPosEvent(event);
         verify(scannerView, times(1)).setInactive();

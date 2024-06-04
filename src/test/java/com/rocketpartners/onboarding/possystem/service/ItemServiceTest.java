@@ -15,7 +15,7 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-public class ItemServiceTest {
+class ItemServiceTest {
 
     private ItemRepository itemRepository;
     private ItemService itemService;
@@ -170,7 +170,7 @@ public class ItemServiceTest {
 
         List<Item> randomItems = itemService.getRandomItems(2);
         assertEquals(2, randomItems.size());
-        assertFalse(randomItems.get(0).equals(randomItems.get(1)));
+        assertNotEquals(randomItems.get(0), randomItems.get(1));
     }
 
     @Test

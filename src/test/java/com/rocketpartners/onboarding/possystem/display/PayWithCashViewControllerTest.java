@@ -13,30 +13,31 @@ import java.text.NumberFormat;
 import java.util.Map;
 import java.util.Set;
 
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
-public class PayWithCashViewControllerTest {
+class PayWithCashViewControllerTest {
 
     private IPosEventDispatcher mockEventDispatcher;
     private PayWithCashView mockPayWithCashView;
     private PayWithCashViewController controller;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         mockEventDispatcher = Mockito.mock(IPosEventDispatcher.class);
         mockPayWithCashView = Mockito.mock(PayWithCashView.class);
         controller = new PayWithCashViewController(mockEventDispatcher, mockPayWithCashView);
     }
 
     @Test
-    public void testOnPosEventStartPayWithCashProcess() {
+    void testOnPosEventStartPayWithCashProcess() {
         PosEvent event = new PosEvent(PosEventType.START_PAY_WITH_CASH_PROCESS);
         controller.onPosEvent(event);
         verify(mockPayWithCashView, times(1)).setVisible(true);
     }
 
     @Test
-    public void testOnPosEventInsufficientFunds() {
+    void testOnPosEventInsufficientFunds() {
         BigDecimal amountNeeded = new BigDecimal("5.00");
         PosEvent event = new PosEvent(PosEventType.INSUFFICIENT_FUNDS,
                 Map.of(ConstKeys.AMOUNT_NEEDED, amountNeeded));
@@ -48,7 +49,7 @@ public class PayWithCashViewControllerTest {
     }
 
     @Test
-    public void testOnPosEventDoCancelPayment() {
+    void testOnPosEventDoCancelPayment() {
         PosEvent event = new PosEvent(PosEventType.DO_CANCEL_PAYMENT);
         controller.onPosEvent(event);
         verify(mockPayWithCashView, times(1)).clearDisplayAreaText();
@@ -56,7 +57,7 @@ public class PayWithCashViewControllerTest {
     }
 
     @Test
-    public void testOnPosEventTransactionCompleted() {
+    void testOnPosEventTransactionCompleted() {
         PosEvent event = new PosEvent(PosEventType.TRANSACTION_COMPLETED);
         controller.onPosEvent(event);
         verify(mockPayWithCashView, times(1)).clearDisplayAreaText();
@@ -64,7 +65,7 @@ public class PayWithCashViewControllerTest {
     }
 
     @Test
-    public void testGetEventTypesToListenFor() {
+    void testGetEventTypesToListenFor() {
         Set<PosEventType> eventTypes = controller.getEventTypesToListenFor();
         assert eventTypes.contains(PosEventType.START_PAY_WITH_CASH_PROCESS);
         assert eventTypes.contains(PosEventType.INSUFFICIENT_FUNDS);
@@ -73,7 +74,7 @@ public class PayWithCashViewControllerTest {
     }
 
     @Test
-    public void testDispatchPosEvent() {
+    void testDispatchPosEvent() {
         PosEvent event = new PosEvent(PosEventType.START_PAY_WITH_CASH_PROCESS);
         controller.dispatchPosEvent(event);
         verify(mockEventDispatcher, times(1)).dispatchPosEvent(event);

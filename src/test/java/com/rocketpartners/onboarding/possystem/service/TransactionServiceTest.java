@@ -15,7 +15,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
-public class TransactionServiceTest {
+class TransactionServiceTest {
 
     private TransactionRepository transactionRepository;
     private DiscountService discountService;
@@ -25,7 +25,7 @@ public class TransactionServiceTest {
     private Transaction transaction;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         transactionRepository = Mockito.mock(TransactionRepository.class);
         discountService = Mockito.mock(DiscountService.class);
         when(discountService.computeDiscountsToApplyFor(any())).thenReturn(new ArrayList<>());
@@ -41,7 +41,7 @@ public class TransactionServiceTest {
     }
 
     @Test
-    public void testAddItemToTransaction_NewItem() {
+    void testAddItemToTransaction_NewItem() {
         String itemUpc = "1234567890";
         transactionService.addItemToTransaction(transaction, itemUpc);
         assertEquals(1, transaction.getLineItems().size());
@@ -52,7 +52,7 @@ public class TransactionServiceTest {
     }
 
     @Test
-    public void testAddItemToTransaction_ExistingItem() {
+    void testAddItemToTransaction_ExistingItem() {
         String itemUpc = "1234567890";
         LineItem existingItem = new LineItem(itemUpc, "tx1", 1, false);
         transaction.getLineItems().add(existingItem);
@@ -67,7 +67,7 @@ public class TransactionServiceTest {
     }
 
     @Test
-    public void testAddItemToTransaction_VoidedItem() {
+    void testAddItemToTransaction_VoidedItem() {
         transaction.setId("tx1");
         String itemUpc = "1234567890";
         LineItem voidedItem = new LineItem(itemUpc, "tx1", 1, true);
@@ -87,7 +87,7 @@ public class TransactionServiceTest {
     }
 
     @Test
-    public void testAddMultipleItemsWithDifferentUPCs() {
+    void testAddMultipleItemsWithDifferentUPCs() {
         String itemUpc1 = "1234567890";
         String itemUpc2 = "0987654321";
 
@@ -100,7 +100,7 @@ public class TransactionServiceTest {
     }
 
     @Test
-    public void testAddItemMultipleTimes() {
+    void testAddItemMultipleTimes() {
         String itemUpc = "1234567890";
 
         transactionService.addItemToTransaction(transaction, itemUpc);
@@ -113,7 +113,7 @@ public class TransactionServiceTest {
     }
 
     @Test
-    public void testRemoveItemFromTransaction_DecrementQuantity() {
+    void testRemoveItemFromTransaction_DecrementQuantity() {
         String itemUpc = "1234567890";
         LineItem existingItem = new LineItem(itemUpc, "tx1", 2, false);
         transaction.getLineItems().add(existingItem);
@@ -126,7 +126,7 @@ public class TransactionServiceTest {
     }
 
     @Test
-    public void testRemoveItemFromTransaction_RemoveLineItem() {
+    void testRemoveItemFromTransaction_RemoveLineItem() {
         transaction.setId("tx1");
         String itemUpc = "1234567890";
         LineItem existingItem = new LineItem(itemUpc, "tx1", 2, false);
@@ -138,7 +138,7 @@ public class TransactionServiceTest {
     }
 
     @Test
-    public void testRemoveItemFromTransaction_ItemNotInTransaction() {
+    void testRemoveItemFromTransaction_ItemNotInTransaction() {
         String itemUpc = "1234567890";
 
         transactionService.removeItemFromTransaction(transaction, itemUpc);
@@ -147,7 +147,7 @@ public class TransactionServiceTest {
     }
 
     @Test
-    public void testVoidLineItemInTransaction() {
+    void testVoidLineItemInTransaction() {
         String itemUpc = "1234567890";
         LineItem existingItem = new LineItem(itemUpc, "tx1", 1, false);
         transaction.getLineItems().add(existingItem);
@@ -160,7 +160,7 @@ public class TransactionServiceTest {
     }
 
     @Test
-    public void testVoidLineItemInTransaction_AlreadyVoided() {
+    void testVoidLineItemInTransaction_AlreadyVoided() {
         String itemUpc = "1234567890";
         LineItem existingItem = new LineItem(itemUpc, "tx1", 1, true);
         transaction.getLineItems().add(existingItem);
@@ -174,7 +174,7 @@ public class TransactionServiceTest {
     }
 
     @Test
-    public void testAddItemToTransaction_OnlyVoidedItems() {
+    void testAddItemToTransaction_OnlyVoidedItems() {
         transaction.setId("tx1");
         String itemUpc = "1234567890";
         LineItem voidedItem = new LineItem(itemUpc, "tx1", 1, true);
@@ -194,7 +194,7 @@ public class TransactionServiceTest {
     }
 
     @Test
-    public void testRemoveItemFromTransaction_OnlyOneQuantity1() {
+    void testRemoveItemFromTransaction_OnlyOneQuantity1() {
         String itemUpc = "1234567890";
         LineItem existingItem = new LineItem(itemUpc, "tx1", 2, false);
         transaction.getLineItems().add(existingItem);
@@ -205,7 +205,7 @@ public class TransactionServiceTest {
     }
 
     @Test
-    public void testRemoveItemFromTransaction_OnlyOneQuantity2() {
+    void testRemoveItemFromTransaction_OnlyOneQuantity2() {
         String itemUpc = "1234567890";
         LineItem existingItem = new LineItem(itemUpc, "tx1", 1, false);
         transaction.getLineItems().add(existingItem);
@@ -216,7 +216,7 @@ public class TransactionServiceTest {
     }
 
     @Test
-    public void testVoidItemWithMultipleQuantities() {
+    void testVoidItemWithMultipleQuantities() {
         String itemUpc = "1234567890";
         LineItem existingItem = new LineItem(itemUpc, "tx1", 3, false);
         transaction.getLineItems().add(existingItem);
@@ -230,7 +230,7 @@ public class TransactionServiceTest {
 
 
     @Test
-    public void testAddItemToTransaction_DoesNotChangeVoidedQuantity() {
+    void testAddItemToTransaction_DoesNotChangeVoidedQuantity() {
         String itemUpc = "1234567890";
         LineItem voidedItem = new LineItem(itemUpc, "tx1", 5, true);
         transaction.getLineItems().add(voidedItem);
@@ -250,21 +250,21 @@ public class TransactionServiceTest {
     }
 
     @Test
-    public void testRemoveItemFromEmptyTransaction() {
+    void testRemoveItemFromEmptyTransaction() {
         String itemUpc = "1234567890";
         transactionService.removeItemFromTransaction(transaction, itemUpc);
         assertTrue(transaction.getLineItems().isEmpty());
     }
 
     @Test
-    public void testVoidItemFromEmptyTransaction() {
+    void testVoidItemFromEmptyTransaction() {
         String itemUpc = "1234567890";
         transactionService.voidLineItemInTransaction(transaction, itemUpc);
         assertTrue(transaction.getLineItems().isEmpty());
     }
 
     @Test
-    public void testTransactionPersistence_AddItem() {
+    void testTransactionPersistence_AddItem() {
         String itemUpc = "1234567890";
         transactionService.addItemToTransaction(transaction, itemUpc);
         ArgumentCaptor<Transaction> transactionCaptor = ArgumentCaptor.forClass(Transaction.class);
@@ -273,7 +273,7 @@ public class TransactionServiceTest {
     }
 
     @Test
-    public void testTransactionPersistence_RemoveItem() {
+    void testTransactionPersistence_RemoveItem() {
         String itemUpc = "1234567890";
         LineItem existingItem = new LineItem(itemUpc, "tx1", 1, false);
         transaction.getLineItems().add(existingItem);
@@ -286,7 +286,7 @@ public class TransactionServiceTest {
     }
 
     @Test
-    public void testTransactionPersistence_VoidLineItem() {
+    void testTransactionPersistence_VoidLineItem() {
         String itemUpc = "1234567890";
         LineItem existingItem = new LineItem(itemUpc, "tx1", 1, false);
         transaction.getLineItems().add(existingItem);

@@ -16,10 +16,10 @@ import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class ApplicationTest {
+class ApplicationTest {
 
     @Test
-    public void testTimerUpdatesBackOfficeComponent() {
+    void testTimerUpdatesBackOfficeComponent() {
         ItemBookLoaderComponent itemBookLoaderComponent = Mockito.mock(ItemBookLoaderComponent.class);
         TransactionService transactionService = Mockito.mock(TransactionService.class);
         ItemService itemService = Mockito.mock(ItemService.class);
@@ -54,8 +54,8 @@ public class ApplicationTest {
          * @param transactionService      the transaction service
          * @param itemService             the item service
          */
-        public MockPosComponent(@NonNull ItemBookLoaderComponent itemBookLoaderComponent,
-                                @NonNull TransactionService transactionService, @NonNull ItemService itemService) {
+        MockPosComponent(@NonNull ItemBookLoaderComponent itemBookLoaderComponent,
+                         @NonNull TransactionService transactionService, @NonNull ItemService itemService) {
             super(itemBookLoaderComponent, transactionService, itemService);
         }
 

@@ -14,24 +14,24 @@ import java.util.Set;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
-public class ErrorPopupViewControllerTest {
+class ErrorPopupViewControllerTest {
 
     private ErrorPopupViewController controller;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         controller = new ErrorPopupViewController();
     }
 
     @Test
-    public void testGetEventTypesToListenFor() {
+    void testGetEventTypesToListenFor() {
         Set<PosEventType> eventTypes = controller.getEventTypesToListenFor();
 
         assertEquals(Set.of(PosEventType.ERROR), eventTypes);
     }
 
     @Test
-    public void testOnPosEvent_Error() {
+    void testOnPosEvent_Error() {
         PosEvent event = Mockito.mock(PosEvent.class);
         when(event.getType()).thenReturn(PosEventType.ERROR);
         when(event.getProperty(ConstKeys.ERROR, String.class)).thenReturn("Test Error");
@@ -49,7 +49,7 @@ public class ErrorPopupViewControllerTest {
     }
 
     @Test
-    public void testDispatchPosEvent() {
+    void testDispatchPosEvent() {
         PosEvent event = Mockito.mock(PosEvent.class);
         controller.dispatchPosEvent(event);
         verifyNoInteractions(event);

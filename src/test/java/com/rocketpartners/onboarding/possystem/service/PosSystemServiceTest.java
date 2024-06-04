@@ -11,19 +11,19 @@ import java.util.List;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
-public class PosSystemServiceTest {
+class PosSystemServiceTest {
 
     private PosSystemRepository mockPosSystemRepository;
     private PosSystemService posSystemService;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         mockPosSystemRepository = Mockito.mock(PosSystemRepository.class);
         posSystemService = new PosSystemService(mockPosSystemRepository);
     }
 
     @Test
-    public void testCreateAndPersist_PosSystemAlreadyExists() {
+    void testCreateAndPersist_PosSystemAlreadyExists() {
         String storeName = "TestStore";
         int posLane = 1;
 
@@ -37,7 +37,7 @@ public class PosSystemServiceTest {
     }
 
     @Test
-    public void testCreateAndPersist_PosSystemDoesNotExist() {
+    void testCreateAndPersist_PosSystemDoesNotExist() {
         String storeName = "TestStore";
         int posLane = 1;
 
@@ -53,7 +53,7 @@ public class PosSystemServiceTest {
     }
 
     @Test
-    public void testSavePosSystem() {
+    void testSavePosSystem() {
         PosSystem posSystem = new PosSystem();
         posSystem.setStoreName("TestStore");
         posSystem.setPosLane(1);
@@ -64,7 +64,7 @@ public class PosSystemServiceTest {
     }
 
     @Test
-    public void testGetPosSystemById() {
+    void testGetPosSystemById() {
         String posSystemId = "testId";
         PosSystem expectedPosSystem = new PosSystem();
         expectedPosSystem.setId(posSystemId);
@@ -77,7 +77,7 @@ public class PosSystemServiceTest {
     }
 
     @Test
-    public void testDeletePosSystemById() {
+    void testDeletePosSystemById() {
         String posSystemId = "testId";
 
         posSystemService.deletePosSystemById(posSystemId);
@@ -86,7 +86,7 @@ public class PosSystemServiceTest {
     }
 
     @Test
-    public void testPosSystemExists() {
+    void testPosSystemExists() {
         String posSystemId = "testId";
 
         when(mockPosSystemRepository.posSystemExists(posSystemId)).thenReturn(true);
@@ -97,7 +97,7 @@ public class PosSystemServiceTest {
     }
 
     @Test
-    public void testGetAllPosSystems() {
+    void testGetAllPosSystems() {
         List<PosSystem> expectedPosSystems = List.of(new PosSystem(), new PosSystem());
 
         when(mockPosSystemRepository.getAllPosSystems()).thenReturn(expectedPosSystems);
@@ -108,7 +108,7 @@ public class PosSystemServiceTest {
     }
 
     @Test
-    public void testGetPosSystemsByStoreName() {
+    void testGetPosSystemsByStoreName() {
         String storeName = "TestStore";
         List<PosSystem> expectedPosSystems = List.of(new PosSystem(), new PosSystem());
 
@@ -120,7 +120,7 @@ public class PosSystemServiceTest {
     }
 
     @Test
-    public void testGetPosSystemByStoreNameAndPosLane() {
+    void testGetPosSystemByStoreNameAndPosLane() {
         String storeName = "TestStore";
         int posLane = 1;
         PosSystem expectedPosSystem = new PosSystem();
@@ -135,7 +135,7 @@ public class PosSystemServiceTest {
     }
 
     @Test
-    public void testPosSystemExistsByStoreNameAndPosLane() {
+    void testPosSystemExistsByStoreNameAndPosLane() {
         String storeName = "TestStore";
         int posLane = 1;
 

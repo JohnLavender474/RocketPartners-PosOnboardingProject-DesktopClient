@@ -26,7 +26,7 @@ import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
-public class PosComponentTest {
+class PosComponentTest {
 
     private ItemBookLoaderComponent itemBookLoaderComponent;
     private TransactionService transactionService;
@@ -35,6 +35,7 @@ public class PosComponentTest {
 
     @BeforeEach
     void setUp() {
+        Mockito.clearAllCaches();
         itemBookLoaderComponent = mock(ItemBookLoaderComponent.class);
         transactionService = mock(TransactionService.class);
         when(transactionService.createAndPersist(anyString(), anyInt())).thenAnswer(invocation -> {
@@ -70,7 +71,7 @@ public class PosComponentTest {
     }
 
     @Test
-    public void testBootUp() {
+    void testBootUp() {
         posComponent.bootUp();
         assertTrue(posComponent.isOn());
         assertNull(posComponent.getTransaction());
@@ -98,6 +99,7 @@ public class PosComponentTest {
         ArgumentCaptor<PosEvent> eventCaptor = ArgumentCaptor.forClass(PosEvent.class);
         verify(posComponent, times(3)).dispatchPosEvent(eventCaptor.capture());
         List<PosEvent> capturedEvents = eventCaptor.getAllValues();
+        System.out.println(capturedEvents);
         assertEquals(3, capturedEvents.size());
         assertEquals(PosEventType.POS_BOOTUP, capturedEvents.get(0).getType());
         assertEquals(PosEventType.TRANSACTION_STARTED, capturedEvents.get(1).getType());
@@ -106,7 +108,7 @@ public class PosComponentTest {
 
 
     @Test
-    public void testVoidTransaction() {
+    void testVoidTransaction() {
         posComponent.bootUp();
         posComponent.startTransaction(null);
         posComponent.voidTransaction();
@@ -142,7 +144,7 @@ public class PosComponentTest {
     }
 
     @Test
-    public void testResetPos() {
+    void testResetPos() {
         posComponent.bootUp();
         posComponent.startTransaction(null);
         posComponent.completeTransaction();
@@ -163,7 +165,7 @@ public class PosComponentTest {
     }
 
     @Test
-    public void testHandlePosEvent_RequestAddItem_TransactionNotStarted_ItemExists() {
+    void testHandlePosEvent_RequestAddItem_TransactionNotStarted_ItemExists() {
         posComponent.setTransactionState(TransactionState.NOT_STARTED);
         String itemUpc = "1234567890";
         PosEvent addItemEvent = new PosEvent(PosEventType.REQUEST_ADD_ITEM, Map.of(ConstKeys.ITEM_UPC, itemUpc));
@@ -194,7 +196,7 @@ public class PosComponentTest {
     }
 
     @Test
-    public void testHandlePosEvent_RequestAddItem_TransactionNotStarted_ItemDoesNotExist() {
+    void testHandlePosEvent_RequestAddItem_TransactionNotStarted_ItemDoesNotExist() {
         posComponent.setTransactionState(TransactionState.NOT_STARTED);
         String itemUpc = "1234567890";
         PosEvent addItemEvent = new PosEvent(PosEventType.REQUEST_ADD_ITEM, Map.of(ConstKeys.ITEM_UPC, itemUpc));
@@ -219,7 +221,7 @@ public class PosComponentTest {
     }
 
     @Test
-    public void testHandlePosEvent_RequestAddItem_TransactionNotStarted_AddToTransactionFails() {
+    void testHandlePosEvent_RequestAddItem_TransactionNotStarted_AddToTransactionFails() {
         posComponent.setTransactionState(TransactionState.NOT_STARTED);
         String itemUpc = "1234567890";
         PosEvent addItemEvent = new PosEvent(PosEventType.REQUEST_ADD_ITEM, Map.of(ConstKeys.ITEM_UPC, itemUpc));
@@ -245,7 +247,7 @@ public class PosComponentTest {
     }
 
     @Test
-    public void testHandlePosEvent_RequestAddItem_ItemDoesNotExist() {
+    void testHandlePosEvent_RequestAddItem_ItemDoesNotExist() {
         posComponent.startTransaction(null);
         String itemUpc = "1234567890";
         PosEvent addItemEvent = new PosEvent(PosEventType.REQUEST_ADD_ITEM, Map.of(ConstKeys.ITEM_UPC, itemUpc));
@@ -259,7 +261,7 @@ public class PosComponentTest {
     }
 
     @Test
-    public void testHandlePosEvent_RequestAddItem_TransactionInProgress() {
+    void testHandlePosEvent_RequestAddItem_TransactionInProgress() {
         posComponent.startTransaction(null);
         String itemUpc = "1234567890";
         PosEvent addItemEvent = new PosEvent(PosEventType.REQUEST_ADD_ITEM, Map.of(ConstKeys.ITEM_UPC, itemUpc));
@@ -273,7 +275,7 @@ public class PosComponentTest {
     }
 
     @Test
-    public void testHandlePosEvent_RequestStartTransaction() {
+    void testHandlePosEvent_RequestStartTransaction() {
         PosEvent startTransactionEvent = new PosEvent(PosEventType.REQUEST_START_TRANSACTION);
 
         posComponent.dispatchPosEvent(startTransactionEvent);
@@ -283,7 +285,7 @@ public class PosComponentTest {
     }
 
     @Test
-    public void testHandlePosEvent_RequestVoidTransaction() {
+    void testHandlePosEvent_RequestVoidTransaction() {
         posComponent.startTransaction(null);
         PosEvent voidTransactionEvent = new PosEvent(PosEventType.REQUEST_VOID_TRANSACTION);
 
@@ -293,7 +295,7 @@ public class PosComponentTest {
     }
 
     @Test
-    public void testHandlePosEvent_RequestCompleteTransaction1() {
+    void testHandlePosEvent_RequestCompleteTransaction1() {
         posComponent.startTransaction(null);
         posComponent.setTransactionState(TransactionState.AWAITING_CASH_PAYMENT);
         PosEvent completeTransactionEvent = new PosEvent(PosEventType.REQUEST_COMPLETE_TRANSACTION);
@@ -304,7 +306,7 @@ public class PosComponentTest {
     }
 
     @Test
-    public void testHandlePosEvent_RequestCompleteTransaction2() {
+    void testHandlePosEvent_RequestCompleteTransaction2() {
         posComponent.startTransaction(null);
         posComponent.setTransactionState(TransactionState.AWAITING_CARD_PAYMENT);
         PosEvent completeTransactionEvent = new PosEvent(PosEventType.REQUEST_COMPLETE_TRANSACTION);
@@ -315,7 +317,7 @@ public class PosComponentTest {
     }
 
     @Test
-    public void testHandlePosEvent_RequestResetPos() {
+    void testHandlePosEvent_RequestResetPos() {
         posComponent.startTransaction(null);
         posComponent.setTransactionState(TransactionState.COMPLETED);
         PosEvent resetPosEvent = new PosEvent(PosEventType.REQUEST_RESET_POS);
@@ -327,7 +329,7 @@ public class PosComponentTest {
     }
 
     @Test
-    public void testHandlePosEvent_RequestRemoveItem_TransactionNotInProgress() {
+    void testHandlePosEvent_RequestRemoveItem_TransactionNotInProgress() {
         PosEvent removeItemEvent = new PosEvent(PosEventType.REQUEST_REMOVE_ITEM, Map.of(ConstKeys.ITEM_UPC,
                 "1234567890"));
 
@@ -338,7 +340,7 @@ public class PosComponentTest {
     }
 
     @Test
-    public void testHandlePosEvent_RequestRemoveItem_ItemDoesNotExist() {
+    void testHandlePosEvent_RequestRemoveItem_ItemDoesNotExist() {
         posComponent.startTransaction(null);
         String itemUpc = "1234567890";
         PosEvent removeItemEvent = new PosEvent(PosEventType.REQUEST_REMOVE_ITEM, Map.of(ConstKeys.ITEM_UPC, itemUpc));
@@ -352,7 +354,7 @@ public class PosComponentTest {
     }
 
     @Test
-    public void testHandlePosEvent_RequestRemoveItem_TransactionInProgress() {
+    void testHandlePosEvent_RequestRemoveItem_TransactionInProgress() {
         posComponent.startTransaction(null);
         String itemUpc = "1234567890";
         PosEvent removeItemEvent = new PosEvent(PosEventType.REQUEST_REMOVE_ITEM, Map.of(ConstKeys.ITEM_UPC, itemUpc));
@@ -372,7 +374,7 @@ public class PosComponentTest {
     }
 
     @Test
-    public void testHandlePosEvent_RequestVoidLineItems_TransactionNotStarted() {
+    void testHandlePosEvent_RequestVoidLineItems_TransactionNotStarted() {
         PosEvent voidLineItemsEvent = new PosEvent(PosEventType.REQUEST_VOID_LINE_ITEMS, Map.of(ConstKeys.ITEM_UPCS,
                 List.of("1234567890")));
 
@@ -382,7 +384,7 @@ public class PosComponentTest {
     }
 
     @Test
-    public void testHandlePosEvent_RequestVoidLineItems_TransactionInProgress() {
+    void testHandlePosEvent_RequestVoidLineItems_TransactionInProgress() {
         posComponent.startTransaction(null);
         PosEvent voidLineItemsEvent = new PosEvent(PosEventType.REQUEST_VOID_LINE_ITEMS, Map.of(ConstKeys.ITEM_UPCS,
                 List.of("1234567890")));
@@ -395,7 +397,7 @@ public class PosComponentTest {
     }
 
     @Test
-    public void testHandlePosEvent_RequestUpdateQuickItems_TransactionNotInProgress() {
+    void testHandlePosEvent_RequestUpdateQuickItems_TransactionNotInProgress() {
         PosEvent updateQuickItemsEvent = new PosEvent(PosEventType.REQUEST_UPDATE_QUICK_ITEMS);
 
         posComponent.dispatchPosEvent(updateQuickItemsEvent);
@@ -404,7 +406,7 @@ public class PosComponentTest {
     }
 
     @Test
-    public void testHandlePosEvent_RequestUpdateQuickItems_TransactionInProgress() {
+    void testHandlePosEvent_RequestUpdateQuickItems_TransactionInProgress() {
         posComponent.startTransaction(null);
         PosEvent updateQuickItemsEvent = new PosEvent(PosEventType.REQUEST_UPDATE_QUICK_ITEMS);
 

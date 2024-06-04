@@ -12,42 +12,42 @@ import java.util.Set;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 
-public class PayWithCardViewControllerTest {
+class PayWithCardViewControllerTest {
 
     private IPosEventDispatcher mockEventDispatcher;
     private PayWithCardView mockPayWithCardView;
     private PayWithCardViewController controller;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         mockEventDispatcher = Mockito.mock(IPosEventDispatcher.class);
         mockPayWithCardView = Mockito.mock(PayWithCardView.class);
         controller = new PayWithCardViewController(mockEventDispatcher, mockPayWithCardView);
     }
 
     @Test
-    public void testOnPosEventStartPayWithCardProcess() {
+    void testOnPosEventStartPayWithCardProcess() {
         PosEvent event = new PosEvent(PosEventType.START_PAY_WITH_CARD_PROCESS);
         controller.onPosEvent(event);
         verify(mockPayWithCardView, times(1)).setVisible(true);
     }
 
     @Test
-    public void testOnPosEventDoCancelPayment() {
+    void testOnPosEventDoCancelPayment() {
         PosEvent event = new PosEvent(PosEventType.DO_CANCEL_PAYMENT);
         controller.onPosEvent(event);
         verify(mockPayWithCardView, times(1)).setVisible(false);
     }
 
     @Test
-    public void testOnPosEventTransactionCompleted() {
+    void testOnPosEventTransactionCompleted() {
         PosEvent event = new PosEvent(PosEventType.TRANSACTION_COMPLETED);
         controller.onPosEvent(event);
         verify(mockPayWithCardView, times(1)).setVisible(false);
     }
 
     @Test
-    public void testGetEventTypesToListenFor() {
+    void testGetEventTypesToListenFor() {
         Set<PosEventType> eventTypes = controller.getEventTypesToListenFor();
         assert eventTypes.contains(PosEventType.START_PAY_WITH_CARD_PROCESS);
         assert eventTypes.contains(PosEventType.DO_CANCEL_PAYMENT);
@@ -55,7 +55,7 @@ public class PayWithCardViewControllerTest {
     }
 
     @Test
-    public void testDispatchPosEvent() {
+    void testDispatchPosEvent() {
         PosEvent event = new PosEvent(PosEventType.START_PAY_WITH_CARD_PROCESS);
         controller.dispatchPosEvent(event);
         verify(mockEventDispatcher, times(1)).dispatchPosEvent(event);

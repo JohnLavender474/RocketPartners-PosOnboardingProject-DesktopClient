@@ -7,20 +7,21 @@ import org.mockito.Mockito;
 
 import java.math.BigDecimal;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.when;
 
-public class TaxServiceTest {
+class TaxServiceTest {
 
     private TaxService taxService;
 
     @BeforeEach
-    public void setUp() {
+    void setUp() {
         taxService = new TaxService();
     }
 
     @Test
-    public void testComputeTaxesFor() {
+    void testComputeTaxesFor() {
         Transaction mockTransaction = Mockito.mock(Transaction.class);
 
         BigDecimal subtotal = new BigDecimal("100.00");
@@ -33,7 +34,7 @@ public class TaxServiceTest {
     }
 
     @Test
-    public void testComputeTaxesFor_ZeroSubtotal() {
+    void testComputeTaxesFor_ZeroSubtotal() {
         Transaction mockTransaction = Mockito.mock(Transaction.class);
 
         BigDecimal subtotal = BigDecimal.ZERO;
@@ -46,7 +47,7 @@ public class TaxServiceTest {
     }
 
     @Test
-    public void testComputeTaxesFor_NullSubtotal() {
+    void testComputeTaxesFor_NullSubtotal() {
         Transaction mockTransaction = Mockito.mock(Transaction.class);
 
         when(mockTransaction.getSubtotal()).thenReturn(null);
