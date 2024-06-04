@@ -4,6 +4,9 @@ import lombok.NonNull;
 
 import java.util.Set;
 
+/**
+ * Interface for classes that can listen for POS events.
+ */
 public interface IPosEventListener {
 
     /**
