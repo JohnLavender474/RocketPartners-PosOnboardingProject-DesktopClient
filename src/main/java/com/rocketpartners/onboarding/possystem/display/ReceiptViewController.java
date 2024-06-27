@@ -1,7 +1,10 @@
 package com.rocketpartners.onboarding.possystem.display;
 
+import com.rocketpartners.onboarding.possystem.component.IComponent;
 import com.rocketpartners.onboarding.possystem.constant.ConstKeys;
 import com.rocketpartners.onboarding.possystem.display.dto.TransactionDto;
+import com.rocketpartners.onboarding.possystem.event.IPosEventDispatcher;
+import com.rocketpartners.onboarding.possystem.event.IPosEventListener;
 import com.rocketpartners.onboarding.possystem.event.PosEvent;
 import com.rocketpartners.onboarding.possystem.event.PosEventType;
 import lombok.NonNull;
@@ -11,7 +14,7 @@ import java.util.Set;
 /**
  * Controller for the receipt view. This class is responsible for updating the receipt view based on POS events.
  */
-public class ReceiptViewController implements IController {
+public class ReceiptViewController implements IPosEventListener {
 
     private final Set<PosEventType> eventsToListenFor = Set.of(
             PosEventType.TRANSACTION_COMPLETED,
@@ -51,11 +54,6 @@ public class ReceiptViewController implements IController {
             }
             case TRANSACTION_STARTED, TRANSACTION_VOIDED, POS_RESET, POS_BOOTUP -> receiptView.setVisible(false);
         }
-    }
-
-    @Override
-    public void dispatchPosEvent(@NonNull PosEvent event) {
-        // do nothing
     }
 
     @Override

@@ -6,7 +6,6 @@ import com.rocketpartners.onboarding.possystem.component.journal.PosJournalCompo
 import com.rocketpartners.onboarding.possystem.constant.ConstKeys;
 import com.rocketpartners.onboarding.possystem.constant.ConstVals;
 import com.rocketpartners.onboarding.possystem.constant.TransactionState;
-import com.rocketpartners.onboarding.possystem.display.IController;
 import com.rocketpartners.onboarding.possystem.display.dto.ItemDto;
 import com.rocketpartners.onboarding.possystem.display.dto.LineItemDto;
 import com.rocketpartners.onboarding.possystem.display.dto.TransactionDto;
@@ -29,7 +28,7 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 /**
- * Controller for a POS system. This class is responsible for handling POS events and managing transactions.
+ * Controller for POS system. This class is responsible for handling POS events and managing transactions.
  */
 @ToString
 public class PosComponent implements IComponent, IPosEventManager {
@@ -724,27 +723,18 @@ public class PosComponent implements IComponent, IPosEventManager {
     }
 
     /**
-     * Register a child controller with this controller and also add it as an event listener. Child controllers will
-     * receive boot up, update, and shutdown calls, and POS events.
+     * Register a child component with this component. Child components will receive boot up, update, and shutdown
+     * calls, but will not receive POS events.
      *
-     * @param controller The child controller to register.
+     * @param component The child component to register.
      */
-    public void registerChildController(@NonNull IController controller) {
-        childComponents.add(controller);
-        posEventListeners.add(controller);
+    public void registerChildComponent(@NonNull IComponent component) {
+        childComponents.add(component);
         if (Application.DEBUG) {
-            System.out.println("[PosComponent] Registered child controller: " + controller);
+            System.out.println("[PosComponent] Registered child component: " + component);
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * If the listener is an {@link IController} instance, then you should use the {@link #registerChildController}
-     * method instead.
-     *
-     * @param listener The listener to register.
-     */
     @Override
     public void registerPosEventListener(@NonNull IPosEventListener listener) {
         posEventListeners.add(listener);
@@ -753,14 +743,6 @@ public class PosComponent implements IComponent, IPosEventManager {
         }
     }
 
-    /**
-     * {@inheritDoc}
-     * <p>
-     * If the listener is an {@link IController} instance, then you should use the {@link #registerChildController}
-     * method instead.
-     *
-     * @param listener The listener to unregister.
-     */
     @Override
     public void unregisterPosEventListener(@NonNull IPosEventListener listener) {
         posEventListeners.remove(listener);

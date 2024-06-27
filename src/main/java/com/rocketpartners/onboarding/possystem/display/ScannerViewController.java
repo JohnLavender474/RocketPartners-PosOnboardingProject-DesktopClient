@@ -1,8 +1,10 @@
 package com.rocketpartners.onboarding.possystem.display;
 
 import com.rocketpartners.onboarding.possystem.Application;
+import com.rocketpartners.onboarding.possystem.component.IComponent;
 import com.rocketpartners.onboarding.possystem.constant.TransactionState;
 import com.rocketpartners.onboarding.possystem.event.IPosEventDispatcher;
+import com.rocketpartners.onboarding.possystem.event.IPosEventListener;
 import com.rocketpartners.onboarding.possystem.event.PosEvent;
 import com.rocketpartners.onboarding.possystem.event.PosEventType;
 import lombok.AccessLevel;
@@ -18,7 +20,7 @@ import java.util.Set;
  * Controller for the scanner view. This class is responsible for updating the scanner view based on POS events.
  * The scanner view is created with the parent POS event dispatcher.
  */
-public class ScannerViewController implements IController {
+public class ScannerViewController implements IPosEventDispatcher, IPosEventListener {
 
     private static final Set<PosEventType> eventsToListenFor = EnumSet.of(
             PosEventType.POS_BOOTUP,

@@ -1,11 +1,13 @@
 package com.rocketpartners.onboarding.possystem.display;
 
 import com.rocketpartners.onboarding.possystem.Application;
+import com.rocketpartners.onboarding.possystem.component.IComponent;
 import com.rocketpartners.onboarding.possystem.constant.ConstKeys;
 import com.rocketpartners.onboarding.possystem.constant.TransactionState;
 import com.rocketpartners.onboarding.possystem.display.dto.ItemDto;
 import com.rocketpartners.onboarding.possystem.display.dto.TransactionDto;
 import com.rocketpartners.onboarding.possystem.event.IPosEventDispatcher;
+import com.rocketpartners.onboarding.possystem.event.IPosEventListener;
 import com.rocketpartners.onboarding.possystem.event.PosEvent;
 import com.rocketpartners.onboarding.possystem.event.PosEventType;
 import lombok.NonNull;
@@ -17,7 +19,7 @@ import java.util.Set;
 /**
  * Controller for the customer view. This class is responsible for updating the customer view based on POS events.
  */
-public class CustomerViewController implements IController {
+public class CustomerViewController implements IPosEventDispatcher, IPosEventListener, IComponent {
 
     private static final Set<PosEventType> eventTypesToListenFor = EnumSet.of(
             PosEventType.POS_BOOTUP,

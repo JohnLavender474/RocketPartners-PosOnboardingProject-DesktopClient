@@ -1,13 +1,15 @@
 package com.rocketpartners.onboarding.possystem.display;
 
+import com.rocketpartners.onboarding.possystem.component.IComponent;
 import com.rocketpartners.onboarding.possystem.event.IPosEventDispatcher;
+import com.rocketpartners.onboarding.possystem.event.IPosEventListener;
 import com.rocketpartners.onboarding.possystem.event.PosEvent;
 import com.rocketpartners.onboarding.possystem.event.PosEventType;
 import lombok.NonNull;
 
 import java.util.Set;
 
-public class DiscountsViewController implements IController {
+public class DiscountsViewController implements IPosEventDispatcher, IPosEventListener {
 
     private static final Set<PosEventType> eventTypesToListenFor = Set.of(
             PosEventType.DO_OPEN_DISCOUNTS

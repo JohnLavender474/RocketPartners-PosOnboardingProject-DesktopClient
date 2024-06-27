@@ -1,7 +1,9 @@
 package com.rocketpartners.onboarding.possystem.display;
 
+import com.rocketpartners.onboarding.possystem.component.IComponent;
 import com.rocketpartners.onboarding.possystem.constant.ConstKeys;
 import com.rocketpartners.onboarding.possystem.event.IPosEventDispatcher;
+import com.rocketpartners.onboarding.possystem.event.IPosEventListener;
 import com.rocketpartners.onboarding.possystem.event.PosEvent;
 import com.rocketpartners.onboarding.possystem.event.PosEventType;
 import lombok.NonNull;
@@ -13,7 +15,7 @@ import java.util.Set;
 /**
  * Controller for the keypad view. This class is responsible for updating the keypad view based on POS events.
  */
-public class PayWithCashViewController implements IController {
+public class PayWithCashViewController implements IPosEventDispatcher, IPosEventListener {
 
     private static final Set<PosEventType> eventTypesToListenFor = Set.of(
             PosEventType.START_PAY_WITH_CASH_PROCESS,

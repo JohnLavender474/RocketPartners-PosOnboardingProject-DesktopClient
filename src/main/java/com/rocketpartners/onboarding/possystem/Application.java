@@ -158,35 +158,36 @@ public class Application {
 
             CustomerViewController customerViewController = new CustomerViewController(
                     posComponent, storeName, laneNumber);
-            posComponent.registerChildController(customerViewController);
+            posComponent.registerPosEventListener(customerViewController);
+            posComponent.registerChildComponent(customerViewController);
 
             ScannerViewController scannerViewController =
                     new ScannerViewController("Scanner View - Lane " + laneNumber, posComponent);
             scannerViewController.addScannerViewKeyboardFocusManager(KeyboardFocusManager.getCurrentKeyboardFocusManager());
-            posComponent.registerChildController(scannerViewController);
+            posComponent.registerPosEventListener(scannerViewController);
 
             PayWithCardViewController payWithCardViewController =
                     new PayWithCardViewController("Pay with Card View - Lane " + laneNumber, posComponent);
-            posComponent.registerChildController(payWithCardViewController);
+            posComponent.registerPosEventListener(payWithCardViewController);
 
             PayWithCashViewController payWithCashViewController =
                     new PayWithCashViewController("Pay with Cash View - Lane " + laneNumber, posComponent);
-            posComponent.registerChildController(payWithCashViewController);
+            posComponent.registerPosEventListener(payWithCashViewController);
 
             ReceiptViewController receiptViewController =
                     new ReceiptViewController("Receipt View - Lane " + laneNumber);
-            posComponent.registerChildController(receiptViewController);
+            posComponent.registerPosEventListener(receiptViewController);
 
             ErrorPopupViewController errorPopupViewController = new ErrorPopupViewController();
-            posComponent.registerChildController(errorPopupViewController);
+            posComponent.registerPosEventListener(errorPopupViewController);
 
             DiscountsViewController discountsViewController =
                     new DiscountsViewController("Discounts View - Lane " + laneNumber, posComponent);
-            posComponent.registerChildController(discountsViewController);
+            posComponent.registerPosEventListener(discountsViewController);
 
             PoleDisplayViewController poleDisplayViewController =
                     new PoleDisplayViewController("Pole Display View - Lane " + laneNumber);
-            posComponent.registerChildController(poleDisplayViewController);
+            posComponent.registerPosEventListener(poleDisplayViewController);
 
             posComponent.bootUp();
 
