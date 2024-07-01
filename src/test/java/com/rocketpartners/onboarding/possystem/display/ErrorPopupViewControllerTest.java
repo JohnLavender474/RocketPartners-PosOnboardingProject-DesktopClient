@@ -34,7 +34,7 @@ class ErrorPopupViewControllerTest {
     void testOnPosEvent_Error() {
         PosEvent event = Mockito.mock(PosEvent.class);
         when(event.getType()).thenReturn(PosEventType.ERROR);
-        when(event.getProperty(ConstKeys.ERROR, String.class)).thenReturn("Test Error");
+        when(event.getProperty(ConstKeys.MESSAGE, String.class)).thenReturn("Test Error");
 
         MockedStatic<JOptionPane> mockedJOptionPane = mockStatic(JOptionPane.class);
 

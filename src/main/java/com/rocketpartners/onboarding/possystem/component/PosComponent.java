@@ -1,8 +1,6 @@
 package com.rocketpartners.onboarding.possystem.component;
 
 import com.rocketpartners.onboarding.possystem.Application;
-import com.rocketpartners.onboarding.possystem.component.journal.IPosJournalListener;
-import com.rocketpartners.onboarding.possystem.component.journal.PosJournalComponent;
 import com.rocketpartners.onboarding.possystem.constant.ConstKeys;
 import com.rocketpartners.onboarding.possystem.constant.ConstVals;
 import com.rocketpartners.onboarding.possystem.constant.TransactionState;
@@ -37,7 +35,6 @@ public class PosComponent implements IComponent, IPosEventManager {
 
     private final TransactionService transactionService;
     private final ItemService itemService;
-    private final PosJournalComponent journalComponent;
 
     private final Map<PosEventType, List<PosEvent>> events;
     private final Set<IComponent> childComponents;
@@ -59,35 +56,20 @@ public class PosComponent implements IComponent, IPosEventManager {
     private boolean shuttingDown;
 
     /**
-     * Constructor that accepts a transaction service and an item service. Constructs a new {@link PosJournalComponent}
-     * instance. The transaction state is set to NOT_STARTED and the transaction number is set to 1.
+     * Constructor that accepts a transaction service, an item service, and a POS journal component. The transaction
+     * state is set to NOT_STARTED and the transaction number is set to 1.
      *
      * @param transactionService The transaction service.
      * @param itemService        The item service.
      */
     public PosComponent(@NonNull ItemBookLoaderComponent itemBookLoaderComponent,
                         @NonNull TransactionService transactionService, @NonNull ItemService itemService) {
-        this(itemBookLoaderComponent, transactionService, itemService, new PosJournalComponent());
-    }
-
-    /**
-     * Constructor that accepts a transaction service, an item service, and a POS journal component. The transaction
-     * state is set to NOT_STARTED and the transaction number is set to 1.
-     *
-     * @param transactionService The transaction service.
-     * @param itemService        The item service.
-     * @param journalComponent   The POS journal component.
-     */
-    public PosComponent(@NonNull ItemBookLoaderComponent itemBookLoaderComponent,
-                        @NonNull TransactionService transactionService, @NonNull ItemService itemService,
-                        @NonNull PosJournalComponent journalComponent) {
         if (Application.DEBUG) {
             System.out.println("[PosComponent] Creating POS component");
         }
         this.itemBookLoaderComponent = itemBookLoaderComponent;
         this.transactionService = transactionService;
         this.itemService = itemService;
-        this.journalComponent = journalComponent;
         events = new EnumMap<>(PosEventType.class);
         childComponents = new LinkedHashSet<>();
         posEventListeners = new LinkedHashSet<>();
@@ -138,7 +120,7 @@ public class PosComponent implements IComponent, IPosEventManager {
             String error = "Cannot start transaction when transaction state is not NOT_STARTED. Current transaction " +
                     "state: " + transactionState;
             System.err.println(error);
-            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.MESSAGE, error)));
             return;
         }
 
@@ -180,14 +162,14 @@ public class PosComponent implements IComponent, IPosEventManager {
                 String error = "Cannot add item to transaction when transaction state is not SCANNING_IN_PROGRESS. " +
                         "Current transaction state: " + transactionState;
                 System.err.println(error);
-                dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
+                dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.MESSAGE, error)));
             }
 
             if (!isTransactionEditable()) {
                 String error = "Cannot add item to transaction when transaction is not editable. Current " +
                         "transaction state: " + transactionState;
                 System.err.println(error);
-                dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
+                dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.MESSAGE, error)));
             }
 
             return;
@@ -198,14 +180,14 @@ public class PosComponent implements IComponent, IPosEventManager {
         if (itemUpc == null) {
             String error = "Cannot add item to transaction because item UPC is null";
             System.err.println(error);
-            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.MESSAGE, error)));
             return;
         }
 
         if (itemUpc.isBlank()) {
             String error = "Cannot add item to transaction because item UPC is blank";
             System.err.println(error);
-            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.MESSAGE, error)));
             return;
         }
 
@@ -215,9 +197,10 @@ public class PosComponent implements IComponent, IPosEventManager {
             Item item = itemService.getItemByUpc(itemUpc);
             ItemDto itemDto = ItemDto.from(item);
 
-            dispatchPosEvent(new PosEvent(PosEventType.ITEM_ADDED, Map.of(
-                    ConstKeys.ITEM_DTO, itemDto,
-                    ConstKeys.TRANSACTION_DTO, transactionDto)));
+            dispatchPosEvent(new PosEvent(PosEventType.ITEM_ADDED,
+                    Map.of(ConstKeys.ITEM_DTO, itemDto, ConstKeys.TRANSACTION_DTO, transactionDto)));
+            dispatchPosEvent(new PosEvent(PosEventType.LOG,
+                    Map.of(ConstKeys.MESSAGE, "Item " + itemUpc + " added to transaction.")));
 
             if (Application.DEBUG) {
                 System.out.println("[PosComponent] Item added to transaction: " + itemUpc);
@@ -225,7 +208,7 @@ public class PosComponent implements IComponent, IPosEventManager {
         } else {
             String error = "Cannot add item to transaction because item with UPC [ " + itemUpc + " ] does not exist";
             System.err.println(error);
-            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.MESSAGE, error)));
         }
     }
 
@@ -233,17 +216,16 @@ public class PosComponent implements IComponent, IPosEventManager {
         if (transactionState != TransactionState.SCANNING_IN_PROGRESS || !isTransactionEditable()) {
             if (transactionState != TransactionState.SCANNING_IN_PROGRESS) {
                 String error = "Cannot remove item from transaction when transaction state is not " +
-                        "SCANNING_IN_PROGRESS. " +
-                        "Current transaction state: " + transactionState;
+                        "SCANNING_IN_PROGRESS. " + "Current transaction state: " + transactionState;
                 System.err.println(error);
-                dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
+                dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.MESSAGE, error)));
             }
 
             if (!isTransactionEditable()) {
                 String error = "Cannot remove item from transaction when transaction is not editable. Current " +
                         "transaction state: " + transactionState;
                 System.err.println(error);
-                dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
+                dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.MESSAGE, error)));
             }
 
             return;
@@ -253,7 +235,7 @@ public class PosComponent implements IComponent, IPosEventManager {
         if (itemUpc == null) {
             String error = "Cannot remove item from transaction because item UPC is null";
             System.err.println(error);
-            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.MESSAGE, error)));
             return;
         }
 
@@ -263,30 +245,33 @@ public class PosComponent implements IComponent, IPosEventManager {
             Item item = itemService.getItemByUpc(itemUpc);
             ItemDto itemDto = ItemDto.from(item);
 
-            dispatchPosEvent(new PosEvent(PosEventType.ITEM_REMOVED, Map.of(
-                    ConstKeys.ITEM_DTO, itemDto,
-                    ConstKeys.TRANSACTION_DTO, transactionDto)));
+            dispatchPosEvent(new PosEvent(PosEventType.ITEM_REMOVED,
+                    Map.of(ConstKeys.ITEM_DTO, itemDto, ConstKeys.TRANSACTION_DTO, transactionDto)));
+            dispatchPosEvent(new PosEvent(PosEventType.LOG,
+                    Map.of(ConstKeys.MESSAGE, "Item " + itemUpc + " removed from transaction.")));
         } else {
             String error = "Cannot remove item from transaction because item with UPC " + itemUpc + " does not exist";
             System.err.println(error);
-            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.MESSAGE, error)));
         }
     }
 
     private void handleRequestVoidLineItems(@NonNull PosEvent event) {
         if (transactionState == TransactionState.NOT_STARTED || !isTransactionEditable()) {
             if (transactionState == TransactionState.NOT_STARTED) {
-                String error = "Cannot void line items when transaction is not in progress. Current " +
-                        "transaction state: " + transactionState;
+                String error =
+                        "Cannot void line items when transaction is not in progress. Current " + "transaction state: " +
+                                transactionState;
                 System.err.println(error);
-                dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
+                dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.MESSAGE, error)));
             }
 
             if (!isTransactionEditable()) {
-                String error = "Cannot void line items when transaction is not editable. Current " +
-                        "transaction state: " + transactionState;
+                String error =
+                        "Cannot void line items when transaction is not editable. Current " + "transaction state: " +
+                                transactionState;
                 System.err.println(error);
-                dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
+                dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.MESSAGE, error)));
             }
 
             return;
@@ -296,16 +281,17 @@ public class PosComponent implements IComponent, IPosEventManager {
         if (itemUpcs == null) {
             String error = "Cannot void line items because item UPCs is null";
             System.err.println(error);
-            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.MESSAGE, error)));
             return;
         }
 
         itemUpcs.forEach(it -> transactionService.voidLineItemInTransaction(transaction, it));
 
         TransactionDto transactionDto = getTransactionDto();
-
-        dispatchPosEvent(new PosEvent(PosEventType.LINE_ITEMS_VOIDED,
-                Map.of(ConstKeys.TRANSACTION_DTO, transactionDto)));
+        dispatchPosEvent(
+                new PosEvent(PosEventType.LINE_ITEMS_VOIDED, Map.of(ConstKeys.TRANSACTION_DTO, transactionDto)));
+        dispatchPosEvent(new PosEvent(PosEventType.LOG,
+                Map.of(ConstKeys.MESSAGE, "Line items voided from transaction: " + itemUpcs)));
     }
 
     private void handleRequestVoidTransaction() {
@@ -314,14 +300,15 @@ public class PosComponent implements IComponent, IPosEventManager {
                 String error = "Cannot void transaction when transaction is not in progress. Current " +
                         "transaction state: " + transactionState;
                 System.err.println(error);
-                dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
+                dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.MESSAGE, error)));
             }
 
             if (!isTransactionEditable()) {
-                String error = "Cannot void transaction when transaction is not editable. Current " +
-                        "transaction state: " + transactionState;
+                String error =
+                        "Cannot void transaction when transaction is not editable. Current " + "transaction state: " +
+                                transactionState;
                 System.err.println(error);
-                dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
+                dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.MESSAGE, error)));
             }
 
             return;
@@ -335,14 +322,15 @@ public class PosComponent implements IComponent, IPosEventManager {
             String error = "Cannot update quick items when transaction state is not SCANNING_IN_PROGRESS. Current " +
                     "transaction state: " + transactionState;
             System.err.println(error);
-            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.MESSAGE, error)));
             return;
         }
 
         Set<String> itemUpcsInTransaction =
                 transaction.getLineItems().stream().map(LineItem::getItemUpc).collect(Collectors.toSet());
-        List<ItemDto> quickItemDtos = itemService.getRandomItemsNotIn(itemUpcsInTransaction,
-                ConstVals.QUICK_ITEMS_COUNT).stream().map(ItemDto::from).toList();
+        List<ItemDto> quickItemDtos =
+                itemService.getRandomItemsNotIn(itemUpcsInTransaction, ConstVals.QUICK_ITEMS_COUNT).stream()
+                        .map(ItemDto::from).toList();
 
         dispatchPosEvent(new PosEvent(PosEventType.DO_UPDATE_QUICK_ITEMS, Map.of(ConstKeys.ITEM_DTOS, quickItemDtos)));
     }
@@ -355,27 +343,28 @@ public class PosComponent implements IComponent, IPosEventManager {
         if (transactionState != TransactionState.SCANNING_IN_PROGRESS) {
             String error = "Cannot start card payment process when transaction state is not SCANNING_IN_PROGRESS";
             System.err.println(error);
-            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.MESSAGE, error)));
             return;
         }
 
         if (transaction.getLineItems().isEmpty()) {
             String error = "Cannot start card payment process when transaction has no line items";
             System.err.println(error);
-            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.MESSAGE, error)));
             return;
         }
 
         if (transaction.getLineItems().stream().allMatch(LineItem::isVoided)) {
             String error = "Cannot start card payment process when transaction has only voided line items";
             System.err.println(error);
-            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.MESSAGE, error)));
             return;
         }
 
 
         transactionState = TransactionState.AWAITING_CARD_PAYMENT;
         dispatchPosEvent(new PosEvent(PosEventType.START_PAY_WITH_CARD_PROCESS));
+        dispatchPosEvent(new PosEvent(PosEventType.LOG, Map.of(ConstKeys.MESSAGE, "Card payment process started.")));
     }
 
     private void handleRequestStartPayWithCashProcesss() {
@@ -386,26 +375,27 @@ public class PosComponent implements IComponent, IPosEventManager {
         if (transactionState != TransactionState.SCANNING_IN_PROGRESS) {
             String error = "Cannot start cash payment process when transaction state is not SCANNING_IN_PROGRESS";
             System.err.println(error);
-            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.MESSAGE, error)));
             return;
         }
 
         if (transaction.getLineItems().isEmpty()) {
             String error = "Cannot start cash payment process when transaction has no line items";
             System.err.println(error);
-            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.MESSAGE, error)));
             return;
         }
 
         if (transaction.getLineItems().stream().allMatch(LineItem::isVoided)) {
             String error = "Cannot start cash payment process when transaction has only voided line items";
             System.err.println(error);
-            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.MESSAGE, error)));
             return;
         }
 
         transactionState = TransactionState.AWAITING_CASH_PAYMENT;
         dispatchPosEvent(new PosEvent(PosEventType.START_PAY_WITH_CASH_PROCESS));
+        dispatchPosEvent(new PosEvent(PosEventType.LOG, Map.of(ConstKeys.MESSAGE, "Cash payment process started.")));
     }
 
     private void handleRequestEnterCardNumber(@NonNull PosEvent event) {
@@ -413,7 +403,7 @@ public class PosComponent implements IComponent, IPosEventManager {
             String error = "Cannot enter card number when transaction state is not AWAITING_CARD_PAYMENT. " +
                     "Current transaction state: " + transactionState;
             System.err.println(error);
-            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.MESSAGE, error)));
             return;
         }
 
@@ -421,7 +411,7 @@ public class PosComponent implements IComponent, IPosEventManager {
         if (cardNumber == null) {
             String error = "Cannot enter card number because card number is null";
             System.err.println(error);
-            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.MESSAGE, error)));
             return;
         }
 
@@ -435,7 +425,7 @@ public class PosComponent implements IComponent, IPosEventManager {
             String error = "Cannot insert cash when transaction state is not AWAITING_CASH_PAYMENT. " +
                     "Current transaction state: " + transactionState;
             System.err.println(error);
-            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.MESSAGE, error)));
             return;
         }
 
@@ -444,14 +434,14 @@ public class PosComponent implements IComponent, IPosEventManager {
         if (cashAmountToAddString == null) {
             String error = "Cannot insert cash because cash amount is null";
             System.err.println(error);
-            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.MESSAGE, error)));
             return;
         }
 
         if (!UtilMethods.isDouble(cashAmountToAddString)) {
             String error = "Cannot insert cash because cash amount is not a number: " + cashAmountToAddString;
             System.err.println(error);
-            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.MESSAGE, error)));
             return;
         }
 
@@ -466,20 +456,24 @@ public class PosComponent implements IComponent, IPosEventManager {
             TransactionDto transactionDto = getTransactionDto();
             dispatchPosEvent(new PosEvent(PosEventType.INSUFFICIENT_FUNDS,
                     Map.of(ConstKeys.AMOUNT_NEEDED, amountNeeded, ConstKeys.TRANSACTION_DTO, transactionDto)));
+            dispatchPosEvent(new PosEvent(PosEventType.LOG, Map.of(ConstKeys.MESSAGE,
+                    "Cash inserted: " + cashAmountToAddString + ". Amount still needed: " + amountNeeded)));
         }
     }
 
     private void handleRequestCancelPayment() {
         if (!transactionState.isAwaitingPayment()) {
-            String error = "Cannot cancel payment when transaction is not awaiting payment. Current transaction " +
-                    "state: " + transactionState;
+            String error =
+                    "Cannot cancel payment when transaction is not awaiting payment. Current transaction " + "state: " +
+                            transactionState;
             System.err.println(error);
-            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.MESSAGE, error)));
             return;
         }
 
         transactionState = TransactionState.SCANNING_IN_PROGRESS;
         dispatchPosEvent(new PosEvent(PosEventType.DO_CANCEL_PAYMENT));
+        dispatchPosEvent(new PosEvent(PosEventType.LOG, Map.of(ConstKeys.MESSAGE, "Payment cancelled.")));
     }
 
     private void handleRequestCompleteTransaction() {
@@ -487,47 +481,11 @@ public class PosComponent implements IComponent, IPosEventManager {
             String error = "Cannot complete transaction when transaction is not awaiting payment. Current transaction" +
                     " state: " + transactionState;
             System.err.println(error);
-            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.ERROR, error)));
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.MESSAGE, error)));
             return;
         }
 
         completeTransaction();
-    }
-
-    /**
-     * Add a journal listener to this component.
-     *
-     * @param listener The journal listener.
-     */
-    public void addJournalListener(@NonNull IPosJournalListener listener) {
-        journalComponent.addJournalListener(listener);
-    }
-
-    /**
-     * Remove a journal listener from this component.
-     *
-     * @param listener The journal listener.
-     */
-    public void removeJournalListener(@NonNull IPosJournalListener listener) {
-        journalComponent.removeJournalListener(listener);
-    }
-
-    /**
-     * Log a message to the journal.
-     *
-     * @param message The message to log.
-     */
-    public void logToJournal(@NonNull String message) {
-        journalComponent.log(message);
-    }
-
-    /**
-     * Log an error to the journal.
-     *
-     * @param message The error message.
-     */
-    public void errorToJournal(@NonNull String message) {
-        journalComponent.error(message);
     }
 
     /**
@@ -540,15 +498,6 @@ public class PosComponent implements IComponent, IPosEventManager {
         if (Application.DEBUG) {
             System.out.println("[PosComponent] Set POS system for POS component: " + posSystem);
         }
-    }
-
-    /**
-     * Check if a transaction is voided.
-     *
-     * @return True if the transaction is non-null and voided, false otherwise.
-     */
-    public boolean isTransactionVoided() {
-        return transaction != null && transaction.isVoided();
     }
 
     /**
@@ -627,7 +576,7 @@ public class PosComponent implements IComponent, IPosEventManager {
      * String property with the key {@link ConstKeys#ITEM_UPC}, then a {@link PosEventType#REQUEST_ADD_ITEM}
      * event is triggered. Method is package-private for testing purposes.
      */
-    void startTransaction(PosEvent event) {
+    void startTransaction(@NonNull PosEvent event) {
         if (Application.DEBUG) {
             System.out.println("[PosComponent] Starting new transaction: " + this);
         }
@@ -636,8 +585,10 @@ public class PosComponent implements IComponent, IPosEventManager {
         transactionNumber++;
         transactionState = TransactionState.SCANNING_IN_PROGRESS;
 
-        dispatchPosEvent(new PosEvent(PosEventType.TRANSACTION_STARTED, Map.of(
-                ConstKeys.TRANSACTION_NUMBER, transaction.getTransactionNumber())));
+        dispatchPosEvent(new PosEvent(PosEventType.TRANSACTION_STARTED,
+                Map.of(ConstKeys.TRANSACTION_NUMBER, transaction.getTransactionNumber())));
+        dispatchPosEvent(new PosEvent(PosEventType.LOG,
+                Map.of(ConstKeys.MESSAGE, "Transaction " + transaction.getTransactionNumber() + " started.")));
 
         if (Application.DEBUG) {
             System.out.println("[PosComponent] New transaction started: " + this);
@@ -647,9 +598,9 @@ public class PosComponent implements IComponent, IPosEventManager {
                 itemService.getRandomItems(ConstVals.QUICK_ITEMS_COUNT).stream().map(ItemDto::from).toList();
         dispatchPosEvent(new PosEvent(PosEventType.DO_UPDATE_QUICK_ITEMS, Map.of(ConstKeys.ITEM_DTOS, quickItemDtos)));
 
-        if (event != null && event.containsProperty(ConstKeys.ITEM_UPC)) {
-            dispatchPosEvent(new PosEvent(PosEventType.REQUEST_ADD_ITEM, Map.of(ConstKeys.ITEM_UPC,
-                    event.getProperty(ConstKeys.ITEM_UPC))));
+        if (event.containsProperty(ConstKeys.ITEM_UPC)) {
+            dispatchPosEvent(new PosEvent(PosEventType.REQUEST_ADD_ITEM,
+                    Map.of(ConstKeys.ITEM_UPC, event.getProperty(ConstKeys.ITEM_UPC))));
         }
     }
 
@@ -661,6 +612,8 @@ public class PosComponent implements IComponent, IPosEventManager {
         transaction.setVoided(true);
         transactionService.saveTransaction(transaction);
         dispatchPosEvent(new PosEvent(PosEventType.TRANSACTION_VOIDED));
+        dispatchPosEvent(new PosEvent(PosEventType.LOG,
+                Map.of(ConstKeys.MESSAGE, "Transaction " + transaction.getTransactionNumber() + " voided.")));
         if (Application.DEBUG) {
             System.out.println("[PosComponent] Transaction voided: " + this);
         }
@@ -677,8 +630,10 @@ public class PosComponent implements IComponent, IPosEventManager {
         transactionService.saveTransaction(transaction);
 
         TransactionDto transactionDto = getTransactionDto();
-        dispatchPosEvent(new PosEvent(PosEventType.TRANSACTION_COMPLETED,
-                Map.of(ConstKeys.TRANSACTION_DTO, transactionDto)));
+        dispatchPosEvent(
+                new PosEvent(PosEventType.TRANSACTION_COMPLETED, Map.of(ConstKeys.TRANSACTION_DTO, transactionDto)));
+        dispatchPosEvent(new PosEvent(PosEventType.LOG,
+                Map.of(ConstKeys.MESSAGE, "Transaction " + transaction.getTransactionNumber() + " completed.")));
 
         if (Application.DEBUG) {
             System.out.println("[PosComponent] Transaction completed: " + this);
@@ -693,6 +648,7 @@ public class PosComponent implements IComponent, IPosEventManager {
         transactionState = TransactionState.NOT_STARTED;
 
         dispatchPosEvent(new PosEvent(PosEventType.POS_RESET));
+        dispatchPosEvent(new PosEvent(PosEventType.LOG, Map.of(ConstKeys.MESSAGE, "POS system reset.")));
 
         if (Application.DEBUG) {
             System.out.println("[PosComponent] POS component reset: " + this);
@@ -708,18 +664,10 @@ public class PosComponent implements IComponent, IPosEventManager {
 
     private TransactionDto getTransactionDto() {
         List<LineItemDto> lineItemDtos = getLineItemDtos();
-        return TransactionDto.from(
-                lineItemDtos,
-                posSystem.getStoreName(),
-                posSystem.getPosLane(),
-                transaction.getTransactionNumber(),
-                transaction.getSubtotal(),
-                transaction.getDiscounts(),
-                transaction.getTaxes(),
-                transaction.getTotal(),
-                transaction.getAmountTendered(),
-                transaction.getChangeDue()
-        );
+        return TransactionDto.from(lineItemDtos, posSystem.getStoreName(), posSystem.getPosLane(),
+                transaction.getTransactionNumber(), transaction.getSubtotal(), transaction.getDiscounts(),
+                transaction.getTaxes(), transaction.getTotal(), transaction.getAmountTendered(),
+                transaction.getChangeDue());
     }
 
     /**

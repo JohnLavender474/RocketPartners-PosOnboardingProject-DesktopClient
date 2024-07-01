@@ -6,14 +6,20 @@ package com.rocketpartners.onboarding.possystem.component;
 public interface IComponent {
 
     /**
-     * Boot up the system.
+     * Boot up the component.
      */
     default void bootUp() {
     }
 
     /**
-     * Update the system.
+     * Update the component.
      */
     default void update() {
+    }
+
+    /**
+     * Shut down the component.
+     */
+    default void shutDown() {
     }
 }

@@ -7,6 +7,8 @@ import com.formdev.flatlaf.FlatLightLaf;
 import com.rocketpartners.onboarding.possystem.component.ItemBookLoaderComponent;
 import com.rocketpartners.onboarding.possystem.component.LocalTestTsvItemBookLoaderComponent;
 import com.rocketpartners.onboarding.possystem.component.PosComponent;
+import com.rocketpartners.onboarding.possystem.component.journal.LocalJournal;
+import com.rocketpartners.onboarding.possystem.component.journal.RemoteJournal;
 import com.rocketpartners.onboarding.possystem.display.*;
 import com.rocketpartners.onboarding.possystem.model.PosSystem;
 import com.rocketpartners.onboarding.possystem.repository.DiscountRepository;
@@ -19,12 +21,13 @@ import com.rocketpartners.onboarding.possystem.repository.inmemory.InMemoryPosSy
 import com.rocketpartners.onboarding.possystem.repository.inmemory.InMemoryTransactionRepository;
 import com.rocketpartners.onboarding.possystem.repository.mysql.*;
 import com.rocketpartners.onboarding.possystem.service.*;
-import lombok.*;
+import lombok.Getter;
+import lombok.NonNull;
+import lombok.Setter;
+import lombok.ToString;
 
 import javax.swing.*;
 import java.awt.*;
-import java.sql.Connection;
-import java.sql.DriverManager;
 import java.util.Arrays;
 
 /**
@@ -43,6 +46,7 @@ public class Application {
     @ToString
     public static class Arguments {
 
+        private static final boolean DEFAULT_DEBUG = false;
         private static final String DEFAULT_APP_MODE = "dev";
         private static final String DEFAULT_DB_SOURCE = "inmemory";
         private static final String DEFAULT_MYSQL_DB_NAME = "pos_system";
@@ -50,17 +54,19 @@ public class Application {
         private static final String DEFAULT_MYSQL_USER = "myuser";
         private static final String DEFAULT_MYSQL_PASSWORD = "password";
         private static final String DEFAULT_STORE_NAME = "Rocket Partners Store";
+        private static final String DEFAULT_REMOTE_JOURNAL_HOST = "localhost";
+        private static final String DEFAULT_REMOTE_JOURNAL_PORT = "12345";
         private static final int DEFAULT_LANE_NUMBER = 1;
 
         @Parameter(names = "-debug", description = "Enable debug mode. Values: true, false. Default: false.")
-        private boolean debug = DEBUG;
+        private boolean debug = DEFAULT_DEBUG;
 
-        @Parameter(names = "-dbSource", description = "NOT IMPLEMENTED! The database source. Values: inmemory, mysql." +
-                " Default: inmemory.")
+        @Parameter(names = "-dbSource",
+                description = "NOT IMPLEMENTED! The database source. Values: inmemory, mysql. Default: inmemory.")
         private String dbSource = DEFAULT_DB_SOURCE;
 
-        @Parameter(names = "-mysqlDbName", description = "NOT IMPLEMENTED! The MySQL database name. Default: " +
-                "pos_system.")
+        @Parameter(names = "-mysqlDbName",
+                description = "NOT IMPLEMENTED! The MySQL database name. Default: pos_system.")
         private String mySqlDbName = DEFAULT_MYSQL_DB_NAME;
 
         @Parameter(names = "-mysqlUrl", description = "NOT IMPLEMENTED! The MySQL database URL. Default: " +
@@ -70,8 +76,8 @@ public class Application {
         @Parameter(names = "-mysqlUser", description = "NOT IMPLEMENTED! The MySQL database user. Default: myuser.")
         private String mySqlUser = DEFAULT_MYSQL_USER;
 
-        @Parameter(names = "-mysqlPassword", description = "NOT IMPLEMENTED! The MySQL database password. Default: " +
-                "password.")
+        @Parameter(names = "-mysqlPassword",
+                description = "NOT IMPLEMENTED! The MySQL database password. Default: password.")
         private String mySqlPassword = DEFAULT_MYSQL_PASSWORD;
 
         @Parameter(names = "-appMode", description = "The mode of the application. Values: dev, prod. Default: dev.")
@@ -82,8 +88,13 @@ public class Application {
 
         @Parameter(names = "-laneNumber", description = "The POS lane number. Default: 1.")
         private int laneNumber = DEFAULT_LANE_NUMBER;
-    }
 
+        @Parameter(names = "-remoteJournalHost", description = "The host of the remote journal. Default: localhost.")
+        private String remoteJournalHost = DEFAULT_REMOTE_JOURNAL_HOST;
+
+        @Parameter(names = "-remoteJournalPort", description = "The port of the remote journal. Default: 12345.")
+        private int remoteJournalPort = Integer.parseInt(DEFAULT_REMOTE_JOURNAL_PORT);
+    }
 
     private record Services(@NonNull PosSystemService posSystemService, @NonNull ItemService itemService,
                             @NonNull DiscountService discountService, @NonNull TaxService taxService,
@@ -91,8 +102,7 @@ public class Application {
     }
 
     private record Repositories(@NonNull PosSystemRepository posSystemRepository,
-                                @NonNull ItemRepository itemRepository,
-                                @NonNull DiscountRepository discountRepository,
+                                @NonNull ItemRepository itemRepository, @NonNull DiscountRepository discountRepository,
                                 @NonNull TransactionRepository transactionRepository) {
     }
 
@@ -107,9 +117,7 @@ public class Application {
         System.out.println("[Application] Starting Point of Sale application with args: " + Arrays.toString(args));
 
         Arguments arguments = new Arguments();
-        JCommander jCommander = JCommander.newBuilder()
-                .addObject(arguments)
-                .build();
+        JCommander jCommander = JCommander.newBuilder().addObject(arguments).build();
         try {
             jCommander.parse(args);
         } catch (ParameterException e) {
@@ -137,7 +145,8 @@ public class Application {
             FlatLightLaf.setup();
 
             if (Application.DEBUG) {
-                System.out.println("[Application] Starting Point of Sale application in dev mode with args: " + arguments);
+                System.out.println(
+                        "[Application] Starting Point of Sale application in dev mode with args: " + arguments);
             }
 
             ItemBookLoaderComponent itemBookLoaderComponent = new LocalTestTsvItemBookLoaderComponent();
@@ -146,8 +155,8 @@ public class Application {
             String storeName = arguments.getStoreName();
             int laneNumber = arguments.getLaneNumber();
 
-            PosComponent posComponent = new PosComponent(itemBookLoaderComponent, services.transactionService(),
-                    services.itemService());
+            PosComponent posComponent =
+                    new PosComponent(itemBookLoaderComponent, services.transactionService(), services.itemService());
             PosSystem posSystem;
             if (services.posSystemService().posSystemExistsByStoreNameAndPosLane(storeName, laneNumber)) {
                 posSystem = services.posSystemService().getPosSystemByStoreNameAndPosLane(storeName, laneNumber);
@@ -156,14 +165,22 @@ public class Application {
             }
             posComponent.setPosSystem(posSystem);
 
-            CustomerViewController customerViewController = new CustomerViewController(
-                    posComponent, storeName, laneNumber);
+            LocalJournal localJournal = new LocalJournal();
+            posComponent.registerPosEventListener(localJournal);
+
+            RemoteJournal remoteJournal = new RemoteJournal(arguments.getRemoteJournalHost(), arguments.getRemoteJournalPort());
+            posComponent.registerPosEventListener(remoteJournal);
+            posComponent.registerChildComponent(remoteJournal);
+
+            CustomerViewController customerViewController =
+                    new CustomerViewController(posComponent, storeName, laneNumber);
             posComponent.registerPosEventListener(customerViewController);
             posComponent.registerChildComponent(customerViewController);
 
             ScannerViewController scannerViewController =
                     new ScannerViewController("Scanner View - Lane " + laneNumber, posComponent);
-            scannerViewController.addScannerViewKeyboardFocusManager(KeyboardFocusManager.getCurrentKeyboardFocusManager());
+            scannerViewController.addScannerViewKeyboardFocusManager(
+                    KeyboardFocusManager.getCurrentKeyboardFocusManager());
             posComponent.registerPosEventListener(scannerViewController);
 
             PayWithCardViewController payWithCardViewController =
@@ -189,6 +206,7 @@ public class Application {
                     new PoleDisplayViewController("Pole Display View - Lane " + laneNumber);
             posComponent.registerPosEventListener(poleDisplayViewController);
 
+            // Boot up the POS component and all child components.
             posComponent.bootUp();
 
             // The javax.swing.Timer ensures that the action performed in the ActionListener is executed on the Event
@@ -197,6 +215,13 @@ public class Application {
             Timer timer = new Timer(500, e -> posComponent.update());
             timer.setRepeats(true);
             timer.start();
+
+            // The shutdown hook is used to ensure that the application is properly shut down when the JVM is stopped.
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                System.out.println("[Application] Shutting down Point of Sale application...");
+                posComponent.shutDown();
+                timer.stop();
+            }));
         });
     }
 
@@ -207,8 +232,8 @@ public class Application {
         ItemService itemService = new ItemService(repositories.itemRepository());
         DiscountService discountService = new DiscountService(repositories.discountRepository());
         TaxService taxService = new TaxService();
-        TransactionService transactionService = new TransactionService(
-                repositories.transactionRepository(), discountService, itemService, taxService);
+        TransactionService transactionService =
+                new TransactionService(repositories.transactionRepository(), discountService, itemService, taxService);
 
         return new Services(posSystemService, itemService, discountService, taxService, transactionService);
     }

@@ -1,8 +1,10 @@
 package com.rocketpartners.onboarding.possystem.constant;
 
+/**
+ * Constants for keys used in the application.
+ */
 public class ConstKeys {
-    public static final String LOG = "log";
-    public static final String ERROR = "error";
+    public static final String MESSAGE = "message";
     public static final String ITEM_UPC = "item_upc";
     public static final String ITEM_UPCS = "item_upcs";
     public static final String ITEM_DTOS = "item_dtos";
@@ -13,6 +15,4 @@ public class ConstKeys {
     public static final String CASH_AMOUNT = "cash_amount";
     public static final String TRANSACTION_NUMBER = "transaction_number";
     public static final String AMOUNT_NEEDED = "amount_needed";
-    public static final String AMOUNT_TENDERED = "amount_tendered";
-    public static final String CHANGE_DUE = "change_due";
 }

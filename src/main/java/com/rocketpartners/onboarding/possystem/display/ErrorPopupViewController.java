@@ -1,6 +1,5 @@
 package com.rocketpartners.onboarding.possystem.display;
 
-import com.rocketpartners.onboarding.possystem.component.IComponent;
 import com.rocketpartners.onboarding.possystem.constant.ConstKeys;
 import com.rocketpartners.onboarding.possystem.event.IPosEventDispatcher;
 import com.rocketpartners.onboarding.possystem.event.IPosEventListener;
@@ -30,7 +29,7 @@ public class ErrorPopupViewController implements IPosEventDispatcher, IPosEventL
     @Override
     public void onPosEvent(@NonNull PosEvent event) {
         if (event.getType() == PosEventType.ERROR) {
-            String error = event.getProperty(ConstKeys.ERROR, String.class);
+            String error = event.getProperty(ConstKeys.MESSAGE, String.class);
             JOptionPane.showMessageDialog(null, error, "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
