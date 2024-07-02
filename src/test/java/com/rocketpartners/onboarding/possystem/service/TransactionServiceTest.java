@@ -9,7 +9,6 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -18,20 +17,16 @@ import static org.mockito.Mockito.*;
 class TransactionServiceTest {
 
     private TransactionRepository transactionRepository;
-    private DiscountService discountService;
-    private ItemService itemService;
-    private TaxService taxService;
     private TransactionService transactionService;
     private Transaction transaction;
 
     @BeforeEach
     void setUp() {
         transactionRepository = Mockito.mock(TransactionRepository.class);
-        discountService = Mockito.mock(DiscountService.class);
-        when(discountService.computeDiscountsToApplyFor(any())).thenReturn(new ArrayList<>());
-        when(discountService.computeDiscountAmountFor(any())).thenReturn(BigDecimal.ZERO);
-        itemService = Mockito.mock(ItemService.class);
-        taxService = Mockito.mock(TaxService.class);
+        DiscountService discountService = Mockito.mock(DiscountService.class);
+        when(discountService.computeDiscountAmountToApplyTo(any())).thenReturn(BigDecimal.ZERO);
+        ItemService itemService = Mockito.mock(ItemService.class);
+        TaxService taxService = Mockito.mock(TaxService.class);
         when(taxService.computeTaxesFor(any())).thenReturn(BigDecimal.valueOf(0.04));
         transactionService = new TransactionService(transactionRepository, discountService, itemService, taxService);
         transaction = new Transaction();

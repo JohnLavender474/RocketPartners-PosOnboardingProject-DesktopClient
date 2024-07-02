@@ -575,8 +575,10 @@ public class PosComponent implements IComponent, IPosEventManager {
      * Start a new transaction. Accepts a {@link PosEvent} instance that is nullable. If the event contains a
      * String property with the key {@link ConstKeys#ITEM_UPC}, then a {@link PosEventType#REQUEST_ADD_ITEM}
      * event is triggered. Method is package-private for testing purposes.
+     *
+     * @param event The event that triggered the transaction. (Nullable)
      */
-    void startTransaction(@NonNull PosEvent event) {
+    void startTransaction(PosEvent event) {
         if (Application.DEBUG) {
             System.out.println("[PosComponent] Starting new transaction: " + this);
         }
@@ -598,7 +600,7 @@ public class PosComponent implements IComponent, IPosEventManager {
                 itemService.getRandomItems(ConstVals.QUICK_ITEMS_COUNT).stream().map(ItemDto::from).toList();
         dispatchPosEvent(new PosEvent(PosEventType.DO_UPDATE_QUICK_ITEMS, Map.of(ConstKeys.ITEM_DTOS, quickItemDtos)));
 
-        if (event.containsProperty(ConstKeys.ITEM_UPC)) {
+        if (event != null && event.containsProperty(ConstKeys.ITEM_UPC)) {
             dispatchPosEvent(new PosEvent(PosEventType.REQUEST_ADD_ITEM,
                     Map.of(ConstKeys.ITEM_UPC, event.getProperty(ConstKeys.ITEM_UPC))));
         }
@@ -665,7 +667,7 @@ public class PosComponent implements IComponent, IPosEventManager {
     private TransactionDto getTransactionDto() {
         List<LineItemDto> lineItemDtos = getLineItemDtos();
         return TransactionDto.from(lineItemDtos, posSystem.getStoreName(), posSystem.getPosLane(),
-                transaction.getTransactionNumber(), transaction.getSubtotal(), transaction.getDiscounts(),
+                transaction.getTransactionNumber(), transaction.getSubtotal(), transaction.getDiscountAmount(),
                 transaction.getTaxes(), transaction.getTotal(), transaction.getAmountTendered(),
                 transaction.getChangeDue());
     }

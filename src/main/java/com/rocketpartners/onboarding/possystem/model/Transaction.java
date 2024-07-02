@@ -30,7 +30,7 @@ public class Transaction {
     @NonNull
     private BigDecimal taxes;
     @NonNull
-    private BigDecimal discounts;
+    private BigDecimal discountAmount;
     @NonNull
     private BigDecimal total;
     @NonNull
@@ -47,7 +47,7 @@ public class Transaction {
         lineItems = new ArrayList<>();
         subtotal = BigDecimal.ZERO;
         taxes = BigDecimal.ZERO;
-        discounts = BigDecimal.ZERO;
+        discountAmount = BigDecimal.ZERO;
         total = BigDecimal.ZERO;
         amountTendered = BigDecimal.ZERO;
         changeDue = BigDecimal.ZERO;

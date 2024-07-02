@@ -33,7 +33,7 @@ public class MySQLTransactionRepository implements TransactionRepository {
             stmt.setInt(3, transaction.getTransactionNumber());
             stmt.setBigDecimal(4, transaction.getSubtotal());
             stmt.setBigDecimal(5, transaction.getTaxes());
-            stmt.setBigDecimal(6, transaction.getDiscounts());
+            stmt.setBigDecimal(6, transaction.getDiscountAmount());
             stmt.setBigDecimal(7, transaction.getTotal());
             stmt.setBigDecimal(8, transaction.getAmountTendered());
             stmt.setBigDecimal(9, transaction.getChangeDue());

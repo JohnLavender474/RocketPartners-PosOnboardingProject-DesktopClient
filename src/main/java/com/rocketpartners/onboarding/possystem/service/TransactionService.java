@@ -1,7 +1,6 @@
 package com.rocketpartners.onboarding.possystem.service;
 
 import com.rocketpartners.onboarding.possystem.Application;
-import com.rocketpartners.onboarding.possystem.model.Discount;
 import com.rocketpartners.onboarding.possystem.model.Item;
 import com.rocketpartners.onboarding.possystem.model.LineItem;
 import com.rocketpartners.onboarding.possystem.model.Transaction;
@@ -77,9 +76,8 @@ public class TransactionService {
         BigDecimal taxes = taxService.computeTaxesFor(transaction);
         transaction.setTaxes(taxes);
 
-        List<Discount> discounts = discountService.computeDiscountsToApplyFor(transaction);
-        BigDecimal discountAmount = discountService.computeDiscountAmountFor(discounts);
-        transaction.setDiscounts(discountAmount);
+        BigDecimal discountAmount = discountService.computeDiscountAmountToApplyTo(transaction);
+        transaction.setDiscountAmount(discountAmount);
 
         BigDecimal total = BigDecimal.ZERO;
         total = total.add(subtotal);
