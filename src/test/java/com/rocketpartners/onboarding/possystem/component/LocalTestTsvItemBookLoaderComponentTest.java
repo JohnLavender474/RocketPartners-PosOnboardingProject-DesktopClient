@@ -1,8 +1,8 @@
 package com.rocketpartners.onboarding.possystem.component;
 
+import com.rocketpartners.onboarding.commons.utils.FileLineReader;
 import com.rocketpartners.onboarding.possystem.ApplicationProperties;
 import com.rocketpartners.onboarding.possystem.service.ItemService;
-import com.rocketpartners.onboarding.possystem.utils.TsvFileReader;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -20,17 +20,17 @@ class LocalTestTsvItemBookLoaderComponentTest {
 
     private ItemService itemService;
     private LocalTestTsvItemBookLoaderComponent itemBookLoaderComponent;
-    private TsvFileReader mockTsvFileReader;
+    private FileLineReader mockFileLineReader;
 
     @BeforeEach
     void setUp() {
         itemService = Mockito.mock(ItemService.class);
         ApplicationProperties mockProps = Mockito.mock(ApplicationProperties.class);
-        mockTsvFileReader = Mockito.mock(TsvFileReader.class);
+        mockFileLineReader = Mockito.mock(FileLineReader.class);
         when(mockProps.getProperty("test.item.book.tsv.file.path")).thenReturn("path/to/test.tsv");
         itemBookLoaderComponent = Mockito.spy(new LocalTestTsvItemBookLoaderComponent());
         when(itemBookLoaderComponent.getProps()).thenReturn(mockProps);
-        when(itemBookLoaderComponent.getTsvFileReader()).thenReturn(mockTsvFileReader);
+        when(itemBookLoaderComponent.getFileReader()).thenReturn(mockFileLineReader);
     }
 
     @Test
@@ -40,7 +40,7 @@ class LocalTestTsvItemBookLoaderComponentTest {
                 new String[]{"789012", "Test Item 2", "19.99"}
         );
 
-        when(mockTsvFileReader.read("path/to/test.tsv")).thenReturn(tsvLines);
+        when(mockFileLineReader.read("path/to/test.tsv", "\t")).thenReturn(tsvLines);
 
         itemBookLoaderComponent.loadItemBook(itemService);
 
@@ -72,11 +72,9 @@ class LocalTestTsvItemBookLoaderComponentTest {
                 new String[]{"Invalid line"}
         );
 
-        when(mockTsvFileReader.read("path/to/test.tsv")).thenReturn(tsvLines);
+        when(mockFileLineReader.read("path/to/test.tsv", "\t")).thenReturn(tsvLines);
 
-        RuntimeException exception = assertThrows(RuntimeException.class, () -> {
-            itemBookLoaderComponent.loadItemBook(itemService);
-        });
+        RuntimeException exception = assertThrows(RuntimeException.class, () -> itemBookLoaderComponent.loadItemBook(itemService));
 
         assertEquals("Invalid TSV file format. Expected 3 fields per line. Invalid line: [Invalid line]",
                 exception.getMessage());

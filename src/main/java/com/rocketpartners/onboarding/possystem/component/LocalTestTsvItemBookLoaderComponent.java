@@ -1,9 +1,9 @@
 package com.rocketpartners.onboarding.possystem.component;
 
+import com.rocketpartners.onboarding.commons.utils.FileLineReader;
 import com.rocketpartners.onboarding.possystem.Application;
 import com.rocketpartners.onboarding.possystem.ApplicationProperties;
 import com.rocketpartners.onboarding.possystem.service.ItemService;
-import com.rocketpartners.onboarding.possystem.utils.TsvFileReader;
 import lombok.NonNull;
 
 import java.math.BigDecimal;
@@ -30,15 +30,15 @@ public class LocalTestTsvItemBookLoaderComponent implements ItemBookLoaderCompon
      *
      * @return the TSV file reader
      */
-    TsvFileReader getTsvFileReader() {
-        return new TsvFileReader();
+    FileLineReader getFileReader() {
+        return new FileLineReader();
     }
 
     @Override
     public void loadItemBook(@NonNull ItemService itemService) {
         ApplicationProperties props = getProps();
         String tsvFilePath = props.getProperty("test.item.book.tsv.file.path");
-        List<String[]> tsvLines = getTsvFileReader().read(tsvFilePath);
+        List<String[]> tsvLines = getFileReader().read(tsvFilePath, "\t");
         if (Application.DEBUG) {
             System.out.println("[LocalTestTsvItemBookLoaderComponent] Loading item book from TSV file");
         }

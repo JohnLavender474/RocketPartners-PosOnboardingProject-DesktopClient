@@ -1,9 +1,9 @@
 package com.rocketpartners.onboarding.possystem.service;
 
 import com.rocketpartners.onboarding.possystem.Application;
-import com.rocketpartners.onboarding.possystem.model.Item;
-import com.rocketpartners.onboarding.possystem.model.LineItem;
-import com.rocketpartners.onboarding.possystem.model.Transaction;
+import com.rocketpartners.onboarding.commons.model.Item;
+import com.rocketpartners.onboarding.commons.model.LineItem;
+import com.rocketpartners.onboarding.commons.model.Transaction;
 import com.rocketpartners.onboarding.possystem.repository.TransactionRepository;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;

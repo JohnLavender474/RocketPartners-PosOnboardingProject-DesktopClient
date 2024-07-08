@@ -1,6 +1,6 @@
 package com.rocketpartners.onboarding.possystem.service;
 
-import com.rocketpartners.onboarding.possystem.model.Transaction;
+import com.rocketpartners.onboarding.commons.model.Transaction;
 import lombok.NonNull;
 
 import java.math.BigDecimal;

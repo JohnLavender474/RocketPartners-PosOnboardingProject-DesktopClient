@@ -1,6 +1,6 @@
 package com.rocketpartners.onboarding.possystem.repository;
 
-import com.rocketpartners.onboarding.possystem.model.Transaction;
+import com.rocketpartners.onboarding.commons.model.Transaction;
 
 import java.util.List;
 

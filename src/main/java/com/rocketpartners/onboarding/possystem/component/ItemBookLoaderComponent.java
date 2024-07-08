@@ -9,7 +9,7 @@ import lombok.NonNull;
 public interface ItemBookLoaderComponent {
 
     /**
-     * Load the item book into the item service and return the instantiated persisted items.
+     * Load the item book into the item service.
      *
      * @param itemService the item service to load the item book into
      */

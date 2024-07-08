@@ -10,12 +10,10 @@ import com.rocketpartners.onboarding.possystem.component.PosComponent;
 import com.rocketpartners.onboarding.possystem.component.journal.LocalJournal;
 import com.rocketpartners.onboarding.possystem.component.journal.RemoteJournal;
 import com.rocketpartners.onboarding.possystem.display.*;
-import com.rocketpartners.onboarding.possystem.model.PosSystem;
-import com.rocketpartners.onboarding.possystem.repository.DiscountRepository;
+import com.rocketpartners.onboarding.commons.model.PosSystem;
 import com.rocketpartners.onboarding.possystem.repository.ItemRepository;
 import com.rocketpartners.onboarding.possystem.repository.PosSystemRepository;
 import com.rocketpartners.onboarding.possystem.repository.TransactionRepository;
-import com.rocketpartners.onboarding.possystem.repository.inmemory.InMemoryDiscountRepository;
 import com.rocketpartners.onboarding.possystem.repository.inmemory.InMemoryItemRepository;
 import com.rocketpartners.onboarding.possystem.repository.inmemory.InMemoryPosSystemRepository;
 import com.rocketpartners.onboarding.possystem.repository.inmemory.InMemoryTransactionRepository;
@@ -102,7 +100,7 @@ public class Application {
     }
 
     private record Repositories(@NonNull PosSystemRepository posSystemRepository,
-                                @NonNull ItemRepository itemRepository, @NonNull DiscountRepository discountRepository,
+                                @NonNull ItemRepository itemRepository,
                                 @NonNull TransactionRepository transactionRepository) {
     }
 
@@ -230,7 +228,7 @@ public class Application {
 
         PosSystemService posSystemService = new PosSystemService(repositories.posSystemRepository());
         ItemService itemService = new ItemService(repositories.itemRepository());
-        DiscountService discountService = new DiscountService(repositories.discountRepository());
+        DiscountService discountService = new DiscountService();
         TaxService taxService = new TaxService();
         TransactionService transactionService =
                 new TransactionService(repositories.transactionRepository(), discountService, itemService, taxService);
@@ -244,13 +242,11 @@ public class Application {
         TransactionRepository transactionRepository;
         PosSystemRepository posSystemRepository;
         ItemRepository itemRepository;
-        DiscountRepository discountRepository;
 
         if (dbSource.equals("inmemory")) {
             transactionRepository = new InMemoryTransactionRepository();
             posSystemRepository = new InMemoryPosSystemRepository();
             itemRepository = new InMemoryItemRepository();
-            discountRepository = new InMemoryDiscountRepository();
         } else if (dbSource.equals("mysql")) {
             String url = arguments.getMySqlUrl();
             String username = arguments.getMySqlUser();
@@ -263,7 +259,6 @@ public class Application {
                 transactionRepository = new MySQLTransactionRepository(connectionManager);
                 posSystemRepository = new MySQLPosSystemRepository(connectionManager);
                 itemRepository = new MySQLItemRepository(connectionManager);
-                discountRepository = new MySQLDiscountRepository(connectionManager);
             } catch (Exception e) {
                 System.err.println("Failed to initialize MySQL assets: " + e.getMessage());
                 throw new RuntimeException("Failed to initialize MySQL assets", e);
@@ -272,7 +267,7 @@ public class Application {
             throw new RuntimeException("Invalid database source: " + dbSource + ". Please use 'inmemory' or 'mysql'.");
         }
 
-        return new Repositories(posSystemRepository, itemRepository, discountRepository, transactionRepository);
+        return new Repositories(posSystemRepository, itemRepository, transactionRepository);
     }
 
     private static void startProdApplication(@NonNull Arguments arguments) {

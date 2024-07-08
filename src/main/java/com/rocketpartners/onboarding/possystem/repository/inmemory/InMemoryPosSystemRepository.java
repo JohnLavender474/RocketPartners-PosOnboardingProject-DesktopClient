@@ -1,6 +1,6 @@
 package com.rocketpartners.onboarding.possystem.repository.inmemory;
 
-import com.rocketpartners.onboarding.possystem.model.PosSystem;
+import com.rocketpartners.onboarding.commons.model.PosSystem;
 import com.rocketpartners.onboarding.possystem.repository.PosSystemRepository;
 import lombok.NonNull;
 import lombok.ToString;

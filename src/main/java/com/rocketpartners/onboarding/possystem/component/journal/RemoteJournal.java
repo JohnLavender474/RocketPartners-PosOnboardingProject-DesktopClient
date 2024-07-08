@@ -43,6 +43,9 @@ public class RemoteJournal implements IPosEventListener, IComponent {
 
     @Override
     public void onPosEvent(@NonNull PosEvent event) {
+        if (out == null) {
+            return;
+        }
         String message = event.getProperty("message", String.class);
         switch (event.getType()) {
             case LOG:

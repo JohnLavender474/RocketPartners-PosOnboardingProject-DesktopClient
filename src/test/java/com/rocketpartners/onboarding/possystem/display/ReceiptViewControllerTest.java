@@ -1,7 +1,7 @@
 package com.rocketpartners.onboarding.possystem.display;
 
 import com.rocketpartners.onboarding.possystem.constant.ConstKeys;
-import com.rocketpartners.onboarding.possystem.display.dto.TransactionDto;
+import com.rocketpartners.onboarding.commons.model.TransactionDto;
 import com.rocketpartners.onboarding.possystem.event.PosEvent;
 import com.rocketpartners.onboarding.possystem.event.PosEventType;
 import org.junit.jupiter.api.BeforeEach;

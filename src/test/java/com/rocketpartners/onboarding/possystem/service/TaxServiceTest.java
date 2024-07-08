@@ -1,6 +1,6 @@
 package com.rocketpartners.onboarding.possystem.service;
 
-import com.rocketpartners.onboarding.possystem.model.Transaction;
+import com.rocketpartners.onboarding.commons.model.Transaction;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;

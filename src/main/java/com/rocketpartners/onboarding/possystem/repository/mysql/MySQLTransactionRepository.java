@@ -4,8 +4,8 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.rocketpartners.onboarding.possystem.model.LineItem;
-import com.rocketpartners.onboarding.possystem.model.Transaction;
+import com.rocketpartners.onboarding.commons.model.LineItem;
+import com.rocketpartners.onboarding.commons.model.Transaction;
 import com.rocketpartners.onboarding.possystem.repository.TransactionRepository;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;

@@ -1,9 +1,7 @@
 package com.rocketpartners.onboarding.possystem.service;
 
-import com.rocketpartners.onboarding.possystem.model.Transaction;
-import com.rocketpartners.onboarding.possystem.repository.DiscountRepository;
+import com.rocketpartners.onboarding.commons.model.Transaction;
 import lombok.NonNull;
-import lombok.RequiredArgsConstructor;
 import lombok.ToString;
 
 import java.math.BigDecimal;
@@ -13,10 +11,7 @@ import java.math.BigDecimal;
  * for computing the total discount amount for a list of discounts.
  */
 @ToString
-@RequiredArgsConstructor
 public class DiscountService {
-
-    private final DiscountRepository discountRepository;
 
     /**
      * Compute the total discount amount for a transaction.

@@ -2,7 +2,7 @@ package com.rocketpartners.onboarding.possystem.display;
 
 import com.rocketpartners.onboarding.possystem.component.IComponent;
 import com.rocketpartners.onboarding.possystem.constant.ConstKeys;
-import com.rocketpartners.onboarding.possystem.display.dto.ItemDto;
+import com.rocketpartners.onboarding.commons.model.ItemDto;
 import com.rocketpartners.onboarding.possystem.event.IPosEventDispatcher;
 import com.rocketpartners.onboarding.possystem.event.IPosEventListener;
 import com.rocketpartners.onboarding.possystem.event.PosEvent;

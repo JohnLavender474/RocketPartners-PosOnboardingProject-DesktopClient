@@ -1,23 +1,17 @@
 package com.rocketpartners.onboarding.possystem.component;
 
+import com.rocketpartners.onboarding.commons.model.*;
+import com.rocketpartners.onboarding.commons.utils.UtilMethods;
 import com.rocketpartners.onboarding.possystem.Application;
 import com.rocketpartners.onboarding.possystem.constant.ConstKeys;
 import com.rocketpartners.onboarding.possystem.constant.ConstVals;
 import com.rocketpartners.onboarding.possystem.constant.TransactionState;
-import com.rocketpartners.onboarding.possystem.display.dto.ItemDto;
-import com.rocketpartners.onboarding.possystem.display.dto.LineItemDto;
-import com.rocketpartners.onboarding.possystem.display.dto.TransactionDto;
 import com.rocketpartners.onboarding.possystem.event.IPosEventListener;
 import com.rocketpartners.onboarding.possystem.event.IPosEventManager;
 import com.rocketpartners.onboarding.possystem.event.PosEvent;
 import com.rocketpartners.onboarding.possystem.event.PosEventType;
-import com.rocketpartners.onboarding.possystem.model.Item;
-import com.rocketpartners.onboarding.possystem.model.LineItem;
-import com.rocketpartners.onboarding.possystem.model.PosSystem;
-import com.rocketpartners.onboarding.possystem.model.Transaction;
 import com.rocketpartners.onboarding.possystem.service.ItemService;
 import com.rocketpartners.onboarding.possystem.service.TransactionService;
-import com.rocketpartners.onboarding.possystem.utils.UtilMethods;
 import lombok.*;
 
 import java.math.BigDecimal;

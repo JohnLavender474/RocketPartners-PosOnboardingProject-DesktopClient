@@ -1,7 +1,7 @@
 package com.rocketpartners.onboarding.possystem.display;
 
-import com.rocketpartners.onboarding.possystem.display.dto.ItemDto;
-import com.rocketpartners.onboarding.possystem.utils.Pair;
+import com.rocketpartners.onboarding.commons.model.ItemDto;
+import com.rocketpartners.onboarding.commons.utils.Pair;
 import lombok.NonNull;
 
 import javax.swing.*;

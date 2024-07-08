@@ -1,6 +1,6 @@
 package com.rocketpartners.onboarding.possystem.repository.inmemory;
 
-import com.rocketpartners.onboarding.possystem.model.Transaction;
+import com.rocketpartners.onboarding.commons.model.Transaction;
 import com.rocketpartners.onboarding.possystem.repository.TransactionRepository;
 import lombok.NonNull;
 import lombok.ToString;

@@ -1,6 +1,6 @@
 package com.rocketpartners.onboarding.possystem.service;
 
-import com.rocketpartners.onboarding.possystem.model.Item;
+import com.rocketpartners.onboarding.commons.model.Item;
 import com.rocketpartners.onboarding.possystem.repository.ItemRepository;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;

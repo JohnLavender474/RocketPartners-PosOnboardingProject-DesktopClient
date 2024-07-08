@@ -1,8 +1,8 @@
 package com.rocketpartners.onboarding.possystem.display;
 
 import com.rocketpartners.onboarding.possystem.Application;
-import com.rocketpartners.onboarding.possystem.display.dto.LineItemDto;
-import com.rocketpartners.onboarding.possystem.display.dto.TransactionDto;
+import com.rocketpartners.onboarding.commons.model.LineItemDto;
+import com.rocketpartners.onboarding.commons.model.TransactionDto;
 import lombok.NonNull;
 
 import javax.swing.*;
