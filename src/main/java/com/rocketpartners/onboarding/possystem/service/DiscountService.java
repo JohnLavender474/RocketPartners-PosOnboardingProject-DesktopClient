@@ -1,10 +1,13 @@
 package com.rocketpartners.onboarding.possystem.service;
 
-import com.rocketpartners.onboarding.commons.model.Transaction;
+import com.rocketpartners.onboarding.commons.model.Discount;
+import com.rocketpartners.onboarding.commons.model.DiscountComputation;
+import com.rocketpartners.onboarding.commons.model.TransactionDto;
 import lombok.NonNull;
 import lombok.ToString;
+import org.springframework.web.reactive.function.client.WebClient;
 
-import java.math.BigDecimal;
+import java.util.List;
 
 /**
  * Service class for Discounts. This class provides methods for computing discounts to apply to a transaction and
@@ -13,14 +16,44 @@ import java.math.BigDecimal;
 @ToString
 public class DiscountService {
 
+    private final WebClient webClient;
+
     /**
-     * Compute the total discount amount for a transaction.
+     * Create a new DiscountService with the given base URL.
      *
-     * @param transaction The transaction for which to compute discounts.
-     * @return the total discount amount for the transaction
+     * @param baseUrl the base URL
      */
-    public BigDecimal computeDiscountAmountToApplyTo(@NonNull Transaction transaction) {
-        // TODO: Implement this method
-        return BigDecimal.ZERO;
+    public DiscountService(@NonNull String baseUrl) {
+        webClient = WebClient.builder().baseUrl(baseUrl).build();
+    }
+
+    /**
+     * Get the list of discounts.
+     *
+     * @return the list of discounts
+     */
+    public List<Discount> getDiscounts() {
+        try {
+            return webClient.get().uri("/api/discounts").retrieve().bodyToFlux(Discount.class).collectList().block();
+        } catch (Exception e) {
+            System.err.println("Failed to get discounts: " + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Compute the discounts to apply to a transaction.
+     *
+     * @param transaction the transaction dto
+     * @return the computed discounts
+     */
+    public DiscountComputation computeDiscounts(@NonNull TransactionDto transaction) {
+        try {
+            return webClient.post().uri("/api/discounts/compute").bodyValue(transaction).retrieve()
+                    .bodyToMono(DiscountComputation.class).block();
+        } catch (Exception e) {
+            System.err.println("Failed to compute discounts: " + e.getMessage());
+            return null;
+        }
     }
 }

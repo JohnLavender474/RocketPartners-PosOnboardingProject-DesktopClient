@@ -1,15 +1,13 @@
 package com.rocketpartners.onboarding.possystem.component;
 
-import com.rocketpartners.onboarding.commons.model.Item;
-import com.rocketpartners.onboarding.commons.model.LineItem;
-import com.rocketpartners.onboarding.commons.model.PosSystem;
-import com.rocketpartners.onboarding.commons.model.Transaction;
+import com.rocketpartners.onboarding.commons.model.*;
 import com.rocketpartners.onboarding.commons.utils.UtilMethods;
 import com.rocketpartners.onboarding.possystem.constant.ConstKeys;
 import com.rocketpartners.onboarding.possystem.constant.ConstVals;
 import com.rocketpartners.onboarding.possystem.constant.TransactionState;
 import com.rocketpartners.onboarding.possystem.event.PosEvent;
 import com.rocketpartners.onboarding.possystem.event.PosEventType;
+import com.rocketpartners.onboarding.possystem.service.DiscountService;
 import com.rocketpartners.onboarding.possystem.service.ItemService;
 import com.rocketpartners.onboarding.possystem.service.TransactionService;
 import org.junit.jupiter.api.BeforeEach;
@@ -18,6 +16,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -32,12 +31,14 @@ class PosComponentTest {
     private ItemBookLoaderComponent itemBookLoaderComponent;
     private TransactionService transactionService;
     private ItemService itemService;
+    private DiscountService discountService;
     private PosComponent posComponent;
 
     @BeforeEach
     void setUp() {
         Mockito.clearAllCaches();
         itemBookLoaderComponent = mock(ItemBookLoaderComponent.class);
+
         transactionService = mock(TransactionService.class);
         when(transactionService.createAndPersist(anyString(), anyInt())).thenAnswer(invocation -> {
             int transactionNumber = invocation.getArgument(1);
@@ -47,6 +48,7 @@ class PosComponentTest {
             transaction.setTransactionNumber(transactionNumber);
             return transaction;
         });
+
         itemService = mock(ItemService.class);
         when(itemService.createAndPersist(anyString(), anyString(), any(BigDecimal.class), anyString(),
                 anyString())).thenAnswer(invocation -> {
@@ -63,7 +65,13 @@ class PosComponentTest {
             item.setDescription(itemDescription);
             return item;
         });
-        posComponent = Mockito.spy(new PosComponent(itemBookLoaderComponent, transactionService, itemService));
+
+        discountService = Mockito.mock(DiscountService.class);
+        when(discountService.getDiscounts()).thenReturn(new ArrayList<>());
+        when(discountService.computeDiscounts(any())).thenReturn(new DiscountComputation());
+
+        posComponent = Mockito.spy(
+                new PosComponent(itemBookLoaderComponent, transactionService, itemService, discountService));
         PosSystem posSystem = new PosSystem();
         posSystem.setId("1");
         posSystem.setPosLane(1);
@@ -102,7 +110,8 @@ class PosComponentTest {
         List<PosEvent> capturedEvents = eventCaptor.getAllValues();
 
         assertTrue(UtilMethods.containsInOrder(capturedEvents.stream().map(PosEvent::getType).toList(),
-                List.of(PosEventType.POS_BOOTUP, PosEventType.TRANSACTION_STARTED, PosEventType.DO_UPDATE_QUICK_ITEMS)));
+                List.of(PosEventType.POS_BOOTUP, PosEventType.TRANSACTION_STARTED,
+                        PosEventType.DO_UPDATE_QUICK_ITEMS)));
     }
 
     @Test
@@ -400,11 +409,18 @@ class PosComponentTest {
     @Test
     void testStartCardPaymentProcess() {
         Transaction transaction = new Transaction();
+
         LineItem lineItem = new LineItem();
         lineItem.setItemUpc("testUPC");
         lineItem.setQuantity(1);
         transaction.setLineItems(Collections.singletonList(lineItem));
         when(transactionService.createAndPersist(anyString(), anyInt())).thenReturn(transaction);
+
+        Item item = new Item();
+        item.setUpc("testUPC");
+        item.setName("testItem");
+        item.setUnitPrice(BigDecimal.TEN);
+        when(itemService.getItemByUpc(anyString())).thenReturn(item);
 
         posComponent.startTransaction(null);
         posComponent.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_START_PAY_WITH_CARD_PROCESS));
@@ -415,11 +431,18 @@ class PosComponentTest {
     @Test
     void testStartCashPaymentProcess() {
         Transaction transaction = new Transaction();
+
         LineItem lineItem = new LineItem();
         lineItem.setItemUpc("testUpc");
         lineItem.setQuantity(1);
         transaction.setLineItems(Collections.singletonList(lineItem));
         when(transactionService.createAndPersist(anyString(), anyInt())).thenReturn(transaction);
+
+        Item item = new Item();
+        item.setUpc("testUPC");
+        item.setName("testItem");
+        item.setUnitPrice(BigDecimal.TEN);
+        when(itemService.getItemByUpc(anyString())).thenReturn(item);
 
         posComponent.startTransaction(null);
         posComponent.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_START_PAY_WITH_CASH_PROCESS));
@@ -437,6 +460,12 @@ class PosComponentTest {
 
         when(transactionService.createAndPersist(anyString(), anyInt())).thenReturn(transaction);
 
+        Item item = new Item();
+        item.setUpc("testUPC");
+        item.setName("testItem");
+        item.setUnitPrice(BigDecimal.TEN);
+        when(itemService.getItemByUpc(anyString())).thenReturn(item);
+
         posComponent.startTransaction(null);
         posComponent.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_START_PAY_WITH_CARD_PROCESS));
         posComponent.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_CANCEL_PAYMENT));
@@ -453,6 +482,12 @@ class PosComponentTest {
         transaction.setLineItems(Collections.singletonList(lineItem));
 
         when(transactionService.createAndPersist(anyString(), anyInt())).thenReturn(transaction);
+
+        Item item = new Item();
+        item.setUpc("testUPC");
+        item.setName("testItem");
+        item.setUnitPrice(BigDecimal.TEN);
+        when(itemService.getItemByUpc(anyString())).thenReturn(item);
 
         posComponent.startTransaction(null);
         posComponent.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_START_PAY_WITH_CASH_PROCESS));
@@ -549,7 +584,7 @@ class PosComponentTest {
         assertEquals(new BigDecimal("4.00"), posComponent.getTransaction().getAmountTendered());
 
         ArgumentCaptor<PosEvent> eventCaptor = ArgumentCaptor.forClass(PosEvent.class);
-        verify(posComponent, times(9)).dispatchPosEvent(eventCaptor.capture());
+        verify(posComponent, times(10)).dispatchPosEvent(eventCaptor.capture());
 
         List<PosEvent> capturedEvents = eventCaptor.getAllValues();
         assertTrue(capturedEvents.stream().map(PosEvent::getType).toList().contains(PosEventType.INSUFFICIENT_FUNDS));

@@ -24,7 +24,6 @@ import java.util.UUID;
 public class TransactionService {
 
     private final TransactionRepository transactionRepository;
-    private final DiscountService discountService;
     private final ItemService itemService;
     private final TaxService taxService;
 
@@ -53,10 +52,11 @@ public class TransactionService {
     }
 
     /**
-     * Recompute the subtotal, taxes, discounts, and total for a transaction. After the transaction is recomputed, the
-     * transaction is saved.
+     * Recompute the subtotal and total for a transaction. The discount amount is factored into computing the total.
+     * However, discounts to apply are NOT computed in this method. To compute discounts, use {@link DiscountService}.
+     * After the transaction is recomputed, the transaction is saved.
      *
-     * @param transaction the transaction to recompute
+     * @param transaction the transaction to recompute and save
      */
     public void recomputeAndSaveTransaction(@NonNull Transaction transaction) {
         transaction.setSubtotal(BigDecimal.ZERO);
@@ -76,13 +76,10 @@ public class TransactionService {
         BigDecimal taxes = taxService.computeTaxesFor(transaction);
         transaction.setTaxes(taxes);
 
-        BigDecimal discountAmount = discountService.computeDiscountAmountToApplyTo(transaction);
-        transaction.setDiscountAmount(discountAmount);
-
         BigDecimal total = BigDecimal.ZERO;
         total = total.add(subtotal);
         total = total.add(taxes);
-        total = total.subtract(discountAmount);
+        total = total.subtract(transaction.getDiscountAmount());
         transaction.setTotal(total);
 
         saveTransaction(transaction);

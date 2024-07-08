@@ -4,13 +4,13 @@ import com.beust.jcommander.JCommander;
 import com.beust.jcommander.Parameter;
 import com.beust.jcommander.ParameterException;
 import com.formdev.flatlaf.FlatLightLaf;
+import com.rocketpartners.onboarding.commons.model.PosSystem;
 import com.rocketpartners.onboarding.possystem.component.ItemBookLoaderComponent;
 import com.rocketpartners.onboarding.possystem.component.LocalTestTsvItemBookLoaderComponent;
 import com.rocketpartners.onboarding.possystem.component.PosComponent;
 import com.rocketpartners.onboarding.possystem.component.journal.LocalJournal;
 import com.rocketpartners.onboarding.possystem.component.journal.RemoteJournal;
 import com.rocketpartners.onboarding.possystem.display.*;
-import com.rocketpartners.onboarding.commons.model.PosSystem;
 import com.rocketpartners.onboarding.possystem.repository.ItemRepository;
 import com.rocketpartners.onboarding.possystem.repository.PosSystemRepository;
 import com.rocketpartners.onboarding.possystem.repository.TransactionRepository;
@@ -52,6 +52,7 @@ public class Application {
         private static final String DEFAULT_MYSQL_USER = "myuser";
         private static final String DEFAULT_MYSQL_PASSWORD = "password";
         private static final String DEFAULT_STORE_NAME = "Rocket Partners Store";
+        private static final String DEFAULT_DISCOUNT_ENGINE_BASE_URL = "http://localhost:8080";
         private static final String DEFAULT_REMOTE_JOURNAL_HOST = "localhost";
         private static final String DEFAULT_REMOTE_JOURNAL_PORT = "12345";
         private static final int DEFAULT_LANE_NUMBER = 1;
@@ -86,6 +87,9 @@ public class Application {
 
         @Parameter(names = "-laneNumber", description = "The POS lane number. Default: 1.")
         private int laneNumber = DEFAULT_LANE_NUMBER;
+
+        @Parameter(names = "-discountEngineBaseUrl", description = "The base URL of the discount engine.")
+        private String discountEngineBaseUrl = DEFAULT_DISCOUNT_ENGINE_BASE_URL;
 
         @Parameter(names = "-remoteJournalHost", description = "The host of the remote journal. Default: localhost.")
         private String remoteJournalHost = DEFAULT_REMOTE_JOURNAL_HOST;
@@ -154,7 +158,8 @@ public class Application {
             int laneNumber = arguments.getLaneNumber();
 
             PosComponent posComponent =
-                    new PosComponent(itemBookLoaderComponent, services.transactionService(), services.itemService());
+                    new PosComponent(itemBookLoaderComponent, services.transactionService(), services.itemService(),
+                            services.discountService);
             PosSystem posSystem;
             if (services.posSystemService().posSystemExistsByStoreNameAndPosLane(storeName, laneNumber)) {
                 posSystem = services.posSystemService().getPosSystemByStoreNameAndPosLane(storeName, laneNumber);
@@ -166,7 +171,8 @@ public class Application {
             LocalJournal localJournal = new LocalJournal();
             posComponent.registerPosEventListener(localJournal);
 
-            RemoteJournal remoteJournal = new RemoteJournal(arguments.getRemoteJournalHost(), arguments.getRemoteJournalPort());
+            RemoteJournal remoteJournal =
+                    new RemoteJournal(arguments.getRemoteJournalHost(), arguments.getRemoteJournalPort());
             posComponent.registerPosEventListener(remoteJournal);
             posComponent.registerChildComponent(remoteJournal);
 
@@ -228,10 +234,10 @@ public class Application {
 
         PosSystemService posSystemService = new PosSystemService(repositories.posSystemRepository());
         ItemService itemService = new ItemService(repositories.itemRepository());
-        DiscountService discountService = new DiscountService();
+        DiscountService discountService = new DiscountService(arguments.getDiscountEngineBaseUrl());
         TaxService taxService = new TaxService();
         TransactionService transactionService =
-                new TransactionService(repositories.transactionRepository(), discountService, itemService, taxService);
+                new TransactionService(repositories.transactionRepository(), itemService, taxService);
 
         return new Services(posSystemService, itemService, discountService, taxService, transactionService);
     }

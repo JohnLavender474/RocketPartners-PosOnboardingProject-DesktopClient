@@ -10,6 +10,7 @@ import com.rocketpartners.onboarding.possystem.event.IPosEventListener;
 import com.rocketpartners.onboarding.possystem.event.IPosEventManager;
 import com.rocketpartners.onboarding.possystem.event.PosEvent;
 import com.rocketpartners.onboarding.possystem.event.PosEventType;
+import com.rocketpartners.onboarding.possystem.service.DiscountService;
 import com.rocketpartners.onboarding.possystem.service.ItemService;
 import com.rocketpartners.onboarding.possystem.service.TransactionService;
 import lombok.*;
@@ -29,6 +30,7 @@ public class PosComponent implements IComponent, IPosEventManager {
 
     private final TransactionService transactionService;
     private final ItemService itemService;
+    private final DiscountService discountService;
 
     private final Map<PosEventType, List<PosEvent>> events;
     private final Set<IComponent> childComponents;
@@ -57,13 +59,17 @@ public class PosComponent implements IComponent, IPosEventManager {
      * @param itemService        The item service.
      */
     public PosComponent(@NonNull ItemBookLoaderComponent itemBookLoaderComponent,
-                        @NonNull TransactionService transactionService, @NonNull ItemService itemService) {
+                        @NonNull TransactionService transactionService, @NonNull ItemService itemService,
+                        @NonNull DiscountService discountService) {
         if (Application.DEBUG) {
             System.out.println("[PosComponent] Creating POS component");
         }
+
         this.itemBookLoaderComponent = itemBookLoaderComponent;
         this.transactionService = transactionService;
         this.itemService = itemService;
+        this.discountService = discountService;
+
         events = new EnumMap<>(PosEventType.class);
         childComponents = new LinkedHashSet<>();
         posEventListeners = new LinkedHashSet<>();
@@ -355,8 +361,9 @@ public class PosComponent implements IComponent, IPosEventManager {
             return;
         }
 
-
         transactionState = TransactionState.AWAITING_CARD_PAYMENT;
+        computeDiscountsAndSave();
+
         dispatchPosEvent(new PosEvent(PosEventType.START_PAY_WITH_CARD_PROCESS));
         dispatchPosEvent(new PosEvent(PosEventType.LOG, Map.of(ConstKeys.MESSAGE, "Card payment process started.")));
     }
@@ -388,8 +395,28 @@ public class PosComponent implements IComponent, IPosEventManager {
         }
 
         transactionState = TransactionState.AWAITING_CASH_PAYMENT;
+        computeDiscountsAndSave();
+
         dispatchPosEvent(new PosEvent(PosEventType.START_PAY_WITH_CASH_PROCESS));
         dispatchPosEvent(new PosEvent(PosEventType.LOG, Map.of(ConstKeys.MESSAGE, "Cash payment process started.")));
+    }
+
+    private void computeDiscountsAndSave() {
+        DiscountComputation computation = discountService.computeDiscounts(getTransactionDto());
+        if (computation == null) {
+            String error = "Failed to compute discounts for transaction";
+            System.err.println(error);
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.MESSAGE, error)));
+            return;
+        }
+
+        transaction.setDiscountAmount(computation.getDiscountAmount());
+        transactionService.recomputeAndSaveTransaction(transaction);
+
+        StringBuilder builder = new StringBuilder();
+        computation.getAppliedDiscounts().forEach((itemUpc, discount) ->
+                builder.append("\n\tItem: ").append(itemUpc).append(", Discount: ").append(discount));
+        dispatchPosEvent(new PosEvent(PosEventType.LOG, Map.of(ConstKeys.MESSAGE, "Discounts applied: " + builder)));
     }
 
     private void handleRequestEnterCardNumber(@NonNull PosEvent event) {
@@ -411,6 +438,7 @@ public class PosComponent implements IComponent, IPosEventManager {
 
         transaction.setAmountTendered(transaction.getTotal());
         transaction.setChangeDue(BigDecimal.ZERO);
+
         dispatchPosEvent(new PosEvent(PosEventType.REQUEST_COMPLETE_TRANSACTION));
     }
 
@@ -458,7 +486,7 @@ public class PosComponent implements IComponent, IPosEventManager {
     private void handleRequestCancelPayment() {
         if (!transactionState.isAwaitingPayment()) {
             String error =
-                    "Cannot cancel payment when transaction is not awaiting payment. Current transaction " + "state: " +
+                    "Cannot cancel payment when transaction is not awaiting payment. Current transaction state: " +
                             transactionState;
             System.err.println(error);
             dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.MESSAGE, error)));
@@ -466,8 +494,12 @@ public class PosComponent implements IComponent, IPosEventManager {
         }
 
         transactionState = TransactionState.SCANNING_IN_PROGRESS;
+        transaction.setDiscountAmount(BigDecimal.ZERO);
+        transactionService.recomputeAndSaveTransaction(transaction);
+
         dispatchPosEvent(new PosEvent(PosEventType.DO_CANCEL_PAYMENT));
-        dispatchPosEvent(new PosEvent(PosEventType.LOG, Map.of(ConstKeys.MESSAGE, "Payment cancelled.")));
+        dispatchPosEvent(new PosEvent(PosEventType.LOG, Map.of(ConstKeys.MESSAGE,
+                "Payment cancelled. Any discounts that were applied have been removed.")));
     }
 
     private void handleRequestCompleteTransaction() {

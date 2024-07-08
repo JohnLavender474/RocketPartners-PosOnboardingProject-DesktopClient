@@ -23,12 +23,10 @@ class TransactionServiceTest {
     @BeforeEach
     void setUp() {
         transactionRepository = Mockito.mock(TransactionRepository.class);
-        DiscountService discountService = Mockito.mock(DiscountService.class);
-        when(discountService.computeDiscountAmountToApplyTo(any())).thenReturn(BigDecimal.ZERO);
         ItemService itemService = Mockito.mock(ItemService.class);
         TaxService taxService = Mockito.mock(TaxService.class);
         when(taxService.computeTaxesFor(any())).thenReturn(BigDecimal.valueOf(0.04));
-        transactionService = new TransactionService(transactionRepository, discountService, itemService, taxService);
+        transactionService = new TransactionService(transactionRepository,  itemService, taxService);
         transaction = new Transaction();
         transaction.setId("tx1");
         transaction.setPosSystemId("pos1");
