@@ -203,7 +203,7 @@ public class Application {
             posComponent.registerPosEventListener(errorPopupViewController);
 
             DiscountsViewController discountsViewController =
-                    new DiscountsViewController("Discounts View - Lane " + laneNumber, posComponent);
+                    new DiscountsViewController("Discounts View - Lane " + laneNumber);
             posComponent.registerPosEventListener(discountsViewController);
 
             PoleDisplayViewController poleDisplayViewController =

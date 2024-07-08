@@ -16,10 +16,7 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Mockito;
 
 import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.anyInt;
@@ -31,11 +28,10 @@ class PosComponentTest {
     private ItemBookLoaderComponent itemBookLoaderComponent;
     private TransactionService transactionService;
     private ItemService itemService;
-    private DiscountService discountService;
     private PosComponent posComponent;
 
     @BeforeEach
-    void setUp() {
+    void setUp() throws Exception {
         Mockito.clearAllCaches();
         itemBookLoaderComponent = mock(ItemBookLoaderComponent.class);
 
@@ -66,8 +62,8 @@ class PosComponentTest {
             return item;
         });
 
-        discountService = Mockito.mock(DiscountService.class);
-        when(discountService.getDiscounts()).thenReturn(new ArrayList<>());
+        DiscountService discountService = Mockito.mock(DiscountService.class);
+        when(discountService.getDiscounts()).thenReturn(new HashMap<>());
         when(discountService.computeDiscounts(any())).thenReturn(new DiscountComputation());
 
         posComponent = Mockito.spy(

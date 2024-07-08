@@ -1,44 +1,50 @@
 package com.rocketpartners.onboarding.possystem.display;
 
-import com.rocketpartners.onboarding.possystem.component.IComponent;
-import com.rocketpartners.onboarding.possystem.event.IPosEventDispatcher;
+import com.rocketpartners.onboarding.commons.model.Discount;
+import com.rocketpartners.onboarding.possystem.Application;
+import com.rocketpartners.onboarding.possystem.constant.ConstKeys;
 import com.rocketpartners.onboarding.possystem.event.IPosEventListener;
 import com.rocketpartners.onboarding.possystem.event.PosEvent;
 import com.rocketpartners.onboarding.possystem.event.PosEventType;
 import lombok.NonNull;
 
+import java.util.Map;
 import java.util.Set;
 
-public class DiscountsViewController implements IPosEventDispatcher, IPosEventListener {
+/**
+ * Controller for the discounts view.
+ */
+public class DiscountsViewController implements IPosEventListener {
 
-    private static final Set<PosEventType> eventTypesToListenFor = Set.of(
-            PosEventType.DO_OPEN_DISCOUNTS
-    );
+    private static final Set<PosEventType> eventTypesToListenFor = Set.of(PosEventType.DO_SHOW_DISCOUNTS);
 
-    private final IPosEventDispatcher parentPosEventDispatcher;
     private final DiscountsView discountsView;
 
-    public DiscountsViewController(@NonNull String frameTitle, @NonNull IPosEventDispatcher parentPosEventDispatcher) {
-        this.parentPosEventDispatcher = parentPosEventDispatcher;
-        discountsView = new DiscountsView(frameTitle, this);
-    }
-
-    DiscountsViewController(@NonNull IPosEventDispatcher parentPosEventDispatcher,
-                            @NonNull DiscountsView discountsView) {
-        this.parentPosEventDispatcher = parentPosEventDispatcher;
-        this.discountsView = discountsView;
+    /**
+     * Create a new discounts view controller.
+     *
+     * @param frameTitle the title of the frame
+     */
+    public DiscountsViewController(@NonNull String frameTitle) {
+        discountsView = new DiscountsView(frameTitle);
     }
 
     @Override
     public void onPosEvent(@NonNull PosEvent event) {
-        switch (event.getType()) {
-            case DO_OPEN_DISCOUNTS -> discountsView.setVisible(true);
-        }
-    }
+        if (event.getType() == PosEventType.DO_SHOW_DISCOUNTS) {
+            if (Application.DEBUG) {
+                System.out.println("[DiscountsViewController] Showing discounts view");
+            }
+            discountsView.setVisible(true);
 
-    @Override
-    public void dispatchPosEvent(PosEvent event) {
-        parentPosEventDispatcher.dispatchPosEvent(event);
+            Map<String, Discount> discounts = (Map<String, Discount>) event.getProperty(ConstKeys.DISCOUNTS);
+            if (Application.DEBUG) {
+                System.out.println("[DiscountsViewController] Discounts: " + discounts);
+            }
+            if (discounts != null) {
+                discountsView.setDiscounts(discounts);
+            }
+        }
     }
 
     @Override

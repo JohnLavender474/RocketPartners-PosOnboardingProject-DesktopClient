@@ -99,7 +99,7 @@ public class PosComponent implements IComponent, IPosEventManager {
             case REQUEST_START_TRANSACTION -> handleRequestStartTransaction(event);
             case REQUEST_OPEN_SCANNER -> handleRequestOpenScanner();
             case REQUEST_OPEN_POLE_DISPLAY -> handleRequestOpenPoleDisplay();
-            case REQUEST_OPEN_DISCOUNTS -> handleRequestOpenDiscounts();
+            case REQUEST_SHOW_DISCOUNTS -> handleRequestShowDiscounts();
             case REQUEST_ADD_ITEM -> handleRequestAddItem(event);
             case REQUEST_REMOVE_ITEM -> handleRequestRemoveItem(event);
             case REQUEST_UPDATE_QUICK_ITEMS -> handleRequestUpdateQuickItems();
@@ -141,11 +141,22 @@ public class PosComponent implements IComponent, IPosEventManager {
         dispatchPosEvent(new PosEvent(PosEventType.DO_OPEN_POLE_DISPLAY));
     }
 
-    private void handleRequestOpenDiscounts() {
+    private void handleRequestShowDiscounts() {
         if (Application.DEBUG) {
             System.out.println("[PosComponent] Request to open discounts");
         }
-        dispatchPosEvent(new PosEvent(PosEventType.DO_OPEN_DISCOUNTS));
+
+        Map<String, Discount> discounts;
+        try {
+            discounts = discountService.getDiscounts();
+        } catch (Exception e) {
+            String error = "Failed to get discounts: " + e.getMessage();
+            System.err.println(error);
+            dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.MESSAGE, error)));
+            return;
+        }
+
+        dispatchPosEvent(new PosEvent(PosEventType.DO_SHOW_DISCOUNTS, Map.of(ConstKeys.DISCOUNTS, discounts)));
     }
 
     private void handleRequestAddItem(@NonNull PosEvent event) {
@@ -402,9 +413,11 @@ public class PosComponent implements IComponent, IPosEventManager {
     }
 
     private void computeDiscountsAndSave() {
-        DiscountComputation computation = discountService.computeDiscounts(getTransactionDto());
-        if (computation == null) {
-            String error = "Failed to compute discounts for transaction";
+        DiscountComputation computation;
+        try {
+            computation = discountService.computeDiscounts(getTransactionDto());
+        } catch (Exception e) {
+            String error = "Failed to compute discounts for transaction: " + e.getMessage();
             System.err.println(error);
             dispatchPosEvent(new PosEvent(PosEventType.ERROR, Map.of(ConstKeys.MESSAGE, error)));
             return;
@@ -414,8 +427,9 @@ public class PosComponent implements IComponent, IPosEventManager {
         transactionService.recomputeAndSaveTransaction(transaction);
 
         StringBuilder builder = new StringBuilder();
-        computation.getAppliedDiscounts().forEach((itemUpc, discount) ->
-                builder.append("\n\tItem: ").append(itemUpc).append(", Discount: ").append(discount));
+        computation.getAppliedDiscounts().forEach(
+                (itemUpc, discount) -> builder.append("\n\tItem: ").append(itemUpc).append(", Discount: ")
+                        .append(discount));
         dispatchPosEvent(new PosEvent(PosEventType.LOG, Map.of(ConstKeys.MESSAGE, "Discounts applied: " + builder)));
     }
 
@@ -498,8 +512,8 @@ public class PosComponent implements IComponent, IPosEventManager {
         transactionService.recomputeAndSaveTransaction(transaction);
 
         dispatchPosEvent(new PosEvent(PosEventType.DO_CANCEL_PAYMENT));
-        dispatchPosEvent(new PosEvent(PosEventType.LOG, Map.of(ConstKeys.MESSAGE,
-                "Payment cancelled. Any discounts that were applied have been removed.")));
+        dispatchPosEvent(new PosEvent(PosEventType.LOG,
+                Map.of(ConstKeys.MESSAGE, "Payment cancelled. Any discounts that were applied have been removed.")));
     }
 
     private void handleRequestCompleteTransaction() {

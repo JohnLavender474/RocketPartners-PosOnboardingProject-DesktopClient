@@ -37,7 +37,7 @@ public class CustomerView extends JFrame {
      * price of the item. The fifth column is the quantity of the item. The sixth column is the total price of the item.
      * The table model is used to update the transactions table with line item DTOs.
      */
-    class TransactionTableModel extends DefaultTableModel {
+    final class TransactionTableModel extends DefaultTableModel {
 
         /**
          * Constructor that initializes the transactions table model.
@@ -119,7 +119,7 @@ public class CustomerView extends JFrame {
      * checkbox in the first column is disabled. The renderer is used to update the transactions table with line item
      * DTOs. The renderer updates the transactions table with line item DTOs.
      */
-    static class SelectCellRenderer extends JCheckBox implements TableCellRenderer {
+    static final class SelectCellRenderer extends JCheckBox implements TableCellRenderer {
 
         private final TransactionTableModel model;
 
@@ -148,7 +148,7 @@ public class CustomerView extends JFrame {
      * the line item. The renderer is used to update the transactions table with line item DTOs. The renderer updates
      * the transactions table with line item DTOs.
      */
-    static class QuantityCellRenderer extends JPanel implements TableCellRenderer {
+    static final class QuantityCellRenderer extends JPanel implements TableCellRenderer {
 
         private final TransactionTableModel model;
         private final JButton decrementButton;
@@ -201,7 +201,7 @@ public class CustomerView extends JFrame {
      * line item. The editor is used to update the transactions table with line item DTOs. The editor updates the
      * transactions table with line item DTOs.
      */
-    class QuantityCellEditor extends AbstractCellEditor implements TableCellEditor {
+    final class QuantityCellEditor extends AbstractCellEditor implements TableCellEditor {
 
         private final JPanel panel;
         private final JButton decrementButton;
@@ -295,7 +295,7 @@ public class CustomerView extends JFrame {
      * checkbox in the first column is disabled. The renderer is used to update the transactions table with line item
      * DTOs. The renderer updates the transactions table with line item DTOs.
      */
-    class StandardCellRenderer extends DefaultTableCellRenderer {
+    final class StandardCellRenderer extends DefaultTableCellRenderer {
 
         private final TransactionTableModel model;
 
@@ -382,7 +382,6 @@ public class CustomerView extends JFrame {
     private static final String CANCEL_PAYMENT_BUTTON_TEXT = "Cancel Payment";
     private static final String CONTINUE_BUTTON_TEXT = "Continue";
 
-    @NonNull
     private final IPosEventDispatcher parentEventDispatcher;
     private final Set<String> selectedLineItemUpcs;
     private final CircularFifoQueue<ItemDto> quickItemDtos;
@@ -554,7 +553,7 @@ public class CustomerView extends JFrame {
         openDiscountsButton = createButton(OPEN_DISCOUNTS_BUTTON_TEXT, Color.getHSBColor(300f / 360f, 1f, 0.5f));
         openDiscountsButton.addActionListener(e ->
                 SwingUtilities.invokeLater(() ->
-                        parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_OPEN_DISCOUNTS))
+                        parentEventDispatcher.dispatchPosEvent(new PosEvent(PosEventType.REQUEST_SHOW_DISCOUNTS))
                 )
         );
 

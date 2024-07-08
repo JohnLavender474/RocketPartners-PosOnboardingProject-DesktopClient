@@ -1,7 +1,6 @@
 package com.rocketpartners.onboarding.possystem.display;
 
 import com.rocketpartners.onboarding.possystem.constant.ConstKeys;
-import com.rocketpartners.onboarding.possystem.event.IPosEventDispatcher;
 import com.rocketpartners.onboarding.possystem.event.IPosEventListener;
 import com.rocketpartners.onboarding.possystem.event.PosEvent;
 import com.rocketpartners.onboarding.possystem.event.PosEventType;
@@ -15,11 +14,9 @@ import java.util.Set;
  * This controller class does not own any UI components but rather listens for events and displays a popup dialog when
  * an error event is received.
  */
-public class ErrorPopupViewController implements IPosEventDispatcher, IPosEventListener {
+public class ErrorPopupViewController implements IPosEventListener {
 
-    private static final Set<PosEventType> eventTypesToListenFor = Set.of(
-            PosEventType.ERROR
-    );
+    private static final Set<PosEventType> eventTypesToListenFor = Set.of(PosEventType.ERROR);
 
     @Override
     public @NonNull Set<PosEventType> getEventTypesToListenFor() {
@@ -32,10 +29,5 @@ public class ErrorPopupViewController implements IPosEventDispatcher, IPosEventL
             String error = event.getProperty(ConstKeys.MESSAGE, String.class);
             JOptionPane.showMessageDialog(null, error, "Error", JOptionPane.ERROR_MESSAGE);
         }
-    }
-
-    @Override
-    public void dispatchPosEvent(PosEvent event) {
-        // do nothing
     }
 }
