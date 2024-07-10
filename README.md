@@ -1,12 +1,158 @@
 # POS Project: No, POS Does Not Stand for Piece of S***
 
-## NOT FINISHED YET
-
 As part of the onboarding process at Rocket Partners, I have been tasked with creating a mock POS (Point of Sale)
 system in multiple phases.
 
 In the first phase, I was to develop a fully working desktop app in Java Swing to simulate the components of a POS
-system. For this phase, I was to handle the transaction process, store a pricebook, generate a receipt, and more. As
+system. In the second phase, I was to develop a "virtual journal" server application that would receive and print logs
+from the client applications. In the third phase, I was to develop a "discount engine" which would be a Spring Boot
+app that would calculate discounts for transactions based on a set of rules; this app would have a REST API and
+would be deployed to AWS. 
+
+This repository contains the code for the first phase of the project. The code for the second and third phases can be
+found in separate repositories:
+- [POS Virtual Journal](https://github.com/JohnLavender474/RocketPartners-POSOnboardingProject-VirtualJournal)
+- [POS Discount Engine](https://github.com/JohnLavender474/RocketPartners-PosOnboardingProject-PosDiscountEngine)
+- [POS Commons](https://github.com/JohnLavender474/RocketPartners-PosOnboardingProject-Commons)
+
+---
+
+## Steps to run
+1. Before running this application, make sure you have the `POS Virtual Journal` and `POS Discount Engine` applications so that this application can communicate with them. Running them is optional, as this project has error handling in case they are not.
+2. Clone this repository.
+3. Open the project in your favorite IDE.
+4. Run the `Application` class. This will start the POS system application. There are arguments that can optionally be set (please see the `Application` class).
+
+This section explains each of the argument parameters for configuring the application.
+
+    -debug
+
+    Description: Enable or disable debug mode.
+
+    Values: true, false
+
+    Default: false
+
+    
+    ---
+
+
+    -appMode
+    
+    Description: Set the mode of the application.
+    
+    Values: dev (development), prod (production)
+    
+    Default: dev
+
+
+    ---
+    
+    
+    -dbSource
+    
+    Description: (NOT IMPLEMENTED) Specify the database source.
+    
+    Values: inmemory, mysql
+    
+    Default: inmemory
+
+
+    ---
+    
+    
+    -mysqlDbName
+    
+    Description: (NOT IMPLEMENTED) The name of the MySQL database.
+    
+    Default: pos_system
+
+
+    ---
+    
+    
+    -mysqlUrl
+    
+    Description: (NOT IMPLEMENTED) The URL of the MySQL database.
+    
+    Default: jdbc:mysql://localhost:3306/pos_system
+
+
+    ---
+    
+    
+    -mysqlUser
+    
+    Description: (NOT IMPLEMENTED) The MySQL database user.
+    
+    Default: myuser
+
+
+    ---
+    
+    
+    -mysqlPassword
+    
+    Description: (NOT IMPLEMENTED) The MySQL database password.
+    
+    Default: password
+
+
+    ---
+    
+    
+    -storeName
+    
+    Description: The name of the store.
+    
+    Default: Rocket Partners Store
+
+
+    ---
+    
+    
+    -laneNumber
+    
+    Description: The POS lane number.
+    
+    Default: 1
+
+
+    ---
+    
+    
+    -discountEngineBaseUrl
+    
+    Description: The base URL of the discount engine.
+    
+    Default: http://localhost:8080
+
+
+    ---
+    
+    
+    -remoteJournalHost
+    
+    Description: The host of the remote journal.
+    
+    Default: localhost
+
+
+    ---
+    
+    
+    -remoteJournalPort
+    
+    Description: The port of the remote journal.
+    
+    Default: 12345
+
+
+These parameters provide flexible configuration options for the application, allowing for customization based on different deployment and runtime requirements.
+
+---
+
+For this phase, I was to handle the transaction process, store a pricebook, generate a receipt, and more. As
 for the design of the project, I opted for an event-driven architecture where the Swing components would interact with
 parent components that would handle the business logic. This design choice was made to ensure that the Swing components
 remained as lightweight as possible and that the business logic was separated from the view.
